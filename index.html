@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+
+        <meta charset="utf-8"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>WebGL Raytracer</title>
+
+        <style>
+            #rendering-canvas {
+                position: relative;
+                left: 120px;
+                top: 5px;
+                width: 800px;
+                height: 600px;
+            }
+            #complete-loop-fpsmeter {
+                position: relative;
+                left: 0px;
+                top: 0px;
+            }
+            #update-fpsmeter {
+                position: relative;
+                left: 0px;
+                top: 45px;
+            }
+
+            #ui-container {
+                position: absolute;
+                left: 1000px;
+                top: 10px;
+            }
+
+            #loggerOutput {
+                width: 90%;
+                margin: 0px auto;
+                border: 0px none;
+                padding: 0px none;
+                background-color: black;
+                color: white;
+                font-family: 'Lucida Console', Monaco, monospace;
+                outline: none;
+                display: block;
+            }
+        </style>
+
+    </head>
+
+    <body>
+
+        <div>
+
+            <div id="complete-loop-fpsmeter"></div>
+            <div id="update-fpsmeter"></div>
+
+            <canvas id="rendering-canvas" width="800" height="600"></canvas>
+
+        </div>
+
+        <div id="ui-container">
+            <table>
+                <tr>
+                    <td>CLICK CANVAS FOR</td>
+                    <td>FREEFLY CONTROLS</td>
+                </tr>
+
+
+
+                <tr>
+                    <td>Performance<br>Auto Scaling</td>
+                    <td><input id="auto-scaling-enabled" type="checkbox" checked></td>
+                </tr>
+                <tr>
+                    <td>Resolution</td>
+                    <td><input id="resolution" type="range" min="1" max="10" value="1"></td>
+                </tr>
+                <tr>
+                    <td>AntiAliasing</td>
+                    <td><input id="anti-aliasing-enabled" type="checkbox" checked></td>
+                </tr>
+
+                <tr>
+                    <td>boxes rotation x</td>
+                    <td><input id="angle-x" type="range" min="0" max="100" value="50"></td>
+                </tr>
+                <tr>
+                    <td>boxes rotation y</td>
+                    <td><input id="angle-y" type="range" min="0" max="100" value="50"></td>
+                </tr>
+                <tr>
+                    <td>boxes rotation z</td>
+                    <td><input id="angle-z" type="range" min="0" max="100" value="50"></td>
+                </tr>
+
+            </table>
+        </div>
+
+        <textarea id="loggerOutput" rows="10" readonly></textarea>
+
+        <script src="./dist/bundle.js"></script>
+
+    </body>
+
+</html>
