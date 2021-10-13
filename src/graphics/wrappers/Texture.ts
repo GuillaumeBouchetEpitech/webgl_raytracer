@@ -5,20 +5,20 @@ export class Texture {
 
     private _width: number = 0;
     private _height: number = 0;
-    private _texture: WebGLTexture | null = null;
+    private _textureObject: WebGLTexture | null = null;
 
     constructor() {
     }
 
     allocate(width: number, height: number, pixelated: boolean = false) {
 
-        if (this._texture)
+        if (this._textureObject)
             throw new Error("texture already initialised");
 
         const gl = WebGLContext.getContext();
 
-        this._texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this._texture);
+        this._textureObject = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this._textureObject);
 
         // wrapping to clamp to edge
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -39,12 +39,12 @@ export class Texture {
 
     resize(width: number, height: number) {
 
-        if (!this._texture)
+        if (!this._textureObject)
             throw new Error("texture not initialised");
 
         const gl = WebGLContext.getContext();
 
-        gl.bindTexture(gl.TEXTURE_2D, this._texture);
+        gl.bindTexture(gl.TEXTURE_2D, this._textureObject);
 
         const level = 0;
         const internalFormat = gl.RGBA;
@@ -57,13 +57,13 @@ export class Texture {
 
     async loadFromUrl(url: string, pixelated: boolean = false): Promise<void> {
 
-        if (this._texture)
+        if (this._textureObject)
             throw new Error("texture already initialised");
 
         const gl = WebGLContext.getContext();
 
-        this._texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this._texture);
+        this._textureObject = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this._textureObject);
 
         // Because images have to be download over the internet
         // they might take a moment until they are ready.
@@ -85,15 +85,13 @@ export class Texture {
         return new Promise<void>((resolve, reject) => {
 
             const image = new Image();
-            image.onerror = (err) => {
-                reject(err);
-            };
+            image.onerror = reject;
             image.onload = () => {
 
                 this._width = image.width;
                 this._height = image.height;
 
-                gl.bindTexture(gl.TEXTURE_2D, this._texture);
+                gl.bindTexture(gl.TEXTURE_2D, this._textureObject);
                 gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
 
                 // wrapping to clamp to edge
@@ -113,26 +111,26 @@ export class Texture {
     }
 
     getWidth(): number {
-        if (!this._texture)
+        if (!this._textureObject)
             throw new Error("texture not initialised")
 
         return this._width;
     }
 
     getHeight(): number {
-        if (!this._texture)
+        if (!this._textureObject)
             throw new Error("texture not initialised")
 
         return this._height;
     }
 
     bind(): void {
-        if (!this._texture)
+        if (!this._textureObject)
             throw new Error("texture not initialised")
 
         const gl = WebGLContext.getContext();
 
-        gl.bindTexture(gl.TEXTURE_2D, this._texture);
+        gl.bindTexture(gl.TEXTURE_2D, this._textureObject);
     }
 
     static unbind(): void {
@@ -143,11 +141,11 @@ export class Texture {
     }
 
     getRawObject() {
-        if (!this._texture)
+        if (!this._textureObject)
             throw new Error("texture not initialised");
 
         // TODO: this is ugly
-        return this._texture;
+        return this._textureObject;
     }
 
 };

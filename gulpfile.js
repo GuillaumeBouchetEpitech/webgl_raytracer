@@ -3,14 +3,15 @@ const browserify = require('browserify');
 const source = require('vinyl-source-stream');
 const tsify = require('tsify');
 const uglify = require('gulp-uglify');
-const sourcemaps = require('gulp-sourcemaps');
+// const sourcemaps = require('gulp-sourcemaps');
 const buffer = require('vinyl-buffer');
 
 const buildMain = ({ isDebug }) => {
 
     const stream = browserify({
             basedir: '.',
-            debug: (isDebug === true),
+            // debug: (isDebug === true),
+            debug: false,
             entries: [
                 './src/main.ts'
             ],

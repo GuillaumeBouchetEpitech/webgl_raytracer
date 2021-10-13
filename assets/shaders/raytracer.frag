@@ -1,6 +1,6 @@
 #version 300 es
 
-precision mediump float;
+precision highp float;
 
 //
 
@@ -44,13 +44,13 @@ const vec3      g_backgroundColor = vec3(0.4);
 
 //
 
-struct t_ray
+struct RayValues
 {
     vec3 origin;
     vec3 direction;
 };
 
-struct t_rayResult
+struct RayResult
 {
     bool hasHit;
     float depth;
@@ -70,7 +70,6 @@ struct t_rayResult
 float texelFetch(sampler2D tex, vec2 texSize, vec2 pixelCoord)
 {
     vec2 uv = (pixelCoord + 0.5) / texSize;
-    // return texture2D(tex, uv).x;
     return texture(tex, uv).x;
 }
 
@@ -87,7 +86,7 @@ float getValueByIndexFromTexture(sampler2D tex, vec2 texSize, float index)
 //
 //
 
-bool intersectSphere(t_ray ray, float radius, out float distance, out vec3 normal)
+bool intersectSphere(RayValues ray, float radius, out float distance, out vec3 normal)
 {
     float nearValue = 0.001; // TODO: hardcoded
     float farValue = 100.0; // TODO: hardcoded
@@ -99,9 +98,8 @@ bool intersectSphere(t_ray ray, float radius, out float distance, out vec3 norma
         return false;
 
     h = sqrt(h);
-    float d1 = -b - h;
-    float d2 = -b + h;
 
+    float d1 = -b - h;
     if (d1 >= nearValue && d1 <= farValue)
     {
         normal = normalize(ray.origin + ray.direction * d1);
@@ -109,6 +107,7 @@ bool intersectSphere(t_ray ray, float radius, out float distance, out vec3 norma
         return true;
     }
 
+    float d2 = -b + h;
     if (d2 >= nearValue && d2 <= farValue)
     {
         normal = normalize(ray.origin + ray.direction * d2);
@@ -119,7 +118,7 @@ bool intersectSphere(t_ray ray, float radius, out float distance, out vec3 norma
     return false;
 }
 
-bool intersectBox(t_ray ray, vec3 boxSize, out float distance, out vec3 normal)
+bool intersectBox(RayValues ray, vec3 boxSize, out float distance, out vec3 normal)
 {
     float nearValue = 0.001; // TODO: hardcoded
     float farValue = 100.0; // TODO: hardcoded
@@ -143,8 +142,8 @@ bool intersectBox(t_ray ray, vec3 boxSize, out float distance, out vec3 normal)
     vec3 t1 = -n - k;
     vec3 t2 = -n + k;
 
-	float tN = max( max( t1.x, t1.y ), t1.z );
-	float tF = min( min( t2.x, t2.y ), t2.z );
+	float tN = max(max(t1.x, t1.y), t1.z);
+	float tF = min(min(t2.x, t2.y), t2.z);
 
     if (tN > tF || tF <= 0.0)
         return false;
@@ -166,7 +165,7 @@ bool intersectBox(t_ray ray, vec3 boxSize, out float distance, out vec3 normal)
     return false;
 }
 
-bool intersectTriangle(t_ray ray, vec3 v0, vec3 v1, vec3 v2, out float distance, out vec3 normal)
+bool intersectTriangle(RayValues ray, vec3 v0, vec3 v1, vec3 v2, out float distance, out vec3 normal)
 {
     float nearValue = 0.001; // TODO: hardcoded
     float farValue = 100.0; // TODO: hardcoded
@@ -190,13 +189,40 @@ bool intersectTriangle(t_ray ray, vec3 v0, vec3 v1, vec3 v2, out float distance,
     return true;
 }
 
+// float intersectPlane(RayValues ray, vec3 normal, float offset)
+// {
+//     return -(dot(ray.origin, normal) + offset) / dot(ray.direction, normal);
+// }
+
+// float intersectPlane2(RayValues ray, vec3 normal, float offset)
+// {
+//     float nearValue = 0.001; // TODO: hardcoded
+//     float farValue = 1000.0; // TODO: hardcoded
+
+//     float a = dot(ray.direction, normal);
+//     float d = -(dot(ray.origin, normal) + offset) / a;
+
+//     if (a > 0.0 || d < nearValue || d > farValue)
+//         return -1.0;
+
+//     return d;
+// }
+
+// float diskIntersect(RayValues ray, vec3 center, vec3 normal, float radius)
+// {
+//     vec3  o = ray.origin - center;
+//     float t = -dot(normal, o) / dot(ray.direction, normal);
+//     vec3  q = o + ray.direction * t;
+//     return (dot(q, q) < radius * radius) ? t : -1.0;
+// }
+
 //
 //
 //
 //
 //
 
-bool intersectScene(t_ray ray, out t_rayResult result, bool shadowMode)
+bool intersectScene(RayValues ray, out RayResult result, bool shadowMode)
 {
     float bestDistance = -1.0;
 
@@ -205,7 +231,7 @@ bool intersectScene(t_ray ray, out t_rayResult result, bool shadowMode)
     if (u_sceneTextureSize.x <= 1.0)
         return false;
 
-    t_ray tmpRay;
+    RayValues tmpRay;
     vec3 normal;
 
     for (float index = u_spheresStart; index < u_spheresStop; index += 11.0)
@@ -420,6 +446,30 @@ bool intersectScene(t_ray ray, out t_rayResult result, bool shadowMode)
         result.lightEnabled = lightEnabled;
     }
 
+    { // plane test
+
+        // vec3 planeNormal = normalize(vec3(0.0, 0.0, 1.0));
+        // float val = intersectPlane(tmpRay, planeNormal, 35.0/4.0*3.0);
+
+        // vec3 planeNormal = normalize(vec3(0.0, 0.0, 1.0));
+        // float val = intersectPlane(tmpRay, planeNormal, 0.0);
+
+        // vec3 planeNormal = normalize(vec3(0.0, 0.0, 1.0));
+        // float val = intersectPlane(tmpRay, planeNormal, 10.0);
+
+        // if (val > 0.0 && (bestDistance <= 0.0 || val < bestDistance))
+        // {
+        //     result.hasHit = true;
+        //     result.depth = val;
+        //     result.position = ray.origin + val * ray.direction;
+        //     result.normal = vec3(planeNormal);
+        //     result.color = vec4(1.0, 1.0, 1.0, 1.0);
+        //     result.reflection = 0.0;
+        //     result.lightEnabled = true;
+        // }
+
+    } // plane test
+
     return result.hasHit;
 }
 
@@ -444,8 +494,8 @@ float lightAt(vec3 impactPosition, vec3 impactNormal, vec3 viewer)
         lightDir = normalize(lightDir);
 
         // is the light blocked by an object?
-        t_rayResult result;
-        if (intersectScene(t_ray(impactPosition, lightDir), result, true))
+        RayResult result;
+        if (intersectScene(RayValues(impactPosition, lightDir), result, true))
             continue; // an object is shadowing this light: ignore this light
 
         //
@@ -495,8 +545,8 @@ float lightAt(vec3 impactPosition, vec3 impactNormal, vec3 viewer)
             continue;
 
         // is the light blocked by an object?
-        t_rayResult result;
-        if (intersectScene(t_ray(impactPosition, lightDir), result, true))
+        RayResult result;
+        if (intersectScene(RayValues(impactPosition, lightDir), result, true))
         {
             float distance = length(impactPosition - result.position);
             if (distance < radius)
@@ -530,8 +580,8 @@ void main()
     vec3 rayDir = normalize(v_position - u_cameraEye); // camera direction
     vec3 finalPixelColor = g_backgroundColor;
 
-    t_ray currRay = t_ray(u_cameraEye, rayDir);
-    t_rayResult result;
+    RayValues currRay = RayValues(u_cameraEye, rayDir);
+    RayResult result;
 
     result.position = u_cameraEye;
     result.reflection = 1.0;
@@ -542,12 +592,12 @@ void main()
     const int maxIteration = g_reflectionMax;
     for (int iterationLeft = maxIteration; iterationLeft >= 0; --iterationLeft)
     {
-        if (result.reflection == 0.0)
+        if (result.reflection <= 0.05)
             break;
 
         bool mustStop = false;
 
-        currRay = t_ray(result.position, rayDir);
+        currRay = RayValues(result.position, rayDir);
 
         result.hasHit = intersectScene(currRay, result, false);
 
@@ -569,30 +619,16 @@ void main()
             }
 
             tmpColor = result.color.xyz * lightIntensity;
-
-            // if (result.color.w < 1.0)
-            // {
-            // }
         }
 
-        // first iteration
-        // if (iterationLeft == maxIteration)
-        // {
-        //     finalPixelColor = tmpColor;
-        // }
-        // else
-        {
-            finalPixelColor = finalPixelColor * (1.0 - lastReflection) + tmpColor * lastReflection;
-            // finalPixelColor = finalPixelColor * lastReflection + tmpColor * (1.0 - lastReflection);
-            // finalPixelColor = finalPixelColor * (1.0 - lastReflection) + tmpColor * result.reflection;
-        }
+        finalPixelColor = finalPixelColor * (1.0 - lastReflection) + tmpColor * lastReflection;
 
         if (mustStop || !result.hasHit)
         {
             break;
         }
 
-        lastReflection = result.reflection;
+        lastReflection *= result.reflection;
 
         rayDir = reflect(rayDir, result.normal);
     }

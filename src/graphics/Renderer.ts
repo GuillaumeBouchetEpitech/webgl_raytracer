@@ -8,10 +8,12 @@ import { FrameBuffer } from "./wrappers/FrameBuffer";
 import { ShaderProgram } from "./wrappers/ShaderProgram";
 import { GeometryWrapper } from "./wrappers/Geometry";
 
-import { Vector3 } from "./utilities/Vector3";
 import { fetchTextFile } from "./utilities/fetchTextFile";
 
 import * as glm from "gl-matrix";
+
+const g_fovy = 70;
+const degToRad = (deg: number) => deg*Math.PI/180;
 
 interface ISphere {
     position: glm.vec3;
@@ -37,6 +39,8 @@ interface ITriangle {
     v0: glm.vec3;
     v1: glm.vec3;
     v2: glm.vec3;
+    min: glm.vec3;
+    max: glm.vec3;
     color: glm.vec3;
     reflection: number;
     shadowEnabled: boolean;
@@ -60,16 +64,22 @@ export class Renderer {
     private _height: number;
     private _resolutionCoef: number = 1;
 
+    private _wireframeShaderProgram: ShaderProgram;
     private _raytracingShaderProgram: ShaderProgram;
     private _textureShaderProgram: ShaderProgram;
 
     private _finalTexture: Texture;
     private _frameBuffer: FrameBuffer;
 
-    private _antiAliasing: boolean = true;
+    private _antiAliasing: boolean = false;
 
+    private _wireframeStackGeometry: GeometryWrapper.Geometry;
+    private _wireframeStackVertices: number[] = [];
     private _raytracingGeometry: GeometryWrapper.Geometry;
     private _screenGeometry: GeometryWrapper.Geometry;
+
+    private _projectionMatrix: glm.mat4;
+    private _modelViewMatrix: glm.mat4;
 
     private _sceneDataTexture: DataTexture;
     private _spheres: ISphere[] = [];
@@ -81,10 +91,9 @@ export class Renderer {
     private _spotLights: ISpotLight[] = [];
 
     private _camera: {
-        position: Vector3;
-        target: Vector3;
-        up: Vector3;
-        zoom: number;
+        position: glm.vec3,
+        target: glm.vec3,
+        up: glm.vec3,
     };
 
     constructor() {
@@ -120,6 +129,13 @@ export class Renderer {
         //
         //
         // initialise shaders
+
+        this._wireframeShaderProgram = new ShaderProgram({
+            vertexShaderSourceCode: await fetchTextFile("./assets/shaders/wireframe.vert"),
+            fragmentShaderSourceCode: await fetchTextFile("./assets/shaders/wireframe.frag"),
+            attributes: [ "a_vertexPosition", "a_vertexColor" ],
+            uniforms: [ "u_modelViewMatrix", "u_projectionMatrix" ],
+        });
 
         this._raytracingShaderProgram = new ShaderProgram({
             vertexShaderSourceCode: await fetchTextFile("./assets/shaders/raytracer.vert"),
@@ -160,6 +176,22 @@ export class Renderer {
 
         //
         //
+
+        this._wireframeStackGeometry = new GeometryWrapper.Geometry(this._wireframeShaderProgram, {
+            vertexBufferObjects: [
+                {
+                    attributes: [
+                        { name: "a_vertexPosition", type: GeometryWrapper.AttributeType.vec3f, index: 0 },
+                        { name: "a_vertexColor", type: GeometryWrapper.AttributeType.vec3f, index: 3 },
+                    ],
+                    stride: 6 * bytesPerPixel,
+                    instanced: false,
+                },
+            ],
+            primitiveType: GeometryWrapper.PrimitiveType.lines,
+        });
+        this._wireframeStackGeometry.setPrimitiveStart(0);
+        this._wireframeStackGeometry.setPrimitiveCount(0);
 
         this._raytracingGeometry = new GeometryWrapper.Geometry(this._raytracingShaderProgram, {
             vertexBufferObjects: [
@@ -212,11 +244,17 @@ export class Renderer {
             +1.0,+1.0,   1,1, // top right
             -1.0,+1.0,   0,1, // top left
             +1.0,-1.0,   1,0, // bottom right
-            -1.0,-1.0,   0,0  // bottom left
+            -1.0,-1.0,   0,0, // bottom left
         ];
         this._screenGeometry.updateBuffer(0, screenVertices, false);
         this._screenGeometry.setPrimitiveStart(0);
         this._screenGeometry.setPrimitiveCount(4);
+
+        //
+        //
+
+        this._projectionMatrix = glm.mat4.create();
+        this._modelViewMatrix = glm.mat4.create();
 
         //
         //
@@ -228,10 +266,9 @@ export class Renderer {
         this._lightsDataTexture.initialise();
 
         this._camera = {
-            position: new Vector3(0, 0, 0),
-            target: new Vector3(1.5, 1.5, 1.5),
-            up: new Vector3(0, 1, 0),
-            zoom: 3,
+            position: glm.vec3.fromValues(0, 0, 0),
+            target: glm.vec3.fromValues(1.5, 1.5, 1.5),
+            up: glm.vec3.fromValues(0, 1, 0),
         };
     }
 
@@ -304,10 +341,26 @@ export class Renderer {
         if (reflection < 0 || reflection > 1)
             throw new Error("invalid triangle reflection");
 
+        const min = glm.vec3.fromValues(+999999, +999999, +999999);
+        const max = glm.vec3.fromValues(-999999, -999999, -999999);
+
+        for (let ii = 0; ii < 3; ++ii) {
+
+            if (min[ii] > v0[ii]) min[ii] = v0[ii];
+            if (min[ii] > v1[ii]) min[ii] = v1[ii];
+            if (min[ii] > v2[ii]) min[ii] = v2[ii];
+
+            if (max[ii] < v0[ii]) max[ii] = v0[ii];
+            if (max[ii] < v1[ii]) max[ii] = v1[ii];
+            if (max[ii] < v2[ii]) max[ii] = v2[ii];
+        }
+
         this._triangles.push({
             v0: glm.vec3.clone(v0),
             v1: glm.vec3.clone(v1),
             v2: glm.vec3.clone(v2),
+            min,
+            max,
             color: glm.vec3.clone(color),
             reflection,
             shadowEnabled,
@@ -317,37 +370,155 @@ export class Renderer {
 
     pushSunLight(direction: glm.vec3, intensity: number) {
 
-        // TODO: validation here
-
         // add sun light
 
-        this._sunLights.push({ direction: glm.vec3.clone(direction), intensity });
+        if (intensity <= 0)
+            throw new Error("intensity cannot be 0");
+        if (glm.vec3.length(direction) === 0)
+            throw new Error("direction cannot be 0");
+
+        const dir = glm.vec3.normalize(glm.vec3.clone(direction), direction);
+
+        this._sunLights.push({ direction: dir, intensity });
     }
 
     pushSpotLight(position: glm.vec3, intensity: number, radius: number) {
 
-        // TODO: validation here
-
         // add spot light
+
+        if (intensity <= 0)
+            throw new Error("intensity cannot be 0");
+        if (radius <= 0)
+            throw new Error("radius cannot be <= 0");
 
         this._spotLights.push({ position: glm.vec3.clone(position), intensity, radius });
     }
 
-    lookAt(eye: glm.vec3, target: glm.vec3, up: glm.vec3, zoom: number) {
+    lookAt(eye: glm.vec3, target: glm.vec3, up: glm.vec3) {
+        glm.vec3.copy(this._camera.position, eye);
+        glm.vec3.copy(this._camera.target, target);
+        glm.vec3.copy(this._camera.up, up);
+    }
 
-        this._camera.position.x = eye[0];
-        this._camera.position.y = eye[1];
-        this._camera.position.z = eye[2];
+    pushLine(posA: glm.vec3, posB: glm.vec3, color: glm.vec3) {
+        // push A
+        this._wireframeStackVertices.push(posA[0], posA[1], posA[2]);
+        this._wireframeStackVertices.push(color[0], color[1], color[2]);
+        // push B
+        this._wireframeStackVertices.push(posB[0], posB[1], posB[2]);
+        this._wireframeStackVertices.push(color[0], color[1], color[2]);
+    }
 
-        this._camera.target.x = target[0];
-        this._camera.target.y = target[1];
-        this._camera.target.z = target[2];
+    pushWireframeSphere(sphere: ISphere) {
 
-        this._camera.up.x = up[0];
-        this._camera.up.y = up[1];
-        this._camera.up.z = up[2];
+        const X = 0.525731112119133606 * sphere.radius;
+        const Z = 0.850650808352039932 * sphere.radius;
+        const N = 0.0;
 
-        this._camera.zoom = zoom;
+        const positions: glm.vec3[] = [
+            [ -X, N, Z ], [  X, N, Z ], [ -X, N,-Z ], [  X, N,-Z ],
+            [  N, Z, X ], [  N, Z,-X ], [  N,-Z, X ], [  N,-Z,-X ],
+            [  Z, X, N ], [ -Z, X, N ], [  Z,-X, N ], [ -Z,-X, N ]
+        ];
+
+        for (let ii = 0; ii < positions.length; ++ii) {
+            positions[ii][0] += sphere.position[0];
+            positions[ii][1] += sphere.position[1];
+            positions[ii][2] += sphere.position[2];
+        }
+
+        const indices: glm.vec3[] = [
+            [ 0, 4, 1], [ 0, 9, 4], [ 9, 5, 4], [ 4, 5, 8], [ 4, 8, 1],
+            [ 8,10, 1], [ 8, 3,10], [ 5, 3, 8], [ 5, 2, 3], [ 2, 7, 3],
+            [ 7,10, 3], [ 7, 6,10], [ 7,11, 6], [11, 0, 6], [ 0, 1, 6],
+            [ 6, 1,10], [ 9, 0,11], [ 9,11, 2], [ 9, 2, 5], [ 7, 2,11],
+        ];
+
+        for (const index of indices) {
+
+            const v1 = positions[index[0]];
+            const v2 = positions[index[1]];
+            const v3 = positions[index[2]];
+
+            this.pushLine(v1, v2, sphere.color);
+            this.pushLine(v2, v3, sphere.color);
+            this.pushLine(v3, v1, sphere.color);
+        }
+    }
+
+    pushWireframeBox(box: IBox) {
+
+        const vertices = [
+            glm.vec3.fromValues(-box.boxSize[0], -box.boxSize[1], -box.boxSize[2]),
+            glm.vec3.fromValues(+box.boxSize[0], -box.boxSize[1], -box.boxSize[2]),
+            glm.vec3.fromValues(-box.boxSize[0], +box.boxSize[1], -box.boxSize[2]),
+            glm.vec3.fromValues(+box.boxSize[0], +box.boxSize[1], -box.boxSize[2]),
+            glm.vec3.fromValues(-box.boxSize[0], -box.boxSize[1], +box.boxSize[2]),
+            glm.vec3.fromValues(+box.boxSize[0], -box.boxSize[1], +box.boxSize[2]),
+            glm.vec3.fromValues(-box.boxSize[0], +box.boxSize[1], +box.boxSize[2]),
+            glm.vec3.fromValues(+box.boxSize[0], +box.boxSize[1], +box.boxSize[2]),
+        ];
+
+        const vertices2: glm.vec3[] = [];
+
+        vertices.forEach((vertex) => {
+
+            const pos = glm.vec3.fromValues(0,0,0);
+            glm.vec3.transformMat4(pos, vertex, box.matrix);
+            vertices2.push(pos);
+        });
+
+        const indicesGroup = [
+            [0,1], [1,3], [3,2], [2,0],
+            [4,5], [5,7], [7,6], [6,4],
+            [0,4], [1,5], [3,7], [2,6],
+        ];
+
+        indicesGroup.forEach((index) => {
+            this.pushLine(vertices2[index[0]], vertices2[index[1]], box.color);
+        });
+    }
+
+    pushWireframeTriangle(triangle: ITriangle) {
+
+        this.pushLine(triangle.v0, triangle.v1, triangle.color);
+        this.pushLine(triangle.v1, triangle.v2, triangle.color);
+        this.pushLine(triangle.v2, triangle.v0, triangle.color);
+    }
+
+    flushWireframe() {
+
+        this._wireframeShaderProgram.bind();
+
+        const gl = WebGLContext.getContext();
+
+        gl.uniformMatrix4fv(this._wireframeShaderProgram.getUniform("u_projectionMatrix"), false, this._projectionMatrix);
+        gl.uniformMatrix4fv(this._wireframeShaderProgram.getUniform("u_modelViewMatrix"), false, this._modelViewMatrix);
+
+        this._wireframeStackGeometry.updateBuffer(0, this._wireframeStackVertices, true);
+        this._wireframeStackGeometry.setPrimitiveCount(this._wireframeStackVertices.length / 6);
+        this._wireframeStackGeometry.render();
+
+        // reset vertices
+        this._wireframeStackVertices.length = 0;
+    }
+
+    render2() {
+
+        glm.mat4.perspective(this._projectionMatrix, degToRad(g_fovy), this._width / this._height, 1, 1500);
+
+        glm.mat4.lookAt(
+            this._modelViewMatrix,
+            this._camera.position,
+            this._camera.target,
+            this._camera.up);
+
+        const composed = glm.mat4.create();
+        glm.mat4.multiply(composed, this._projectionMatrix, this._modelViewMatrix);
+
+        this._spheres.forEach((sphere) => this.pushWireframeSphere(sphere));
+        this._boxes.forEach((box) => this.pushWireframeBox(box));
+        this._triangles.forEach((triangle) => this.pushWireframeTriangle(triangle));
     }
 
     render() {
@@ -355,8 +526,7 @@ export class Renderer {
         const gl = WebGLContext.getContext();
 
         const farCorners = this._computeCameraFarCorners();
-        const plotPositionBuffer = new Float32Array(farCorners);
-        this._raytracingGeometry.updateBuffer(1, plotPositionBuffer, true);
+        this._raytracingGeometry.updateBuffer(1, farCorners, true);
 
         const scaledWidth = Math.floor(this._width * this._resolutionCoef);
         const scaledHeight = Math.floor(this._height * this._resolutionCoef);
@@ -372,7 +542,7 @@ export class Renderer {
             shader.bind();
 
             const u_cameraEye = shader.getUniform("u_cameraEye");
-            gl.uniform3f(u_cameraEye, this._camera.position.x, this._camera.position.y, this._camera.position.z);
+            gl.uniform3f(u_cameraEye, this._camera.position[0], this._camera.position[1], this._camera.position[2]);
 
             //
             //
@@ -406,7 +576,6 @@ export class Renderer {
 
                             sceneDataValues.push(sphere.chessboard ? 1 : 0);
                         }
-                        this._spheres.length = 0;
 
                         gl.uniform1f(u_spheresStop, sceneDataValues.length);
 
@@ -438,7 +607,6 @@ export class Renderer {
 
                             sceneDataValues.push(box.chessboard ? 1 : 0);
                         }
-                        this._boxes.length = 0;
 
                         gl.uniform1f(u_boxesStop, sceneDataValues.length);
 
@@ -465,7 +633,6 @@ export class Renderer {
                             sceneDataValues.push(triangle.shadowEnabled ? 1 : 0); // shadowEnabled
                             sceneDataValues.push(triangle.lightEnabled ? 1 : 0); // lightEnabled
                         }
-                        this._triangles.length = 0;
 
                         gl.uniform1f(u_trianglesStop, sceneDataValues.length);
 
@@ -476,7 +643,7 @@ export class Renderer {
                 gl.activeTexture(gl.TEXTURE0 + 0);
                 this._sceneDataTexture.bind();
 
-                this._sceneDataTexture.update(sceneDataValues, 1);
+                this._sceneDataTexture.update(sceneDataValues);
 
                 const u_sceneTextureData = shader.getUniform("u_sceneTextureData");
                 const u_sceneTextureSize = shader.getUniform("u_sceneTextureSize");
@@ -504,7 +671,6 @@ export class Renderer {
                         lightsDataValues.push(sunLight.direction[0], sunLight.direction[1], sunLight.direction[2]);
                         lightsDataValues.push(sunLight.intensity);
                     }
-                    this._sunLights.length = 0;
 
                     gl.uniform1f(u_sunLightsStop, lightsDataValues.length);
 
@@ -525,7 +691,6 @@ export class Renderer {
                         lightsDataValues.push(spotLight.intensity);
                         lightsDataValues.push(spotLight.radius);
                     }
-                    this._spotLights.length = 0;
 
                     gl.uniform1f(u_spotLightsStop, lightsDataValues.length);
 
@@ -535,7 +700,7 @@ export class Renderer {
                 gl.activeTexture(gl.TEXTURE0 + 1);
                 this._lightsDataTexture.bind();
 
-                this._lightsDataTexture.update(lightsDataValues, 1);
+                this._lightsDataTexture.update(lightsDataValues);
 
                 const u_lightsTextureData = shader.getUniform("u_lightsTextureData");
                 const u_lightsTextureSize = shader.getUniform("u_lightsTextureSize");
@@ -595,9 +760,16 @@ export class Renderer {
         gl.useProgram(null);
     }
 
-    setResolutionCoef(newResolutionCoef: number) {
+    reset() {
+        this._sunLights.length = 0;
+        this._spotLights.length = 0;
 
-        const gl = WebGLContext.getContext();
+        this._spheres.length = 0;
+        this._boxes.length = 0;
+        this._triangles.length = 0;
+    }
+
+    setResolutionCoef(newResolutionCoef: number) {
 
         if (newResolutionCoef === this._resolutionCoef)
             return;
@@ -629,30 +801,38 @@ export class Renderer {
         ];
     }
 
+    // getTriangles(): Readonly<ITriangle[]> {
+    //     return this._triangles;
+    // }
+
     private _computeCameraFarCorners() {
 
-        const forwardDir = this._camera.target.subtract(this._camera.position).normalize();
+        const forwardDir = glm.vec3.sub(glm.vec3.create(), this._camera.target, this._camera.position);
 
-        const leftDir   = forwardDir.crossProduct(this._camera.up).normalize();
-        const upDir     = leftDir.crossProduct(forwardDir).normalize();
-        const farCenter = this._camera.position.add(forwardDir.multiplyScalar(this._camera.zoom));
+        const leftDir = glm.vec3.cross(glm.vec3.create(), forwardDir, this._camera.up);
+        const upDir = glm.vec3.cross(glm.vec3.create(), leftDir, forwardDir);
+
+        const radHFovy = degToRad(g_fovy * 0.5);
+        const xLength = Math.cos(radHFovy) * 1 / Math.sin(radHFovy);
+
+        const scaledForwardDir = glm.vec3.multiply(glm.vec3.create(), forwardDir, glm.vec3.fromValues(xLength, xLength, xLength));
+        const farCenter = glm.vec3.add(glm.vec3.create(), this._camera.position, scaledForwardDir);
 
         const aspectRatio  = this._width / this._height;
-        const farHalfWidth = leftDir.multiplyScalar(aspectRatio);
+        const farHalfWidth = glm.vec3.multiply(glm.vec3.create(), leftDir, glm.vec3.fromValues(aspectRatio, aspectRatio, aspectRatio))
 
-        const farUp     = farCenter.add(upDir);
-        const farBottom = farCenter.subtract(upDir);
-
-        const farTopLeft     = farUp.add(farHalfWidth);
-        const farBottomLeft  = farBottom.add(farHalfWidth);
-        const farTopRight    = farUp.subtract(farHalfWidth);
-        const farBottomRight = farBottom.subtract(farHalfWidth);
+        const farUp     = glm.vec3.add(glm.vec3.create(), farCenter, upDir);
+        const farBottom = glm.vec3.subtract(glm.vec3.create(), farCenter, upDir);
+        const farTopLeft     = glm.vec3.subtract(glm.vec3.create(), farUp, farHalfWidth);
+        const farBottomLeft  = glm.vec3.subtract(glm.vec3.create(), farBottom, farHalfWidth);
+        const farTopRight    = glm.vec3.add(glm.vec3.create(), farUp, farHalfWidth);
+        const farBottomRight = glm.vec3.add(glm.vec3.create(), farBottom, farHalfWidth);
 
         return [
-            farTopRight.x,    farTopRight.y,    farTopRight.z,
-            farTopLeft.x,     farTopLeft.y,     farTopLeft.z,
-            farBottomRight.x, farBottomRight.y, farBottomRight.z,
-            farBottomLeft.x,  farBottomLeft.y,  farBottomLeft.z,
+            farTopRight[0],    farTopRight[1],    farTopRight[2],
+            farTopLeft[0],     farTopLeft[1],     farTopLeft[2],
+            farBottomRight[0], farBottomRight[1], farBottomRight[2],
+            farBottomLeft[0],  farBottomLeft[1],  farBottomLeft[2],
         ];
     }
 

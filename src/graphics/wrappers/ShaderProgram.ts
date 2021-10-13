@@ -44,8 +44,6 @@ export class ShaderProgram {
 
         this._program = program;
 
-        // this._getAttribAndLocation(opt.attributes, opt.uniforms);
-
         this.bind();
 
         this._getAttributes(opt.attributes);
@@ -118,7 +116,7 @@ export class ShaderProgram {
 
     //
 
-    private _getShader(src: string, type: number) {
+    private _getShader(sourceCode: string, type: number) {
 
         const gl = WebGLContext.getContext();
 
@@ -126,7 +124,7 @@ export class ShaderProgram {
         if (!shader)
             throw new Error("could not create a shader");
 
-        gl.shaderSource(shader, src);
+        gl.shaderSource(shader, sourceCode);
         gl.compileShader(shader);
 
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
