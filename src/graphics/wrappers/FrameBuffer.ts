@@ -23,18 +23,12 @@ export class FrameBuffer {
     }
 
     bind() {
-        // if (!this._frameBuffer)
-        //     throw new Error("framebuffer not initialised")
-
         const gl = WebGLContext.getContext();
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this._frameBuffer);
     }
 
     static unbind() {
-        // if (!this._frameBuffer)
-        //     throw new Error("framebuffer not initialised")
-
         const gl = WebGLContext.getContext();
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);

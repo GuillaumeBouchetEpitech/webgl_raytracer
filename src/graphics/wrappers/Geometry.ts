@@ -40,7 +40,6 @@ export namespace GeometryWrapper {
 
     export class Geometry {
 
-        private _def: GeometryDefinition;
         private _vertexArrayObject: WebGLVertexArrayObjectOES;
         private _vertexBufferObjects: WebGLBuffer[];
         private _primitiveType: number;
@@ -66,8 +65,6 @@ export namespace GeometryWrapper {
                         throw new Error(`attribute not found, name="${attr.name}"`);
             }
 
-            this._def = def;
-
             switch (def.primitiveType) {
                 case PrimitiveType.lines:
                     this._primitiveType = gl.LINES;
@@ -92,7 +89,7 @@ export namespace GeometryWrapper {
             //
 
             this._vertexBufferObjects = [];
-            for (const vboDef of this._def.vertexBufferObjects) {
+            for (const vboDef of def.vertexBufferObjects) {
 
                 const vbo = gl.createBuffer();
                 if (!vbo)
@@ -132,8 +129,6 @@ export namespace GeometryWrapper {
                     }
 
                     const attrLocation = shader.getAttribute(attr.name);
-
-                    // TODO: check if the index is 0 on k>0 and assert/throw on it
 
                     for (let ii = 0; ii < totalRows; ++ii) {
 

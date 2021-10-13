@@ -1,6 +1,6 @@
 #version 300 es
 
-precision mediump float;
+precision highp float;
 
 in vec2 a_vertexPosition;
 in vec2 a_vertexTextureCoord;

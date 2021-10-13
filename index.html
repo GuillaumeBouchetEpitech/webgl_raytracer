@@ -59,13 +59,11 @@
         </div>
 
         <div id="ui-container">
+
+            <p>Source Code: <a href="https://github.com/GuillaumeBouchetEpitech/webgl_raytracer">Github Link</a><br/>
+            Click the central canvas for freefly camera controls</p>
+
             <table>
-                <tr>
-                    <td>CLICK CANVAS FOR</td>
-                    <td>FREEFLY CONTROLS</td>
-                </tr>
-
-
 
                 <tr>
                     <td>Performance<br>Auto Scaling</td>
@@ -76,8 +74,8 @@
                     <td><input id="resolution" type="range" min="1" max="10" value="1"></td>
                 </tr>
                 <tr>
-                    <td>AntiAliasing</td>
-                    <td><input id="anti-aliasing-enabled" type="checkbox" checked></td>
+                    <td>AntiAliasing<br/>(for low resolution)</td>
+                    <td><input id="anti-aliasing-enabled" type="checkbox"></td>
                 </tr>
 
                 <tr>
@@ -85,12 +83,16 @@
                     <td><input id="angle-x" type="range" min="0" max="100" value="50"></td>
                 </tr>
                 <tr>
-                    <td>boxes rotation y</td>
+                    <td>boxes rotation y<br/>(vertical axis)</td>
                     <td><input id="angle-y" type="range" min="0" max="100" value="50"></td>
                 </tr>
                 <tr>
                     <td>boxes rotation z</td>
                     <td><input id="angle-z" type="range" min="0" max="100" value="50"></td>
+                </tr>
+                <tr>
+                    <td>Debug Mode</td>
+                    <td><input id="debug-mode-enabled" type="checkbox" checked></td>
                 </tr>
 
             </table>

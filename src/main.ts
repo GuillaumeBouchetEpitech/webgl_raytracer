@@ -71,6 +71,7 @@ const onGlobalLoad = async () => {
         angle_y: document.getElementById("angle-y") as any,
         angle_z: document.getElementById("angle-z") as any,
         angle_w: document.getElementById("angle-w") as any,
+        debug_mode_enabled: document.getElementById("debug-mode-enabled") as HTMLElement,
     };
 
     const setResolution = (newValue: number) => {
@@ -187,11 +188,10 @@ const onGlobalLoad = async () => {
         maxLife: number;
     };
 
+    const flashParticles: IParticles[] = [];
+    let explosionCooldown = 0;
     const smokeParticles: IParticles[] = [];
     let smokeCooldown = 0;
-    const flashParticles: IParticles[] = [];
-    // let flashCooldown = 0;
-    let explosionCooldown = 0;
 
     //
     //
@@ -203,7 +203,6 @@ const onGlobalLoad = async () => {
     for (let yy = 0; yy < mosaicSize; ++yy)
     for (let xx = 0; xx < mosaicSize; ++xx) {
         mosaicVertices.push([
-            // [ xx * mosaicSqSize - mosaicSize * 0.5 * mosaicSqSize, -6 + Math.random() * 6, yy * mosaicSqSize - mosaicSize * 0.5 * mosaicSqSize],
             [ xx * mosaicSqSize - mosaicSize * 0.5 * mosaicSqSize,
               -4 + Math.random() * 3,
               yy * mosaicSqSize - mosaicSize * 0.5 * mosaicSqSize ],
@@ -221,13 +220,6 @@ const onGlobalLoad = async () => {
 
         if (g_running)
             window.requestAnimationFrame(tick);
-
-
-        // const pos = freeFlyController.getPosition();
-        // const theta = freeFlyController.getTheta();
-        // const phi = freeFlyController.getPhi();
-        // g_logger.log(`${pos[0]}/${pos[1]}/${pos[2]} ${theta} ${phi}`);
-
 
         fpsMeters.main.tick();
         fpsMeters.main.tickStart();
@@ -288,9 +280,11 @@ const onGlobalLoad = async () => {
                 const colorA = v0[1];
                 const colorB = v3[1];
 
-                renderer.pushTriangle(v1[0], v0[0], v2[0], colorA, 0.1, false, true);
-                renderer.pushTriangle(v3[0], v1[0], v2[0], colorB, 0.1, false, true);
+                renderer.pushTriangle(v1[0], v0[0], v2[0], colorA, 0.1, true, true);
+                renderer.pushTriangle(v3[0], v1[0], v2[0], colorB, 0.1, true, true);
             }
+
+            renderer.pushTriangle([5,5,1], [10,10,1], [10,5,1], [1,1,1], 0.1, true, true);
 
             // triangles mosaic
             //
@@ -508,10 +502,22 @@ const onGlobalLoad = async () => {
             freeFlyController.getPosition(),
             freeFlyController.getTarget(),
             freeFlyController.getUpAxis(),
-            3
         );
 
+        renderer.computeGrid();
+
         renderer.render();
+
+        const showDebug = (sliders.debug_mode_enabled as any).checked === true;
+        if (showDebug) {
+            renderer.render2();
+            renderer.pushLine([0,0,0], [100,0,0], [1,0,0]);
+            renderer.pushLine([0,0,0], [0,100,0], [0,1,0]);
+            renderer.pushLine([0,0,0], [0,0,100], [0,0,1]);
+            renderer.flushWireframe();
+        }
+
+        renderer.reset();
 
         fpsMeters.step.tick();
     };

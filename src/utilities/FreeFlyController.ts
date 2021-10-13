@@ -1,10 +1,11 @@
 
 import { KeyboardHandler, keyCodes } from "../inputs/KeyboardHandler";
 
-type IVec3 = [number, number, number];
+import * as glm from "gl-matrix";
+
 
 interface IFreeFlyControllerDef {
-    position: IVec3;
+    position: glm.vec3;
     theta: number;
     phi: number;
     mouseSensivity: number;
@@ -20,11 +21,11 @@ export class FreeFlyController {
     private _mouseSensivity: number;
     private _movingSpeed: number;
 
-    private _position: IVec3 = [0, 0, 0]; // TODO: hardcoded
-    private _target: IVec3 = [0, 0, 0];
-    private _forward: IVec3 = [1, 0, 0]; // TODO: hardcoded
-    private _left: IVec3 = [0, 1, 0]; // TODO: hardcoded
-    private _up: IVec3 = [0, 1, 0]; // TODO: hardcoded
+    private _position = glm.vec3.fromValues(0, 0, 0);
+    private _target = glm.vec3.fromValues(0, 0, 0);
+    private _forward = glm.vec3.fromValues(1, 0, 0);
+    private _left = glm.vec3.fromValues(0, 0, 1);
+    private _up = glm.vec3.fromValues(0, 1, 0);
 
     private _keyboardHandler = new KeyboardHandler();
 
@@ -45,7 +46,7 @@ export class FreeFlyController {
             const movementX: number = event.movementX || (event as any).mozMovementX || (event as any).webkitMovementX || 0;
             const movementY: number = event.movementY || (event as any).mozMovementY || (event as any).webkitMovementY || 0;
 
-            this._theta -= movementX * this._mouseSensivity;
+            this._theta += movementX * this._mouseSensivity;
             this._phi   -= movementY * this._mouseSensivity;
         };
 
@@ -102,14 +103,14 @@ export class FreeFlyController {
                 this._keyboardHandler.isPressed( keyCodes.KEY_Q )) {
 
                 for (let ii = 0; ii < 3; ++ii)
-                    this._position[ii] -= this._left[ii] * elapsedTime * this._movingSpeed;
+                    this._position[ii] += this._left[ii] * elapsedTime * this._movingSpeed;
             }
 
             // strafe right
             if (this._keyboardHandler.isPressed( keyCodes.KEY_D )) {
 
                 for (let ii = 0; ii < 3; ++ii)
-                    this._position[ii] += this._left[ii] * elapsedTime * this._movingSpeed;
+                    this._position[ii] -= this._left[ii] * elapsedTime * this._movingSpeed;
             }
 
         } // keyboard
@@ -118,9 +119,7 @@ export class FreeFlyController {
 
             const verticalLimit = 89;
 
-            this._phi = Math.min(Math.max(this._phi, -verticalLimit), +verticalLimit)
-
-            const Up: IVec3 = [0, 1, 0];
+            this._phi = Math.min(Math.max(this._phi, -verticalLimit), +verticalLimit);
 
             const upRadius = Math.cos((this._phi + 90) * 3.14 / 180);
             this._up[1] = Math.sin((this._phi + 90) * 3.14 / 180);
@@ -143,28 +142,16 @@ export class FreeFlyController {
         } // update internals
     }
 
-    getPosition(): IVec3 {
-        return [
-            this._position[0],
-            this._position[1],
-            this._position[2],
-        ];
+    getPosition(): glm.vec3 {
+        return glm.vec3.clone(this._position);
     }
 
-    getTarget(): IVec3 {
-        return [
-            this._target[0],
-            this._target[1],
-            this._target[2],
-        ];
+    getTarget(): glm.vec3 {
+        return glm.vec3.clone(this._target);
     }
 
-    getUpAxis(): IVec3 {
-        return [
-            this._up[0],
-            this._up[1],
-            this._up[2],
-        ];
+    getUpAxis(): glm.vec3 {
+        return glm.vec3.clone(this._up);
     }
 
     getTheta(): number {

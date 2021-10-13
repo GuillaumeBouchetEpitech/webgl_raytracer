@@ -8,10 +8,12 @@ import { FrameBuffer } from "./wrappers/FrameBuffer";
 import { ShaderProgram } from "./wrappers/ShaderProgram";
 import { GeometryWrapper } from "./wrappers/Geometry";
 
-import { Vector3 } from "./utilities/Vector3";
 import { fetchTextFile } from "./utilities/fetchTextFile";
 
 import * as glm from "gl-matrix";
+
+const g_fovy = 70;
+const degToRad = (deg: number) => deg*Math.PI/180;
 
 interface ISphere {
     position: glm.vec3;
@@ -37,6 +39,8 @@ interface ITriangle {
     v0: glm.vec3;
     v1: glm.vec3;
     v2: glm.vec3;
+    min: glm.vec3;
+    max: glm.vec3;
     color: glm.vec3;
     reflection: number;
     shadowEnabled: boolean;
@@ -54,22 +58,59 @@ interface ISpotLight {
     radius: number;
 };
 
+
+
+interface IVoxelChunk {
+    used?: boolean;
+    keyStr?: string;
+    primitives: {
+        triangles: Set<number>,
+        spheres: Set<number>,
+        boxes: Set<number>,
+    },
+};
+
+interface IGridBox {
+    origin: glm.vec3;
+    size: glm.vec3;
+    primitives: {
+        triangles: Set<number>,
+        spheres: Set<number>,
+        boxes: Set<number>,
+    },
+};
+
+interface IGrid {
+    voxelGrid: IVoxelChunk[];
+    gridBoxes: IGridBox[];
+};
+
+
+const gridSize = 8;
+
+
 export class Renderer {
 
     private _width: number;
     private _height: number;
     private _resolutionCoef: number = 1;
 
+    private _wireframeShaderProgram: ShaderProgram;
     private _raytracingShaderProgram: ShaderProgram;
     private _textureShaderProgram: ShaderProgram;
 
     private _finalTexture: Texture;
     private _frameBuffer: FrameBuffer;
 
-    private _antiAliasing: boolean = true;
+    private _antiAliasing: boolean = false;
 
+    private _wireframeStackGeometry: GeometryWrapper.Geometry;
+    private _wireframeStackVertices: number[] = [];
     private _raytracingGeometry: GeometryWrapper.Geometry;
     private _screenGeometry: GeometryWrapper.Geometry;
+
+    private _projectionMatrix: glm.mat4;
+    private _modelViewMatrix: glm.mat4;
 
     private _sceneDataTexture: DataTexture;
     private _spheres: ISphere[] = [];
@@ -80,11 +121,17 @@ export class Renderer {
     private _sunLights: ISunLight[] = [];
     private _spotLights: ISpotLight[] = [];
 
+    private _gridDataTexture: DataTexture;
+
     private _camera: {
-        position: Vector3;
-        target: Vector3;
-        up: Vector3;
-        zoom: number;
+        position: glm.vec3,
+        target: glm.vec3,
+        up: glm.vec3,
+    };
+
+    private _grid: IGrid = {
+        voxelGrid: [],
+        gridBoxes: [],
     };
 
     constructor() {
@@ -121,6 +168,13 @@ export class Renderer {
         //
         // initialise shaders
 
+        this._wireframeShaderProgram = new ShaderProgram({
+            vertexShaderSourceCode: await fetchTextFile("./assets/shaders/wireframe.vert"),
+            fragmentShaderSourceCode: await fetchTextFile("./assets/shaders/wireframe.frag"),
+            attributes: [ "a_vertexPosition", "a_vertexColor" ],
+            uniforms: [ "u_modelViewMatrix", "u_projectionMatrix" ],
+        });
+
         this._raytracingShaderProgram = new ShaderProgram({
             vertexShaderSourceCode: await fetchTextFile("./assets/shaders/raytracer.vert"),
             fragmentShaderSourceCode: await fetchTextFile("./assets/shaders/raytracer.frag"),
@@ -130,6 +184,7 @@ export class Renderer {
 
                 "u_sceneTextureData", "u_sceneTextureSize",
                 "u_lightsTextureData", "u_lightsTextureSize",
+                "u_gridTextureData", "u_gridTextureSize",
 
                 "u_spheresStart", "u_spheresStop",
                 "u_boxesStart", "u_boxesStop",
@@ -137,6 +192,8 @@ export class Renderer {
 
                 "u_sunLightsStart", "u_sunLightsStop",
                 "u_spotLightsStart", "u_spotLightsStop",
+
+                // "u_gridStart", "u_gridStop",
             ],
         });
 
@@ -160,6 +217,22 @@ export class Renderer {
 
         //
         //
+
+        this._wireframeStackGeometry = new GeometryWrapper.Geometry(this._wireframeShaderProgram, {
+            vertexBufferObjects: [
+                {
+                    attributes: [
+                        { name: "a_vertexPosition", type: GeometryWrapper.AttributeType.vec3f, index: 0 },
+                        { name: "a_vertexColor", type: GeometryWrapper.AttributeType.vec3f, index: 3 },
+                    ],
+                    stride: 6 * bytesPerPixel,
+                    instanced: false,
+                },
+            ],
+            primitiveType: GeometryWrapper.PrimitiveType.lines,
+        });
+        this._wireframeStackGeometry.setPrimitiveStart(0);
+        this._wireframeStackGeometry.setPrimitiveCount(0);
 
         this._raytracingGeometry = new GeometryWrapper.Geometry(this._raytracingShaderProgram, {
             vertexBufferObjects: [
@@ -212,11 +285,17 @@ export class Renderer {
             +1.0,+1.0,   1,1, // top right
             -1.0,+1.0,   0,1, // top left
             +1.0,-1.0,   1,0, // bottom right
-            -1.0,-1.0,   0,0  // bottom left
+            -1.0,-1.0,   0,0, // bottom left
         ];
         this._screenGeometry.updateBuffer(0, screenVertices, false);
         this._screenGeometry.setPrimitiveStart(0);
         this._screenGeometry.setPrimitiveCount(4);
+
+        //
+        //
+
+        this._projectionMatrix = glm.mat4.create();
+        this._modelViewMatrix = glm.mat4.create();
 
         //
         //
@@ -227,12 +306,20 @@ export class Renderer {
         this._lightsDataTexture = new DataTexture();
         this._lightsDataTexture.initialise();
 
+        this._gridDataTexture = new DataTexture();
+        this._gridDataTexture.initialise();
+
         this._camera = {
-            position: new Vector3(0, 0, 0),
-            target: new Vector3(1.5, 1.5, 1.5),
-            up: new Vector3(0, 1, 0),
-            zoom: 3,
+            position: glm.vec3.fromValues(0, 0, 0),
+            target: glm.vec3.fromValues(1.5, 1.5, 1.5),
+            up: glm.vec3.fromValues(0, 1, 0),
         };
+
+        // this._grid = {
+        //     min: glm.vec3.fromValues(0, 0, 0),
+        //     max: glm.vec3.fromValues(0, 0, 0),
+        //     voxels: [],
+        // };
     }
 
     pushSphere(position: glm.vec3,
@@ -304,10 +391,26 @@ export class Renderer {
         if (reflection < 0 || reflection > 1)
             throw new Error("invalid triangle reflection");
 
+        const min = glm.vec3.fromValues(+999999, +999999, +999999);
+        const max = glm.vec3.fromValues(-999999, -999999, -999999);
+
+        for (let ii = 0; ii < 3; ++ii) {
+
+            if (min[ii] > v0[ii]) min[ii] = v0[ii];
+            if (min[ii] > v1[ii]) min[ii] = v1[ii];
+            if (min[ii] > v2[ii]) min[ii] = v2[ii];
+
+            if (max[ii] < v0[ii]) max[ii] = v0[ii];
+            if (max[ii] < v1[ii]) max[ii] = v1[ii];
+            if (max[ii] < v2[ii]) max[ii] = v2[ii];
+        }
+
         this._triangles.push({
             v0: glm.vec3.clone(v0),
             v1: glm.vec3.clone(v1),
             v2: glm.vec3.clone(v2),
+            min,
+            max,
             color: glm.vec3.clone(color),
             reflection,
             shadowEnabled,
@@ -317,37 +420,455 @@ export class Renderer {
 
     pushSunLight(direction: glm.vec3, intensity: number) {
 
-        // TODO: validation here
-
         // add sun light
 
-        this._sunLights.push({ direction: glm.vec3.clone(direction), intensity });
+        if (intensity <= 0)
+            throw new Error("intensity cannot be 0");
+        if (glm.vec3.length(direction) === 0)
+            throw new Error("direction cannot be 0");
+
+        const dir = glm.vec3.normalize(glm.vec3.clone(direction), direction);
+
+        this._sunLights.push({ direction: dir, intensity });
     }
 
     pushSpotLight(position: glm.vec3, intensity: number, radius: number) {
 
-        // TODO: validation here
-
         // add spot light
+
+        if (intensity <= 0)
+            throw new Error("intensity cannot be 0");
+        if (radius <= 0)
+            throw new Error("radius cannot be <= 0");
 
         this._spotLights.push({ position: glm.vec3.clone(position), intensity, radius });
     }
 
-    lookAt(eye: glm.vec3, target: glm.vec3, up: glm.vec3, zoom: number) {
+    lookAt(eye: glm.vec3, target: glm.vec3, up: glm.vec3) {
+        glm.vec3.copy(this._camera.position, eye);
+        glm.vec3.copy(this._camera.target, target);
+        glm.vec3.copy(this._camera.up, up);
+    }
 
-        this._camera.position.x = eye[0];
-        this._camera.position.y = eye[1];
-        this._camera.position.z = eye[2];
+    computeGrid() {
 
-        this._camera.target.x = target[0];
-        this._camera.target.y = target[1];
-        this._camera.target.z = target[2];
+        this._grid.gridBoxes.length = 0;
+        this._grid.voxelGrid.length = 0;
 
-        this._camera.up.x = up[0];
-        this._camera.up.y = up[1];
-        this._camera.up.z = up[2];
+        for (let ii = 0; ii < gridSize * gridSize * gridSize; ++ii) {
+            this._grid.voxelGrid.push({
+                primitives: {
+                    triangles: new Set<number>(),
+                    spheres: new Set<number>(),
+                    boxes: new Set<number>(),
+                },
+            });
+        }
 
-        this._camera.zoom = zoom;
+        const getVox = (x: number, y: number, z: number) => {
+
+            if (x < 0 || x >= gridSize ||
+                y < 0 || y >= gridSize ||
+                z < 0 || z >= gridSize) {
+                throw new Error(`out of bound -> ${x}/${y}/${z} (${gridSize})`);
+            }
+
+            return this._grid.voxelGrid[z * gridSize * gridSize + y * gridSize + x];
+        };
+
+        for (let zz = 0; zz < gridSize; ++zz)
+        for (let yy = 0; yy < gridSize; ++yy)
+        for (let xx = 0; xx < gridSize; ++xx) {
+
+             // TODO: hardcoded
+             const min = glm.vec3.fromValues(
+                -35 + 70 / gridSize * xx,
+                -35 + 70 / gridSize * yy,
+                -35 + 70 / gridSize * zz);
+            const max = glm.vec3.fromValues(
+                -35 + 70 / gridSize * (xx + 1),
+                -35 + 70 / gridSize * (yy + 1),
+                -35 + 70 / gridSize * (zz + 1));
+
+            const v = getVox(xx, yy, zz);
+
+            this._triangles.forEach((triangle, index) => {
+
+                const noCollision = (
+                    triangle.min[0] > max[0] ||
+                    triangle.min[1] > max[1] ||
+                    triangle.min[2] > max[2] ||
+                    triangle.max[0] < min[0] ||
+                    triangle.max[1] < min[1] ||
+                    triangle.max[2] < min[2]);
+
+                if (noCollision)
+                    return;
+
+                v.primitives.triangles.add(index);
+            });
+
+            this._spheres.forEach((sphere, index) => {
+
+                const noCollision = (
+                    sphere.position[0] - sphere.radius > max[0] ||
+                    sphere.position[1] - sphere.radius > max[1] ||
+                    sphere.position[2] - sphere.radius > max[2] ||
+                    sphere.position[0] + sphere.radius < min[0] ||
+                    sphere.position[1] + sphere.radius < min[1] ||
+                    sphere.position[2] + sphere.radius < min[2]);
+
+                if (noCollision)
+                    return;
+
+                v.primitives.spheres.add(index);
+            });
+
+            this._boxes.forEach((box, index) => {
+
+                const pos = glm.vec3.fromValues(0,0,0);
+                glm.vec3.transformMat4(pos, pos, box.matrix);
+
+                const radius = Math.max(box.boxSize[0], Math.max(box.boxSize[1], box.boxSize[2]));
+
+                const noCollision = (
+                    pos[0] - radius > max[0] ||
+                    pos[1] - radius > max[1] ||
+                    pos[2] - radius > max[2] ||
+                    pos[0] + radius < min[0] ||
+                    pos[1] + radius < min[1] ||
+                    pos[2] + radius < min[2]);
+
+                if (noCollision)
+                    return;
+
+                v.primitives.boxes.add(index);
+            });
+
+            const trianglesStr = Array.from(v.primitives.triangles).join("-");
+            const spheresStr = Array.from(v.primitives.spheres).join("-");
+            const boxesStr = Array.from(v.primitives.boxes).join("-");
+
+            v.keyStr = `T=${trianglesStr}_S=${spheresStr}_B=${boxesStr}`;
+        }
+
+        let iterationLeft = 100;
+
+        do {
+
+            if (--iterationLeft < 0)
+                break;
+
+            // find unsued block
+            // expand unused block, x+y+z
+
+            const newPos = glm.vec3.fromValues(-1, -1, -1);
+
+            for (let zz = 0; newPos[2] < 0 && zz < gridSize; ++zz)
+            for (let yy = 0; newPos[1] < 0 && yy < gridSize; ++yy)
+            for (let xx = 0; newPos[0] < 0 && xx < gridSize; ++xx) {
+
+                const v = getVox(xx, yy, zz);
+
+                if (v.used === true)
+                    continue;
+
+                newPos[0] = xx;
+                newPos[1] = yy;
+                newPos[2] = zz;
+                break;
+            }
+
+            if (newPos[0] < 0)
+                break;
+
+            const searchSize = glm.vec3.fromValues(1, 1, 1);
+            const searchAxis = glm.vec3.fromValues(1, 1, 1);
+
+            const masterVox = getVox(newPos[0], newPos[1], newPos[2]);
+            const masterKeyStr = masterVox.keyStr;
+
+            // expand until all axis are 0
+            do {
+
+                // expand axis x
+                if (searchAxis[0] === 1) {
+
+                    if (newPos[0] + searchSize[0] + 1 >= gridSize) {
+                        searchAxis[0] = 0;
+                    }
+                    else {
+                        searchSize[0] += 1;
+
+                        let interrupted = false;
+                        for (let yy = newPos[1]; !interrupted && yy < newPos[1] + searchSize[1]; ++yy)
+                        for (let zz = newPos[2]; !interrupted && zz < newPos[2] + searchSize[2]; ++zz) {
+
+                            const v = getVox(newPos[0] + searchSize[0] - 1, yy, zz);
+
+                            if (v.used === true || v.keyStr !== masterKeyStr) {
+                                interrupted = true;
+                                searchAxis[0] = 0;
+                                searchSize[0] -= 1; // cancel
+                            }
+                        }
+                    }
+                }
+
+                // expand axis y
+                if (searchAxis[1] === 1) {
+
+                    if (newPos[1] + searchSize[1] + 1 >= gridSize) {
+                        searchAxis[1] = 0;
+                    }
+                    else {
+                        searchSize[1] += 1;
+
+                        let interrupted = false;
+                        for (let xx = newPos[0]; !interrupted && xx < newPos[0] + searchSize[0]; ++xx)
+                        for (let zz = newPos[2]; !interrupted && zz < newPos[2] + searchSize[2]; ++zz) {
+
+                            const v = getVox(xx, newPos[1] + searchSize[1] - 1, zz);
+
+                            if (v.used === true || v.keyStr !== masterKeyStr) {
+                                interrupted = true;
+                                searchAxis[1] = 0;
+                                searchSize[1] -= 1; // cancel
+                            }
+                        }
+                    }
+                }
+
+                // expand axis z
+                if (searchAxis[2] === 1) {
+
+                    if (newPos[2] + searchSize[2] + 1 >= gridSize) {
+                        searchAxis[2] = 0;
+                    }
+                    else {
+                        searchSize[2] += 1;
+
+                        let interrupted = false;
+                        for (let xx = newPos[0]; !interrupted && xx < newPos[0] + searchSize[0]; ++xx)
+                        for (let yy = newPos[1]; !interrupted && yy < newPos[1] + searchSize[1]; ++yy) {
+
+                            const v = getVox(xx, yy, newPos[2] + searchSize[2] - 1);
+
+                            if (v.used === true || v.keyStr !== masterKeyStr) {
+                                interrupted = true;
+                                searchAxis[2] = 0;
+                                searchSize[2] -= 1; // cancel
+                            }
+                        }
+                    }
+                }
+
+                //
+                //
+                //
+
+                if (searchAxis[0] === 0 &&
+                    searchAxis[1] === 0 &&
+                    searchAxis[2] === 0) {
+
+                    break;
+                }
+
+            } while (true);
+
+            // console.log("newPos", newPos, "searchAxis", searchAxis, "searchSize", searchSize);
+            // console.log("newPos", newPos, "searchSize", searchSize);
+
+            // mark as used
+            for (let zz = newPos[2]; zz < newPos[2] + searchSize[2]; ++zz)
+            for (let yy = newPos[1]; yy < newPos[1] + searchSize[1]; ++yy)
+            for (let xx = newPos[0]; xx < newPos[0] + searchSize[0]; ++xx) {
+
+                const v = getVox(xx, yy, zz);
+                v.used = true;
+            }
+
+            // save box
+
+            this._grid.gridBoxes.push({
+                origin: glm.vec3.clone(newPos),
+                size: glm.vec3.clone(searchSize),
+                primitives: masterVox.primitives,
+            });
+
+        } while (true);
+
+    }
+
+    pushLine(posA: glm.vec3, posB: glm.vec3, color: glm.vec3) {
+        // push A
+        this._wireframeStackVertices.push(posA[0], posA[1], posA[2]);
+        this._wireframeStackVertices.push(color[0], color[1], color[2]);
+        // push B
+        this._wireframeStackVertices.push(posB[0], posB[1], posB[2]);
+        this._wireframeStackVertices.push(color[0], color[1], color[2]);
+    }
+
+    pushWireframeSphere(sphere: ISphere) {
+
+        const X = 0.525731112119133606 * sphere.radius;
+        const Z = 0.850650808352039932 * sphere.radius;
+        const N = 0.0;
+
+        const positions: glm.vec3[] = [
+            [ -X, N, Z ], [  X, N, Z ], [ -X, N,-Z ], [  X, N,-Z ],
+            [  N, Z, X ], [  N, Z,-X ], [  N,-Z, X ], [  N,-Z,-X ],
+            [  Z, X, N ], [ -Z, X, N ], [  Z,-X, N ], [ -Z,-X, N ]
+        ];
+
+        for (let ii = 0; ii < positions.length; ++ii) {
+            positions[ii][0] += sphere.position[0];
+            positions[ii][1] += sphere.position[1];
+            positions[ii][2] += sphere.position[2];
+        }
+
+        const indices: glm.vec3[] = [
+            [ 0, 4, 1], [ 0, 9, 4], [ 9, 5, 4], [ 4, 5, 8], [ 4, 8, 1],
+            [ 8,10, 1], [ 8, 3,10], [ 5, 3, 8], [ 5, 2, 3], [ 2, 7, 3],
+            [ 7,10, 3], [ 7, 6,10], [ 7,11, 6], [11, 0, 6], [ 0, 1, 6],
+            [ 6, 1,10], [ 9, 0,11], [ 9,11, 2], [ 9, 2, 5], [ 7, 2,11],
+        ];
+
+        for (const index of indices) {
+
+            const v1 = positions[index[0]];
+            const v2 = positions[index[1]];
+            const v3 = positions[index[2]];
+
+            this.pushLine(v1, v2, sphere.color);
+            this.pushLine(v2, v3, sphere.color);
+            this.pushLine(v3, v1, sphere.color);
+        }
+    }
+
+    pushWireframeBox(box: IBox) {
+
+        const vertices = [
+            glm.vec3.fromValues(-box.boxSize[0], -box.boxSize[1], -box.boxSize[2]),
+            glm.vec3.fromValues(+box.boxSize[0], -box.boxSize[1], -box.boxSize[2]),
+            glm.vec3.fromValues(-box.boxSize[0], +box.boxSize[1], -box.boxSize[2]),
+            glm.vec3.fromValues(+box.boxSize[0], +box.boxSize[1], -box.boxSize[2]),
+            glm.vec3.fromValues(-box.boxSize[0], -box.boxSize[1], +box.boxSize[2]),
+            glm.vec3.fromValues(+box.boxSize[0], -box.boxSize[1], +box.boxSize[2]),
+            glm.vec3.fromValues(-box.boxSize[0], +box.boxSize[1], +box.boxSize[2]),
+            glm.vec3.fromValues(+box.boxSize[0], +box.boxSize[1], +box.boxSize[2]),
+        ];
+
+        const vertices2: glm.vec3[] = [];
+
+        vertices.forEach((vertex) => {
+
+            const pos = glm.vec3.fromValues(0,0,0);
+            glm.vec3.transformMat4(pos, vertex, box.matrix);
+            vertices2.push(pos);
+        });
+
+        const indicesGroup = [
+            [0,1], [1,3], [3,2], [2,0],
+            [4,5], [5,7], [7,6], [6,4],
+            [0,4], [1,5], [3,7], [2,6],
+        ];
+
+        indicesGroup.forEach((index) => {
+            this.pushLine(vertices2[index[0]], vertices2[index[1]], box.color);
+        });
+    }
+
+    pushWireframeTriangle(triangle: ITriangle) {
+
+        this.pushLine(triangle.v0, triangle.v1, triangle.color);
+        this.pushLine(triangle.v1, triangle.v2, triangle.color);
+        this.pushLine(triangle.v2, triangle.v0, triangle.color);
+    }
+
+    flushWireframe() {
+
+        this._wireframeShaderProgram.bind();
+
+        const gl = WebGLContext.getContext();
+
+        gl.uniformMatrix4fv(this._wireframeShaderProgram.getUniform("u_projectionMatrix"), false, this._projectionMatrix);
+        gl.uniformMatrix4fv(this._wireframeShaderProgram.getUniform("u_modelViewMatrix"), false, this._modelViewMatrix);
+
+        this._wireframeStackGeometry.updateBuffer(0, this._wireframeStackVertices, true);
+        this._wireframeStackGeometry.setPrimitiveCount(this._wireframeStackVertices.length / 6);
+        this._wireframeStackGeometry.render();
+
+        // reset vertices
+        this._wireframeStackVertices.length = 0;
+    }
+
+    render2() {
+
+        glm.mat4.perspective(this._projectionMatrix, degToRad(g_fovy), this._width / this._height, 1, 1500);
+
+        glm.mat4.lookAt(
+            this._modelViewMatrix,
+            this._camera.position,
+            this._camera.target,
+            this._camera.up);
+
+        const composed = glm.mat4.create();
+        glm.mat4.multiply(composed, this._projectionMatrix, this._modelViewMatrix);
+
+        this._spheres.forEach((sphere) => this.pushWireframeSphere(sphere));
+        this._boxes.forEach((box) => this.pushWireframeBox(box));
+        this._triangles.forEach((triangle) => this.pushWireframeTriangle(triangle));
+
+        //
+        ////
+        //
+
+        { // grid
+
+            const renderCube = (min: glm.vec3, max: glm.vec3) => {
+
+                const vertices: glm.vec3[] = [
+                    glm.vec3.fromValues(min[0], min[1], min[2]),
+                    glm.vec3.fromValues(max[0], min[1], min[2]),
+                    glm.vec3.fromValues(min[0], max[1], min[2]),
+                    glm.vec3.fromValues(max[0], max[1], min[2]),
+                    glm.vec3.fromValues(min[0], min[1], max[2]),
+                    glm.vec3.fromValues(max[0], min[1], max[2]),
+                    glm.vec3.fromValues(min[0], max[1], max[2]),
+                    glm.vec3.fromValues(max[0], max[1], max[2]),
+                ];
+
+                const indicesGroup: [number, number][] = [
+                    [0,1], [1,3], [3,2], [2,0],
+                    [4,5], [5,7], [7,6], [6,4],
+                    [0,4], [1,5], [3,7], [2,6],
+                ];
+
+                const color = glm.vec3.fromValues(1,1,1);
+
+                indicesGroup.forEach((index) => {
+                    this.pushLine(vertices[index[0]], vertices[index[1]], color);
+                });
+            };
+
+            for (let ii = 0; ii < this._grid.gridBoxes.length; ++ii) {
+
+                const gridBox = this._grid.gridBoxes[ii];
+
+                // TODO: hardcoded
+                const min = glm.vec3.fromValues(
+                    -35 + 70 / gridSize * gridBox.origin[0] + 0.5,
+                    -35 + 70 / gridSize * gridBox.origin[1] + 0.5,
+                    -35 + 70 / gridSize * gridBox.origin[2] + 0.5);
+                const max = glm.vec3.fromValues(
+                    -35 + 70 / gridSize * (gridBox.origin[0] + gridBox.size[0]) - 0.5,
+                    -35 + 70 / gridSize * (gridBox.origin[1] + gridBox.size[1]) - 0.5,
+                    -35 + 70 / gridSize * (gridBox.origin[2] + gridBox.size[2]) - 0.5);
+
+                renderCube(min, max);
+            }
+        } // grid
     }
 
     render() {
@@ -355,8 +876,7 @@ export class Renderer {
         const gl = WebGLContext.getContext();
 
         const farCorners = this._computeCameraFarCorners();
-        const plotPositionBuffer = new Float32Array(farCorners);
-        this._raytracingGeometry.updateBuffer(1, plotPositionBuffer, true);
+        this._raytracingGeometry.updateBuffer(1, farCorners, true);
 
         const scaledWidth = Math.floor(this._width * this._resolutionCoef);
         const scaledHeight = Math.floor(this._height * this._resolutionCoef);
@@ -372,7 +892,7 @@ export class Renderer {
             shader.bind();
 
             const u_cameraEye = shader.getUniform("u_cameraEye");
-            gl.uniform3f(u_cameraEye, this._camera.position.x, this._camera.position.y, this._camera.position.z);
+            gl.uniform3f(u_cameraEye, this._camera.position[0], this._camera.position[1], this._camera.position[2]);
 
             //
             //
@@ -406,7 +926,6 @@ export class Renderer {
 
                             sceneDataValues.push(sphere.chessboard ? 1 : 0);
                         }
-                        this._spheres.length = 0;
 
                         gl.uniform1f(u_spheresStop, sceneDataValues.length);
 
@@ -438,7 +957,6 @@ export class Renderer {
 
                             sceneDataValues.push(box.chessboard ? 1 : 0);
                         }
-                        this._boxes.length = 0;
 
                         gl.uniform1f(u_boxesStop, sceneDataValues.length);
 
@@ -465,7 +983,6 @@ export class Renderer {
                             sceneDataValues.push(triangle.shadowEnabled ? 1 : 0); // shadowEnabled
                             sceneDataValues.push(triangle.lightEnabled ? 1 : 0); // lightEnabled
                         }
-                        this._triangles.length = 0;
 
                         gl.uniform1f(u_trianglesStop, sceneDataValues.length);
 
@@ -476,7 +993,7 @@ export class Renderer {
                 gl.activeTexture(gl.TEXTURE0 + 0);
                 this._sceneDataTexture.bind();
 
-                this._sceneDataTexture.update(sceneDataValues, 1);
+                this._sceneDataTexture.update(sceneDataValues);
 
                 const u_sceneTextureData = shader.getUniform("u_sceneTextureData");
                 const u_sceneTextureSize = shader.getUniform("u_sceneTextureSize");
@@ -504,7 +1021,6 @@ export class Renderer {
                         lightsDataValues.push(sunLight.direction[0], sunLight.direction[1], sunLight.direction[2]);
                         lightsDataValues.push(sunLight.intensity);
                     }
-                    this._sunLights.length = 0;
 
                     gl.uniform1f(u_sunLightsStop, lightsDataValues.length);
 
@@ -525,7 +1041,6 @@ export class Renderer {
                         lightsDataValues.push(spotLight.intensity);
                         lightsDataValues.push(spotLight.radius);
                     }
-                    this._spotLights.length = 0;
 
                     gl.uniform1f(u_spotLightsStop, lightsDataValues.length);
 
@@ -535,13 +1050,101 @@ export class Renderer {
                 gl.activeTexture(gl.TEXTURE0 + 1);
                 this._lightsDataTexture.bind();
 
-                this._lightsDataTexture.update(lightsDataValues, 1);
+                this._lightsDataTexture.update(lightsDataValues);
 
                 const u_lightsTextureData = shader.getUniform("u_lightsTextureData");
                 const u_lightsTextureSize = shader.getUniform("u_lightsTextureSize");
 
                 gl.uniform1i(u_lightsTextureData, 1);
                 gl.uniform2f(u_lightsTextureSize, lightsDataValues.length, 1);
+
+                //
+
+                { // grid
+
+                    // upload to gpu
+                    // -> master box
+                    // -> children boxes
+                    // ---> must contains primitives indices
+
+                    const gridDataValues: number[] = [];
+
+                    // gridDataValues.push(-35, -35, -35);
+                    // gridDataValues.push(70, 70, 70);
+
+                    this._grid.gridBoxes.forEach((gridBox) => {
+
+                        // TODO: hardcoded
+                        const min = glm.vec3.fromValues(
+                            -35 + 70 / gridSize * gridBox.origin[0],
+                            -35 + 70 / gridSize * gridBox.origin[1],
+                            -35 + 70 / gridSize * gridBox.origin[2]);
+                        const max = glm.vec3.fromValues(
+                            -35 + 70 / gridSize * (gridBox.origin[0] + gridBox.size[0]),
+                            -35 + 70 / gridSize * (gridBox.origin[1] + gridBox.size[1]),
+                            -35 + 70 / gridSize * (gridBox.origin[2] + gridBox.size[2]));
+
+                        const p = gridBox.primitives;
+
+                        const dataSize = (
+                            // data size
+                            1 // 0
+                            // origin
+                            + 3 // 1..3
+                            // size
+                            + 3 // 4..6
+                            // triangles
+                            + 1 // 7
+                            + p.triangles.size // 8..x
+                            // + 1
+                            // + p.spheres.size
+                            // + 1
+                            // + p.boxes.size
+                        );
+                        gridDataValues.push(dataSize);
+
+                        // origin
+                        gridDataValues.push(min[0], min[1], min[2]);
+                        // size
+                        gridDataValues.push(max[0] - min[0], max[1] - min[1], max[2] - min[2]);
+
+                        // triangles
+                        gridDataValues.push(p.triangles.size);
+                        p.triangles.forEach((triangleIndex) => gridDataValues.push(triangleIndex));
+
+
+                        // console.log("this._triangles.length", this._triangles.length);
+                        // console.log("p.triangles", p.triangles);
+
+                        // p.triangles.forEach((triangleIndex) => {
+                        //     if (triangleIndex >= this._triangles.length) {
+                        //         console.log("p.triangles", p.triangles);
+                        //         throw new Error(`invalid index ${triangleIndex}/${this._triangles.length}`);
+                        //     }
+                        // });
+
+
+                        // gridDataValues.push(p.spheres.size);
+                        // p.spheres.forEach((sphereIndex) => gridDataValues.push(sphereIndex));
+
+                        // gridDataValues.push(p.boxes.size);
+                        // p.boxes.forEach((boxIndex) => gridDataValues.push(boxIndex));
+                    });
+
+                    //
+
+                    gl.activeTexture(gl.TEXTURE0 + 2);
+                    this._gridDataTexture.bind();
+
+                    this._gridDataTexture.update(gridDataValues);
+
+                    const u_gridTextureData = shader.getUniform("u_gridTextureData");
+                    const u_gridTextureSize = shader.getUniform("u_gridTextureSize");
+
+                    gl.uniform1i(u_gridTextureData, 2);
+                    gl.uniform2f(u_gridTextureSize, gridDataValues.length, 1);
+
+                } // grid
 
             } // lights data
 
@@ -595,9 +1198,16 @@ export class Renderer {
         gl.useProgram(null);
     }
 
-    setResolutionCoef(newResolutionCoef: number) {
+    reset() {
+        this._sunLights.length = 0;
+        this._spotLights.length = 0;
 
-        const gl = WebGLContext.getContext();
+        this._spheres.length = 0;
+        this._boxes.length = 0;
+        this._triangles.length = 0;
+    }
+
+    setResolutionCoef(newResolutionCoef: number) {
 
         if (newResolutionCoef === this._resolutionCoef)
             return;
@@ -629,30 +1239,38 @@ export class Renderer {
         ];
     }
 
+    // getTriangles(): Readonly<ITriangle[]> {
+    //     return this._triangles;
+    // }
+
     private _computeCameraFarCorners() {
 
-        const forwardDir = this._camera.target.subtract(this._camera.position).normalize();
+        const forwardDir = glm.vec3.sub(glm.vec3.create(), this._camera.target, this._camera.position);
 
-        const leftDir   = forwardDir.crossProduct(this._camera.up).normalize();
-        const upDir     = leftDir.crossProduct(forwardDir).normalize();
-        const farCenter = this._camera.position.add(forwardDir.multiplyScalar(this._camera.zoom));
+        const leftDir = glm.vec3.cross(glm.vec3.create(), forwardDir, this._camera.up);
+        const upDir = glm.vec3.cross(glm.vec3.create(), leftDir, forwardDir);
+
+        const radHFovy = degToRad(g_fovy * 0.5);
+        const xLength = Math.cos(radHFovy) * 1 / Math.sin(radHFovy);
+
+        const scaledForwardDir = glm.vec3.multiply(glm.vec3.create(), forwardDir, glm.vec3.fromValues(xLength, xLength, xLength));
+        const farCenter = glm.vec3.add(glm.vec3.create(), this._camera.position, scaledForwardDir);
 
         const aspectRatio  = this._width / this._height;
-        const farHalfWidth = leftDir.multiplyScalar(aspectRatio);
+        const farHalfWidth = glm.vec3.multiply(glm.vec3.create(), leftDir, glm.vec3.fromValues(aspectRatio, aspectRatio, aspectRatio))
 
-        const farUp     = farCenter.add(upDir);
-        const farBottom = farCenter.subtract(upDir);
-
-        const farTopLeft     = farUp.add(farHalfWidth);
-        const farBottomLeft  = farBottom.add(farHalfWidth);
-        const farTopRight    = farUp.subtract(farHalfWidth);
-        const farBottomRight = farBottom.subtract(farHalfWidth);
+        const farUp     = glm.vec3.add(glm.vec3.create(), farCenter, upDir);
+        const farBottom = glm.vec3.subtract(glm.vec3.create(), farCenter, upDir);
+        const farTopLeft     = glm.vec3.subtract(glm.vec3.create(), farUp, farHalfWidth);
+        const farBottomLeft  = glm.vec3.subtract(glm.vec3.create(), farBottom, farHalfWidth);
+        const farTopRight    = glm.vec3.add(glm.vec3.create(), farUp, farHalfWidth);
+        const farBottomRight = glm.vec3.add(glm.vec3.create(), farBottom, farHalfWidth);
 
         return [
-            farTopRight.x,    farTopRight.y,    farTopRight.z,
-            farTopLeft.x,     farTopLeft.y,     farTopLeft.z,
-            farBottomRight.x, farBottomRight.y, farBottomRight.z,
-            farBottomLeft.x,  farBottomLeft.y,  farBottomLeft.z,
+            farTopRight[0],    farTopRight[1],    farTopRight[2],
+            farTopLeft[0],     farTopLeft[1],     farTopLeft[2],
+            farBottomRight[0], farBottomRight[1], farBottomRight[2],
+            farBottomLeft[0],  farBottomLeft[1],  farBottomLeft[2],
         ];
     }
 
