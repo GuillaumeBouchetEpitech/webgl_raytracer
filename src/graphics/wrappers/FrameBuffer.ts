@@ -1,36 +1,39 @@
-
-import { WebGLContext } from "./WebGLContext";
-import { Texture } from "./Texture";
+import { WebGLContext } from './WebGLContext';
+import { Texture } from './Texture';
 
 export class FrameBuffer {
+  private _frameBuffer: WebGLFramebuffer;
 
-    private _frameBuffer: WebGLFramebuffer;
+  constructor() {
+    const gl = WebGLContext.getContext();
 
-    constructor() {
-        const gl = WebGLContext.getContext();
+    this._frameBuffer = gl.createFramebuffer();
+  }
 
-        this._frameBuffer = gl.createFramebuffer();
-    }
+  attachTexture(texture: Texture) {
+    const gl = WebGLContext.getContext();
 
-    attachTexture(texture: Texture) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this._frameBuffer);
 
-        const gl = WebGLContext.getContext();
+    const mimapLevel = 0;
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      texture.getRawObject(),
+      mimapLevel
+    );
+  }
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this._frameBuffer);
+  bind() {
+    const gl = WebGLContext.getContext();
 
-        const mimapLevel = 0;
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture.getRawObject(), mimapLevel);
-    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this._frameBuffer);
+  }
 
-    bind() {
-        const gl = WebGLContext.getContext();
+  static unbind() {
+    const gl = WebGLContext.getContext();
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this._frameBuffer);
-    }
-
-    static unbind() {
-        const gl = WebGLContext.getContext();
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    }
-};
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+}
