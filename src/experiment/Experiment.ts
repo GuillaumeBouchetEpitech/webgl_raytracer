@@ -127,9 +127,9 @@ export class Experiment {
     //
 
     this._def.resolution.addEventListener('input', (event) => {
-      const newValue = (event as any).target.value;
-
-      this._setResolution(newValue);
+      // const newValue = (event as any).target.value;
+      const newValue = (this._def.resolution as any).value;
+      this._setResolution(11 - newValue);
     });
 
     this._def.anti_aliasing_enabled.addEventListener('click', () => {
@@ -144,7 +144,7 @@ export class Experiment {
 
     {
       const currValue = (this._def.resolution as any).value;
-      this._setResolution(currValue);
+      this._setResolution(11 - currValue);
     }
 
     this._def.logger.log('user interface initialized');
@@ -231,35 +231,7 @@ export class Experiment {
     this._frameProfiler.pushDelta(deltaTime);
 
 
-
-    // performance auto-scaling
-    if (this._perfAutoScalingEnabled === true) {
-      if (deltaTime > 40) {
-
-        // prevent large delta time
-        deltaTime = 40;
-
-        if (--this._framesUntilNextCheck < 0) {
-          this._def.logger.log(
-            `performance auto scaling: slow framerate, scaling down resolution`
-          );
-
-          const currValue = parseInt((this._def.resolution as any).value, 10);
-          const newValue = currValue + 1;
-
-          if (newValue >= 1 && newValue <= 10) {
-            this._setResolution(newValue);
-
-            (this._def.resolution as any).value = `${newValue}`;
-          }
-
-          this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
-        }
-      } else {
-        this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
-      }
-    }
-
+    this._handlePerformanceAutoScaling(deltaTime);
 
 
     const elapsedTime = deltaTime / 1000;
@@ -346,7 +318,43 @@ export class Experiment {
     this._def.logger.log(
       `resolution changed (1/${newValue}) => ${newSize[0]}x${newSize[1]} (${totalPixels}px)`
     );
-  };
+  }
+
+  private _handlePerformanceAutoScaling(inDelta: number) {
+
+    if (this._perfAutoScalingEnabled !== true)
+      return;
+
+    if (inDelta <= 20) {
+      this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
+      return;
+    }
+
+    // // prevent large delta time
+    // inDelta = 20;
+
+    --this._framesUntilNextCheck;
+
+    if (this._framesUntilNextCheck > 0)
+      return;
+
+    this._def.logger.log(
+      `performance auto scaling: slow framerate, scaling down resolution`
+    );
+
+    const currValue = parseInt((this._def.resolution as any).value, 10);
+    const newValue = currValue - 1;
+
+    if (newValue >= 1 && newValue <= 10) {
+      this._setResolution(11 - newValue);
+
+      (this._def.resolution as any).value = `${newValue}`;
+    }
+
+    this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
+
+
+  }
 
 
 }

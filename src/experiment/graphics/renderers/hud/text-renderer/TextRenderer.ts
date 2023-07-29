@@ -24,6 +24,7 @@ export interface ITextRenderer {
     inVerticalTextAlign: VerticalTextAlign
   ): this;
   setTextScale(inScale: number): this;
+  setTextColor(inRed: number, inGreen: number, inBlue: number): this;
 
   pushText(inMessage: string, inPosition: glm.ReadonlyVec2): this;
 
@@ -41,6 +42,7 @@ export class TextRenderer implements ITextRenderer {
   private _currentSize: number = 0;
 
   private _textScale: number = 14;
+  private _textColor: glm.vec3 = [1,1,1];
 
   private _horizontalTextAlign: HorizontalTextAlign = 'left';
   private _verticalTextAlign: VerticalTextAlign = 'top';
@@ -265,6 +267,13 @@ export class TextRenderer implements ITextRenderer {
     return this;
   }
 
+  setTextColor(inRed: number, inGreen: number, inBlue: number): this {
+    this._textColor[0] = inRed;
+    this._textColor[1] = inGreen;
+    this._textColor[2] = inBlue;
+    return this;
+  }
+
   pushText(inMessage: string, inPosition: glm.ReadonlyVec2): this {
     //
     // validate
@@ -380,9 +389,6 @@ export class TextRenderer implements ITextRenderer {
     if (!texCoord)
       throw new Error(`fail to find a letter, letter=${inCharacter}`);
 
-    const whiteColor: glm.ReadonlyVec3 = [1.0, 1.0, 1.0];
-    const blackColor: glm.ReadonlyVec3 = [0.0, 0.0, 0.0];
-
     for (let yy = -1; yy <= 1; ++yy) {
       for (let xx = -1; xx <= 1; ++xx) {
         this._buffer[this._currentSize++] = inPosition[0] + 2 * xx;
@@ -390,9 +396,9 @@ export class TextRenderer implements ITextRenderer {
         this._buffer[this._currentSize++] = -0.1;
         this._buffer[this._currentSize++] = texCoord[0];
         this._buffer[this._currentSize++] = texCoord[1];
-        this._buffer[this._currentSize++] = blackColor[0];
-        this._buffer[this._currentSize++] = blackColor[1];
-        this._buffer[this._currentSize++] = blackColor[2];
+        this._buffer[this._currentSize++] = 0; // blackColor
+        this._buffer[this._currentSize++] = 0; // blackColor
+        this._buffer[this._currentSize++] = 0; // blackColor
         this._buffer[this._currentSize++] = this._textScale;
       }
     }
@@ -402,9 +408,9 @@ export class TextRenderer implements ITextRenderer {
     this._buffer[this._currentSize++] = 0.0;
     this._buffer[this._currentSize++] = texCoord[0];
     this._buffer[this._currentSize++] = texCoord[1];
-    this._buffer[this._currentSize++] = whiteColor[0];
-    this._buffer[this._currentSize++] = whiteColor[1];
-    this._buffer[this._currentSize++] = whiteColor[2];
+    this._buffer[this._currentSize++] = this._textColor[0];
+    this._buffer[this._currentSize++] = this._textColor[1];
+    this._buffer[this._currentSize++] = this._textColor[2];
     this._buffer[this._currentSize++] = this._textScale;
   }
 
