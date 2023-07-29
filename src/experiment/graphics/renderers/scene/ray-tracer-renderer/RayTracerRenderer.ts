@@ -128,7 +128,6 @@ export interface IRayTracerRenderer {
 }
 
 export class RayTracerRenderer implements IRayTracerRenderer {
-
   private _cameraFovy: number;
 
   private _canvasWidth: number;
@@ -159,7 +158,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
   private _camera: ICamera;
 
   constructor(inDef: IDefinition) {
-
     this._cameraFovy = inDef.fovy;
 
     this._renderWidth = this._canvasWidth = inDef.canvasWidth;
@@ -223,8 +221,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       .addVboAttribute('a_vertexPosition', 'vec2f')
       .addVbo()
       .setVboAsDynamic()
-      .addVboAttribute('a_plotPosition', 'vec3f')
-      ;
+      .addVboAttribute('a_plotPosition', 'vec3f');
 
     this._rayTracerGeometry = new GeometryWrapper.Geometry(
       this._rayTracerShaderProgram,
@@ -237,7 +234,11 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     rayTracerVertices.push(+1.0, -1.0); // bottom right
     rayTracerVertices.push(-1.0, -1.0); // bottom left
 
-    this._rayTracerGeometry.updateBuffer(0, rayTracerVertices, rayTracerVertices.length);
+    this._rayTracerGeometry.updateBuffer(
+      0,
+      rayTracerVertices,
+      rayTracerVertices.length
+    );
     this._rayTracerGeometry.setPrimitiveStart(0);
     this._rayTracerGeometry.setPrimitiveCount(4);
 
@@ -249,8 +250,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       .setPrimitiveType('triangleStrip')
       .addVbo()
       .addVboAttribute('a_vertexPosition', 'vec2f')
-      .addVboAttribute('a_vertexTextureCoord', 'vec2f')
-      ;
+      .addVboAttribute('a_vertexTextureCoord', 'vec2f');
 
     this._screenGeometry = new GeometryWrapper.Geometry(
       this._textureShaderProgram,
@@ -439,7 +439,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       const shader = this._rayTracerShaderProgram;
 
       shader.bind(() => {
-
         shader.setFloat3Uniform(
           'u_cameraEye',
           this._camera.position[0],
@@ -485,7 +484,10 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                 sceneDataValues.push(sphere.chessboard ? 1 : 0);
               }
 
-              shader.setInteger1Uniform('u_spheresStop', sceneDataValues.length);
+              shader.setInteger1Uniform(
+                'u_spheresStop',
+                sceneDataValues.length
+              );
             } // spheres
 
             {
@@ -568,7 +570,10 @@ export class RayTracerRenderer implements IRayTracerRenderer {
           this._sceneDataTexture.update(sceneDataValues);
 
           shader.setInteger1Uniform('u_sceneTextureData', 0);
-          shader.setInteger1Uniform('u_sceneTextureSize', sceneDataValues.length);
+          shader.setInteger1Uniform(
+            'u_sceneTextureSize',
+            sceneDataValues.length
+          );
         } // scene data
 
         {
@@ -592,7 +597,10 @@ export class RayTracerRenderer implements IRayTracerRenderer {
               lightsDataValues.push(sunLight.intensity);
             }
 
-            shader.setInteger1Uniform('u_sunLightsStop', lightsDataValues.length);
+            shader.setInteger1Uniform(
+              'u_sunLightsStop',
+              lightsDataValues.length
+            );
           } // sun lights
 
           {
@@ -634,9 +642,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
         //
 
         this._rayTracerGeometry.render();
-
       });
-
     } // raytracing pass
 
     FrameBuffer.unbind();
@@ -649,7 +655,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       const shader = this._textureShaderProgram;
 
       shader.bind(() => {
-
         // shader.setInteger1Uniform('u_texture', 0);
         // gl.activeTexture(gl.TEXTURE0 + 0);
         // this._finalTexture.bind();
@@ -671,9 +676,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
         this._screenGeometry.render();
 
         Texture.unbind();
-
       });
-
     } // texture pass
 
     // ShaderProgram.unbind();

@@ -19,7 +19,7 @@ import { renderScene } from './graphics/_renderScene';
 
 interface ExperimentDef {
   canvasElement: HTMLCanvasElement;
-  logger: Logger,
+  logger: Logger;
   perfAutoScaling: HTMLElement;
   resolution: HTMLElement;
   anti_aliasing_enabled: HTMLElement;
@@ -63,7 +63,7 @@ export class Experiment {
       keyboardSensibility: Math.PI * 0.45,
       touchSensibility: 0.3,
       movingSpeed: 10
-      });
+    });
 
     //
     //
@@ -72,9 +72,13 @@ export class Experiment {
       GlobalKeyboardManager.activate();
       GlobalTouchManager.activate(this._canvasElement);
 
-      GlobalPointerLockManager.allowPointerLockedOnClickEvent(this._canvasElement);
+      GlobalPointerLockManager.allowPointerLockedOnClickEvent(
+        this._canvasElement
+      );
       GlobalPointerLockManager.addOnLockChange(() => {
-        const isLocked = GlobalPointerLockManager.isPointerLocked(this._canvasElement);
+        const isLocked = GlobalPointerLockManager.isPointerLocked(
+          this._canvasElement
+        );
 
         if (isLocked) {
           this._def.logger.log('The pointer lock status is now locked');
@@ -85,7 +89,9 @@ export class Experiment {
 
           GlobalMouseManager.deactivate();
 
-          GlobalPointerLockManager.allowPointerLockedOnClickEvent(this._canvasElement);
+          GlobalPointerLockManager.allowPointerLockedOnClickEvent(
+            this._canvasElement
+          );
         }
       });
 
@@ -95,10 +101,8 @@ export class Experiment {
         );
       });
 
-
       this._renderer = new Renderer({ canvasDomElement: this._canvasElement });
       this._renderer.initialize();
-
     }
 
     //
@@ -133,7 +137,8 @@ export class Experiment {
     });
 
     this._def.anti_aliasing_enabled.addEventListener('click', () => {
-      const newValue = (this._def.anti_aliasing_enabled as any).checked === true;
+      const newValue =
+        (this._def.anti_aliasing_enabled as any).checked === true;
 
       this._renderer.rayTracerRenderer.setAntiAliasing(newValue);
 
@@ -153,7 +158,8 @@ export class Experiment {
     this._def.perfAutoScaling.addEventListener('input', () => {
       this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
 
-      this._perfAutoScalingEnabled = (this._def.perfAutoScaling as any).checked === true;
+      this._perfAutoScalingEnabled =
+        (this._def.perfAutoScaling as any).checked === true;
 
       this._def.logger.log(
         `Performance auto scaler change: ${
@@ -161,7 +167,6 @@ export class Experiment {
         }`
       );
     });
-
   }
 
   async init() {
@@ -230,9 +235,7 @@ export class Experiment {
     this._currFrameTime = currentTime;
     this._frameProfiler.pushDelta(deltaTime);
 
-
     this._handlePerformanceAutoScaling(deltaTime);
-
 
     const elapsedTime = deltaTime / 1000;
 
@@ -242,16 +245,13 @@ export class Experiment {
 
     GlobalMouseManager.resetDelta();
 
-
     //
     //
 
     {
-
       const gl = WebGLContext.getContext();
 
       gl.disable(gl.DEPTH_TEST);
-
     }
 
     this._continuousTime += elapsedTime;
@@ -262,8 +262,8 @@ export class Experiment {
       this._continuousTime,
       this._def.angle_x.value,
       this._def.angle_y.value,
-      this._def.angle_z.value);
-
+      this._def.angle_z.value
+    );
 
     this._renderer.rayTracerRenderer.lookAt(
       this._freeFlyController.getPosition(),
@@ -277,9 +277,21 @@ export class Experiment {
     if (showDebug) {
       this._renderer.safeSceneWireFrame(() => {
         this._renderer.setupDebugRenderer();
-        this._renderer.stackRenderers.pushLine([0, 0, 0], [100, 0, 0], [1, 0, 0]);
-        this._renderer.stackRenderers.pushLine([0, 0, 0], [0, 100, 0], [0, 1, 0]);
-        this._renderer.stackRenderers.pushLine([0, 0, 0], [0, 0, 100], [0, 0, 1]);
+        this._renderer.stackRenderers.pushLine(
+          [0, 0, 0],
+          [100, 0, 0],
+          [1, 0, 0]
+        );
+        this._renderer.stackRenderers.pushLine(
+          [0, 0, 0],
+          [0, 100, 0],
+          [0, 1, 0]
+        );
+        this._renderer.stackRenderers.pushLine(
+          [0, 0, 0],
+          [0, 0, 100],
+          [0, 0, 1]
+        );
       });
     }
 
@@ -321,9 +333,7 @@ export class Experiment {
   }
 
   private _handlePerformanceAutoScaling(inDelta: number) {
-
-    if (this._perfAutoScalingEnabled !== true)
-      return;
+    if (this._perfAutoScalingEnabled !== true) return;
 
     if (inDelta <= 20) {
       this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
@@ -335,8 +345,7 @@ export class Experiment {
 
     --this._framesUntilNextCheck;
 
-    if (this._framesUntilNextCheck > 0)
-      return;
+    if (this._framesUntilNextCheck > 0) return;
 
     this._def.logger.log(
       `performance auto scaling: slow framerate, scaling down resolution`
@@ -352,9 +361,5 @@ export class Experiment {
     }
 
     this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
-
-
   }
-
-
 }

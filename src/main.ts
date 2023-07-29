@@ -1,5 +1,4 @@
-
-import { isWebGL2Supported } from "./browser";
+import { isWebGL2Supported } from './browser';
 
 import { Logger } from './experiment/utilities/Logger';
 
@@ -34,17 +33,29 @@ const onPageLoad = async () => {
       throw new Error(`html element "${inName}" not found`);
     }
     return newElement;
-  }
+  };
 
-  const canvasElement = _queryHtmlElement<HTMLCanvasElement>('#rendering-canvas');
-  const perfAutoScaling = _queryHtmlElement<HTMLElement>('#auto-scaling-enabled');
+  const canvasElement =
+    _queryHtmlElement<HTMLCanvasElement>('#rendering-canvas');
+  const perfAutoScaling = _queryHtmlElement<HTMLElement>(
+    '#auto-scaling-enabled'
+  );
   const resolution = _queryHtmlElement<HTMLElement>('#resolution');
-  const anti_aliasing_enabled = _queryHtmlElement<HTMLElement>('#anti-aliasing-enabled');
-  const debug_mode_enabled = _queryHtmlElement<HTMLElement>('#debug-mode-enabled');
-  const angle_x = _queryHtmlElement<HTMLElement>('#angle-x') as any as { value: number };
-  const angle_y = _queryHtmlElement<HTMLElement>('#angle-y') as any as { value: number };
-  const angle_z = _queryHtmlElement<HTMLElement>('#angle-z') as any as { value: number };
-
+  const anti_aliasing_enabled = _queryHtmlElement<HTMLElement>(
+    '#anti-aliasing-enabled'
+  );
+  const debug_mode_enabled = _queryHtmlElement<HTMLElement>(
+    '#debug-mode-enabled'
+  );
+  const angle_x = _queryHtmlElement<HTMLElement>('#angle-x') as any as {
+    value: number;
+  };
+  const angle_y = _queryHtmlElement<HTMLElement>('#angle-y') as any as {
+    value: number;
+  };
+  const angle_z = _queryHtmlElement<HTMLElement>('#angle-z') as any as {
+    value: number;
+  };
 
   //
   // browser features check
@@ -67,7 +78,7 @@ const onPageLoad = async () => {
     debug_mode_enabled,
     angle_x,
     angle_y,
-    angle_z,
+    angle_z
   });
 
   logger.log('initializing');

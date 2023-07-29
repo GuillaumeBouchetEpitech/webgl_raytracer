@@ -15,17 +15,11 @@ export class Texture {
     this._allocate(inWidth, inHeight, inPixels);
   }
 
-  allocate(
-    inWidth: number,
-    inHeight: number,
-  ): void {
+  allocate(inWidth: number, inHeight: number): void {
     this._allocate(inWidth, inHeight);
   }
 
-  resize(
-    inWidth: number,
-    inHeight: number
-  ): void {
+  resize(inWidth: number, inHeight: number): void {
     this._allocate(inWidth, inHeight);
   }
 

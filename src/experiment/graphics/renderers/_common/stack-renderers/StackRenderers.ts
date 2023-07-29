@@ -74,8 +74,7 @@ export class StackRenderers implements IStackRenderers {
       .addVbo()
       .setVboAsDynamic()
       .addVboAttribute('a_vertex_position', 'vec3f')
-      .addVboAttribute('a_vertex_color', 'vec4f')
-      ;
+      .addVboAttribute('a_vertex_color', 'vec4f');
 
     this._wireFramesStackRenderer = new WireFramesStackRenderer(
       this._shader,
@@ -189,31 +188,21 @@ export class StackRenderers implements IStackRenderers {
     }
 
     this._shader.bind(() => {
-
-      this._shader.setMatrix4Uniform(
-        'u_composedMatrix',
-        inComposedMatrix
-      );
+      this._shader.setMatrix4Uniform('u_composedMatrix', inComposedMatrix);
 
       this._wireFramesStackRenderer.flush();
       this._trianglesStackRenderer.flush();
-
     });
   }
 
   safeRender(inComposedMatrix: glm.ReadonlyMat4, inCallback: () => void) {
     this._shader.bind(() => {
-
-      this._shader.setMatrix4Uniform(
-        'u_composedMatrix',
-        inComposedMatrix
-      );
+      this._shader.setMatrix4Uniform('u_composedMatrix', inComposedMatrix);
 
       inCallback();
 
       this._wireFramesStackRenderer.flush();
       this._trianglesStackRenderer.flush();
-
     });
   }
 

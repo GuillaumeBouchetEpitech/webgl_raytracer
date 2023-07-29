@@ -48,7 +48,7 @@ export class Renderer {
     this._rayTracerRenderer = new RayTracerRenderer({
       canvasWidth: this._def.canvasDomElement.width,
       canvasHeight: this._def.canvasDomElement.height,
-      fovy: k_fovy,
+      fovy: k_fovy
     });
     this._textRenderer = new TextRenderer();
     this._stackRenderers = new StackRenderers();
@@ -76,17 +76,14 @@ export class Renderer {
   }
 
   resize(width: number, height: number) {
+    this._debugSceneCamera.setViewportSize(width, height);
+    this._debugSceneCamera.setAsPerspective({
+      fovy: degToRad(k_fovy),
+      near: 1,
+      far: 500
+    });
 
-    this._debugSceneCamera.setViewportSize(
-      width,
-      height
-    );
-    this._debugSceneCamera.setAsPerspective({ fovy: degToRad(k_fovy), near: 1, far: 500 });
-
-    this._mainHudCamera.setViewportSize(
-      width,
-      height
-    );
+    this._mainHudCamera.setViewportSize(width, height);
 
     const hWidth = width * 0.5;
     const hHeight = height * 0.5;
@@ -220,13 +217,15 @@ export class Renderer {
   // }
 
   safeSceneWireFrame(inCallback: () => void) {
-
     this._debugSceneCamera.setEye(this._rayTracerRenderer.camera.position);
     this._debugSceneCamera.setTarget(this._rayTracerRenderer.camera.target);
     this._debugSceneCamera.setUpAxis(this._rayTracerRenderer.camera.up);
     this._debugSceneCamera.computeMatrices();
 
-    this._stackRenderers.safeRender(this._debugSceneCamera.getComposedMatrix(), inCallback);
+    this._stackRenderers.safeRender(
+      this._debugSceneCamera.getComposedMatrix(),
+      inCallback
+    );
   }
 
   flushHudWireFrame() {
@@ -238,7 +237,6 @@ export class Renderer {
   }
 
   setupDebugRenderer() {
-
     this._rayTracerRenderer.spheres.forEach((sphere) =>
       this._pushWireFrameSphere(sphere)
     );

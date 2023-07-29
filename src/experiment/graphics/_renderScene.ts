@@ -1,4 +1,3 @@
-
 import { Renderer } from './Renderer';
 
 import * as glm from 'gl-matrix';
@@ -37,9 +36,8 @@ export const renderScene = (
   continuousTime: number,
   angle_x: number,
   angle_y: number,
-  angle_z: number,
+  angle_z: number
 ) => {
-
   {
     // push scene
 
@@ -195,13 +193,7 @@ export const renderScene = (
       0.5,
       false
     );
-    renderer.rayTracerRenderer.pushSphere(
-      [5, 0, 5],
-      1,
-      [1, 1, 1],
-      0.5,
-      false
-    );
+    renderer.rayTracerRenderer.pushSphere([5, 0, 5], 1, [1, 1, 1], 0.5, false);
 
     //
     //
@@ -439,5 +431,4 @@ export const renderScene = (
       } // smoke particles (timed spot spheres)
     } // particle handling
   } // push scene
-
 };

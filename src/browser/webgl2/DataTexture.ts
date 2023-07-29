@@ -5,8 +5,7 @@ export class DataTexture {
 
   // initialize(data: number[] = [], numComponents: number = 1) {
   initialize(data: number[] = []) {
-    if (this._texture)
-      throw new Error('data texture already initialized');
+    if (this._texture) throw new Error('data texture already initialized');
 
     const gl = WebGLContext.getContext();
 
