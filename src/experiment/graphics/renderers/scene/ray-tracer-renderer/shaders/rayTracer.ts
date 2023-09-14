@@ -64,12 +64,12 @@ out vec4 o_color;
 
 //
 
-const float     g_ambiantLight = 0.2;
+const float     g_ambiantLight = 0.05;
 
 const int       g_reflectionMax = 2;
 const bool      g_shadowsEnabled = true;
 
-const vec3      g_backgroundColor = vec3(0.4);
+const vec3      g_backgroundColor = vec3(0.1);
 
 //
 

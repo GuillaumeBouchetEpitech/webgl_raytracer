@@ -47,15 +47,6 @@ const onPageLoad = async () => {
   const debug_mode_enabled = _queryHtmlElement<HTMLElement>(
     '#debug-mode-enabled'
   );
-  const angle_x = _queryHtmlElement<HTMLElement>('#angle-x') as any as {
-    value: number;
-  };
-  const angle_y = _queryHtmlElement<HTMLElement>('#angle-y') as any as {
-    value: number;
-  };
-  const angle_z = _queryHtmlElement<HTMLElement>('#angle-z') as any as {
-    value: number;
-  };
 
   //
   // browser features check
@@ -76,9 +67,6 @@ const onPageLoad = async () => {
     resolution,
     anti_aliasing_enabled,
     debug_mode_enabled,
-    angle_x,
-    angle_y,
-    angle_z
   });
 
   logger.log('initializing');

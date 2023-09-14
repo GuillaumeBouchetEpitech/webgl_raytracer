@@ -4,7 +4,8 @@ import {
   GlobalPointerLockManager,
   GlobalKeyboardManager,
   GlobalMouseManager,
-  GlobalTouchManager
+  GlobalTouchManager,
+  GlobalVisibilityManager
 } from '../browser';
 
 import { Logger } from './utilities/Logger';
@@ -15,7 +16,7 @@ import { WebGLContext } from '../browser/webgl2';
 import { FreeFlyController } from './controllers/FreeFlyController';
 
 import { Renderer } from './graphics/Renderer';
-import { renderScene } from './graphics/_renderScene';
+import * as scenes from './scenes/intex';
 
 interface ExperimentDef {
   canvasElement: HTMLCanvasElement;
@@ -24,9 +25,6 @@ interface ExperimentDef {
   resolution: HTMLElement;
   anti_aliasing_enabled: HTMLElement;
   debug_mode_enabled: HTMLElement;
-  angle_x: { value: number };
-  angle_y: { value: number };
-  angle_z: { value: number };
 }
 
 const k_maxFramesUntilNextCheck = 60;
@@ -50,6 +48,11 @@ export class Experiment {
   private _perfAutoScalingEnabled = true;
   private _framesUntilNextCheck = k_maxFramesUntilNextCheck;
 
+
+  private _scene = new scenes.TestScene1();
+  // private _scene = new scenes.TestScene2();
+
+
   constructor(inDef: ExperimentDef) {
     this._canvasElement = inDef.canvasElement;
     this._def = inDef;
@@ -71,6 +74,13 @@ export class Experiment {
     {
       GlobalKeyboardManager.activate();
       GlobalTouchManager.activate(this._canvasElement);
+
+      // GlobalVisibilityManager.activate();
+      // GlobalVisibilityManager.addVisibilityChange((isVisible) => {
+      //   if (isVisible === false) {
+      //     this.stop();
+      //   }
+      // });
 
       GlobalPointerLockManager.allowPointerLockedOnClickEvent(
         this._canvasElement
@@ -256,14 +266,7 @@ export class Experiment {
 
     this._continuousTime += elapsedTime;
 
-    renderScene(
-      this._renderer,
-      elapsedTime,
-      this._continuousTime,
-      this._def.angle_x.value,
-      this._def.angle_y.value,
-      this._def.angle_z.value
-    );
+    this._scene.run(this._renderer, elapsedTime);
 
     this._renderer.rayTracerRenderer.lookAt(
       this._freeFlyController.getPosition(),

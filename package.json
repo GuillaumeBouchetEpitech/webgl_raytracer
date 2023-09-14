@@ -6,8 +6,8 @@
   "main": "index.html",
   "scripts": {
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
-    "build-release": "node ./esbuild.js",
-    "build-debug": "node ./esbuild.js debug",
+    "build-release": "bun run bun-build.js release",
+    "build-debug": "bun run bun-build.js debug",
     "build": "npm run build-release"
   },
   "keywords": [],
@@ -19,8 +19,6 @@
     "@types/node": "^15.6.1",
     "fpsmeter": "^0.3.1",
     "gl-matrix": "^3.3.0",
-    "prettier": "^2.8.4",
-    "tslib": "^2.5.0",
-    "esbuild": "0.18.17"
+    "prettier": "^2.8.4"
   }
 }
