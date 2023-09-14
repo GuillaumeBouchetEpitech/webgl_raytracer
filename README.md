@@ -11,16 +11,20 @@
 
 Beyond that: [follow that link to see for yourself](http://guillaumebouchetepitech.github.io/webgl_raytracer/index.html).
 
-## Install/Build
+# How To Build
 
-Release
+### Only Once
 ```bash
-npm install
-npm run build
+npm install -g bun # if not already installed
+bun install
 ```
 
-Debug
+### Release Build
 ```bash
-npm install
-npm run debug
+npm run build-release # minified
+```
+
+### Debug Build
+```bash
+npm run build debug # inlined sourcemap
 ```
