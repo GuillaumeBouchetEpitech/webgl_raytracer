@@ -19,15 +19,14 @@ export interface IDefinition {
   fovy: number;
 }
 
-
 interface IPublicSphere {
-  position: glm.ReadonlyVec3,
-  radius: number,
-  color: glm.ReadonlyVec3,
-  reflection: number,
-  chessboard: boolean,
-  shadowEnabled: boolean,
-  lightEnabled: boolean
+  position: glm.ReadonlyVec3;
+  radius: number;
+  color: glm.ReadonlyVec3;
+  reflection: number;
+  chessboard: boolean;
+  shadowEnabled: boolean;
+  lightEnabled: boolean;
 }
 
 export interface IInternalSphere {
@@ -40,19 +39,18 @@ export interface IInternalSphere {
   chessboard: boolean;
 }
 
-
 interface IPublicBox {
-  position: glm.ReadonlyVec3,
-  angleX: number,
-  angleY: number,
-  angleZ: number,
-  boxSize: glm.ReadonlyVec3,
-  color: glm.ReadonlyVec3,
-  reflection: number,
-  chessboard: boolean,
-  shadowEnabled: boolean,
-  lightEnabled: boolean
-};
+  position: glm.ReadonlyVec3;
+  angleX: number;
+  angleY: number;
+  angleZ: number;
+  boxSize: glm.ReadonlyVec3;
+  color: glm.ReadonlyVec3;
+  reflection: number;
+  chessboard: boolean;
+  shadowEnabled: boolean;
+  lightEnabled: boolean;
+}
 
 export interface InternalBox {
   matrix: glm.mat4;
@@ -99,7 +97,7 @@ export interface IRayTracerRenderer {
     reflection,
     chessboard,
     shadowEnabled,
-    lightEnabled,
+    lightEnabled
   }: IPublicSphere): void;
 
   pushBox({
@@ -112,7 +110,7 @@ export interface IRayTracerRenderer {
     reflection,
     chessboard,
     shadowEnabled,
-    lightEnabled,
+    lightEnabled
   }: IPublicBox): void;
 
   pushTriangle({
@@ -125,13 +123,9 @@ export interface IRayTracerRenderer {
     lightEnabled
   }: ITriangle): void;
 
-  pushSunLight({direction, intensity}: ISunLight): void;
+  pushSunLight({ direction, intensity }: ISunLight): void;
 
-  pushSpotLight({
-    position,
-    intensity,
-    radius,
-  }: ISpotLight): void;
+  pushSpotLight({ position, intensity, radius }: ISpotLight): void;
 
   lookAt(
     eye: glm.ReadonlyVec3,
@@ -315,7 +309,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     reflection,
     chessboard,
     shadowEnabled,
-    lightEnabled,
+    lightEnabled
   }: IPublicSphere): void {
     if (radius <= 0) throw new Error('invalid sphere radius');
     if (reflection < 0 || reflection > 1)
@@ -328,7 +322,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       reflection,
       chessboard,
       shadowEnabled,
-      lightEnabled,
+      lightEnabled
     });
   }
 
@@ -342,7 +336,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     reflection,
     chessboard,
     shadowEnabled,
-    lightEnabled,
+    lightEnabled
   }: IPublicBox): void {
     if (boxSize[0] <= 0 || boxSize[1] <= 0 || boxSize[2] <= 0)
       throw new Error('invalid box size');
@@ -390,7 +384,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     });
   }
 
-  pushSunLight({direction, intensity}: ISunLight) {
+  pushSunLight({ direction, intensity }: ISunLight) {
     // add sun light
 
     if (intensity <= 0) throw new Error('intensity cannot be 0');
@@ -402,11 +396,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     this._sunLights.push({ direction: dir, intensity });
   }
 
-  pushSpotLight({
-    position,
-    intensity,
-    radius,
-  }: ISpotLight): void {
+  pushSpotLight({ position, intensity, radius }: ISpotLight): void {
     // add spot light
 
     if (intensity <= 0) throw new Error('intensity cannot be 0');

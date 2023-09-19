@@ -48,10 +48,8 @@ export class Experiment {
   private _perfAutoScalingEnabled = true;
   private _framesUntilNextCheck = k_maxFramesUntilNextCheck;
 
-
   // private _scene = new scenes.TestScene1();
   private _scene = new scenes.TestScene2();
-
 
   constructor(inDef: ExperimentDef) {
     this._canvasElement = inDef.canvasElement;

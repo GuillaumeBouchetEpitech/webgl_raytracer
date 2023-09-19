@@ -1,5 +1,3 @@
-
-
 type OnChangeCallback = (isVisible: boolean) => void;
 
 class VisibilityManager {
@@ -11,21 +9,26 @@ class VisibilityManager {
   constructor() {
     const handleVisibilityChange = () => {
       const isVisible = this.isVisible();
-      this._onVisibilityChangeCallbacks.forEach((callback) => callback(isVisible));
+      this._onVisibilityChangeCallbacks.forEach((callback) =>
+        callback(isVisible)
+      );
     };
 
     this._handleVisibilityChange = handleVisibilityChange.bind(this);
   }
 
   activate() {
-
     console.log('this.isSupported()', this.isSupported());
     console.log('this._activated', this._activated);
 
     // if (!this.isSupported()) return;
     if (this._activated) return;
 
-    document.addEventListener('visibilitychange', this._handleVisibilityChange, false);
+    document.addEventListener(
+      'visibilitychange',
+      this._handleVisibilityChange,
+      false
+    );
 
     this._activated = true;
   }
@@ -33,7 +36,11 @@ class VisibilityManager {
   deactivate() {
     if (!this._activated) return;
 
-    document.removeEventListener('visibilitychange', this._handleVisibilityChange, false);
+    document.removeEventListener(
+      'visibilitychange',
+      this._handleVisibilityChange,
+      false
+    );
 
     this._activated = false;
   }
@@ -41,7 +48,7 @@ class VisibilityManager {
   //
 
   isSupported() {
-    return ('onvisibilitychange' in document);
+    return 'onvisibilitychange' in document;
   }
 
   //

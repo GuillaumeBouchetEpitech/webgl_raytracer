@@ -66,7 +66,7 @@ const onPageLoad = async () => {
     perfAutoScaling,
     resolution,
     anti_aliasing_enabled,
-    debug_mode_enabled,
+    debug_mode_enabled
   });
 
   logger.log('initializing');

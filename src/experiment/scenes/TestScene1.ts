@@ -1,4 +1,3 @@
-
 import { Renderer } from '../graphics/Renderer';
 
 import * as glm from 'gl-matrix';
@@ -18,7 +17,6 @@ let smokeCooldown = 0;
 let continuousTime: number = 0;
 
 export class TestScene1 {
-
   reset() {
     flashParticles.length = 0;
     explosionCooldown = 0;
@@ -28,11 +26,7 @@ export class TestScene1 {
     continuousTime = 0;
   }
 
-  run(
-    renderer: Renderer,
-    elapsedTime: number
-  ) {
-
+  run(renderer: Renderer, elapsedTime: number) {
     continuousTime += elapsedTime;
 
     {
@@ -49,7 +43,7 @@ export class TestScene1 {
         reflection: 0.2,
         chessboard: false,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       });
 
       // triangle
@@ -74,7 +68,7 @@ export class TestScene1 {
         reflection: 0,
         chessboard: false,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       });
       renderer.rayTracerRenderer.pushBox({
         position: [+10, 0, -10],
@@ -86,7 +80,7 @@ export class TestScene1 {
         reflection: 0,
         chessboard: false,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       });
       renderer.rayTracerRenderer.pushBox({
         position: [-10, 0, +10],
@@ -98,7 +92,7 @@ export class TestScene1 {
         reflection: 0,
         chessboard: false,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       });
       renderer.rayTracerRenderer.pushBox({
         position: [+10, 0, +10],
@@ -110,7 +104,7 @@ export class TestScene1 {
         reflection: 0,
         chessboard: false,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       });
 
       // space ship
@@ -124,7 +118,7 @@ export class TestScene1 {
         reflection: 0,
         chessboard: false,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       }); // body
       renderer.rayTracerRenderer.pushBox({
         position: [5 + 1.0, 0 + 0.5, 10 + 0.0],
@@ -136,7 +130,7 @@ export class TestScene1 {
         reflection: 0,
         chessboard: false,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       }); // cockpit
       renderer.rayTracerRenderer.pushBox({
         position: [5 - 1.0, 0 - 0.25, 10 + 1.5],
@@ -148,7 +142,7 @@ export class TestScene1 {
         reflection: 0,
         chessboard: false,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       }); // wing (left)
       renderer.rayTracerRenderer.pushBox({
         position: [5 - 1.0, 0 - 0.25, 10 - 1.5],
@@ -160,7 +154,7 @@ export class TestScene1 {
         reflection: 0,
         chessboard: false,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       }); // wing (right)
       renderer.rayTracerRenderer.pushBox({
         position: [5 - 1.0, 0 + 1.0, 10 + 0.0],
@@ -172,12 +166,11 @@ export class TestScene1 {
         reflection: 0,
         chessboard: false,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       }); // wing (top)
 
       //
       //
-
 
       renderer.rayTracerRenderer.pushSphere({
         position: [15, 0, 15],
@@ -186,7 +179,7 @@ export class TestScene1 {
         reflection: 0.5,
         chessboard: false,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       });
       renderer.rayTracerRenderer.pushSphere({
         position: [5, 0, 5],
@@ -195,7 +188,7 @@ export class TestScene1 {
         reflection: 0.5,
         chessboard: false,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       });
 
       //
@@ -215,7 +208,7 @@ export class TestScene1 {
         reflection: 0.8,
         chessboard: true,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       });
       renderer.rayTracerRenderer.pushBox({
         position: [0, 2.5, 0],
@@ -227,7 +220,7 @@ export class TestScene1 {
         reflection: 0.8,
         chessboard: true,
         lightEnabled: true,
-        shadowEnabled: true,
+        shadowEnabled: true
       });
 
       //
@@ -247,7 +240,7 @@ export class TestScene1 {
           reflection: 0,
           chessboard: false,
           lightEnabled: true,
-          shadowEnabled: true,
+          shadowEnabled: true
         });
       }
 
@@ -297,8 +290,16 @@ export class TestScene1 {
         });
 
         // actual spot lights
-        renderer.rayTracerRenderer.pushSpotLight({ position: posA, intensity: 5, radius: 10});
-        renderer.rayTracerRenderer.pushSpotLight({ position: posB, intensity: 5, radius: 10});
+        renderer.rayTracerRenderer.pushSpotLight({
+          position: posA,
+          intensity: 5,
+          radius: 10
+        });
+        renderer.rayTracerRenderer.pushSpotLight({
+          position: posB,
+          intensity: 5,
+          radius: 10
+        });
       } // moving spot lights
 
       {
@@ -434,7 +435,7 @@ export class TestScene1 {
                 reflection: 0,
                 chessboard: false,
                 lightEnabled: true,
-                shadowEnabled: true,
+                shadowEnabled: true
               });
             }
 
@@ -445,5 +446,4 @@ export class TestScene1 {
       } // particle handling
     } // push scene
   }
-
-};
+}
