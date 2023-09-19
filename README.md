@@ -28,3 +28,8 @@ npm run build-release # minified
 ```bash
 npm run build debug # inlined sourcemap
 ```
+
+### Watch mode
+```bash
+npm run watch # watch for changes and build the debug version
+```

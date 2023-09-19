@@ -49,8 +49,8 @@ export class Experiment {
   private _framesUntilNextCheck = k_maxFramesUntilNextCheck;
 
 
-  private _scene = new scenes.TestScene1();
-  // private _scene = new scenes.TestScene2();
+  // private _scene = new scenes.TestScene1();
+  private _scene = new scenes.TestScene2();
 
 
   constructor(inDef: ExperimentDef) {
@@ -59,7 +59,10 @@ export class Experiment {
 
     this._freeFlyController = new FreeFlyController({
       coordinates: ['Z', 'X', 'Y'],
-      position: [-10, 9, 22],
+      // position: [-10, 9, 22],
+      // theta: Math.PI * 0.85,
+      // phi: -Math.PI * 0.15,
+      position: [-10, 13, 15],
       theta: Math.PI * 0.85,
       phi: -Math.PI * 0.15,
       mouseSensibility: 0.1,
