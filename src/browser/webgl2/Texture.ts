@@ -162,5 +162,4 @@ export class Texture implements IBoundTexture {
       image.src = url;
     });
   }
-
 }

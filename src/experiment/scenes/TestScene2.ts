@@ -106,9 +106,9 @@ export class TestScene2 {
         { pos: [+2, 4 - 1, 0], size: [1, 0.125, 1] },
         { pos: [+2, 4 + 1, 0], size: [1, 0.125, 1] },
 
-        { pos: [0, 8, -8], size: [8, 8, 0.125], color: [0.5,0.5,1.0] },
-        { pos: [-8, 8, 0], size: [0.125, 8, 8], color: [0.5,0.5,1.0] },
-        { pos: [+8, 8, 0], size: [0.125, 8, 8], color: [0.5,0.5,1.0] },
+        { pos: [0, 8, -8], size: [8, 8, 0.125], color: [0.5, 0.5, 1.0] },
+        { pos: [-8, 8, 0], size: [0.125, 8, 8], color: [0.5, 0.5, 1.0] },
+        { pos: [+8, 8, 0], size: [0.125, 8, 8], color: [0.5, 0.5, 1.0] },
         { pos: [0, -0, 0], size: [8, 0.125, 8], reflection: 0.3 }
       ];
       allBoxes.forEach(({ pos, size, color, reflection }) => {

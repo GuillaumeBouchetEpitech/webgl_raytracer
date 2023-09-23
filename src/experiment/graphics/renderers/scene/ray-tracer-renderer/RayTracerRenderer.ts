@@ -12,14 +12,14 @@ import {
 } from '../../../../../browser/webgl2';
 
 // @ts-ignore
-import rayTracerVertex from "./shaders/ray-tracer.glsl.vert"
+import rayTracerVertex from './shaders/ray-tracer.glsl.vert';
 // @ts-ignore
-import rayTracerFragment from "./shaders/ray-tracer.glsl.frag"
+import rayTracerFragment from './shaders/ray-tracer.glsl.frag';
 
 // @ts-ignore
-import textureVertex from "./shaders/texture.glsl.vert"
+import textureVertex from './shaders/texture.glsl.vert';
 // @ts-ignore
-import textureFragment from "./shaders/texture.glsl.frag"
+import textureFragment from './shaders/texture.glsl.frag';
 
 import * as glm from 'gl-matrix';
 
@@ -465,7 +465,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     const scaledHeight = Math.floor(this._renderHeight);
 
     this._frameBuffer.bind(() => {
-
       gl.viewport(0, 0, scaledWidth, scaledHeight);
       gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
       // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -530,7 +529,10 @@ export class RayTracerRenderer implements IRayTracerRenderer {
               {
                 // boxes
 
-                boundShader.setInteger1Uniform('u_boxesStart', sceneDataValues.length);
+                boundShader.setInteger1Uniform(
+                  'u_boxesStart',
+                  sceneDataValues.length
+                );
 
                 for (const box of this._boxes) {
                   // add box
@@ -544,7 +546,11 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                     box.boxSize[2]
                   );
 
-                  sceneDataValues.push(box.color[0], box.color[1], box.color[2]);
+                  sceneDataValues.push(
+                    box.color[0],
+                    box.color[1],
+                    box.color[2]
+                  );
                   sceneDataValues.push(box.reflection);
 
                   sceneDataValues.push(box.shadowEnabled ? 1 : 0);
@@ -553,7 +559,10 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                   sceneDataValues.push(box.chessboard ? 1 : 0);
                 }
 
-                boundShader.setInteger1Uniform('u_boxesStop', sceneDataValues.length);
+                boundShader.setInteger1Uniform(
+                  'u_boxesStop',
+                  sceneDataValues.length
+                );
               } // boxes
 
               {
@@ -681,7 +690,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
           this._rayTracerGeometry.render();
         });
       } // raytracing pass
-
     });
 
     gl.viewport(0, 0, this._canvasWidth, this._canvasHeight);
@@ -745,7 +753,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
 
     this._finalTexture.preBind((boundTexture) => {
       boundTexture.resize(this._renderWidth, this._renderHeight);
-    })
+    });
   }
 
   getResolutionCoef(): number {

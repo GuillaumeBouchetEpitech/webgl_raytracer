@@ -54,7 +54,7 @@ class VisibilityManager {
   //
 
   isVisible() {
-    return document.visibilityState === "visible";
+    return document.visibilityState === 'visible';
   }
 
   //

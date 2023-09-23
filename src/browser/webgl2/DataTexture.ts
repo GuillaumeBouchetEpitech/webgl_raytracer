@@ -102,5 +102,4 @@ export class DataTexture implements IBoundDataTexture {
 
     gl.bindTexture(gl.TEXTURE_2D, null);
   }
-
 }

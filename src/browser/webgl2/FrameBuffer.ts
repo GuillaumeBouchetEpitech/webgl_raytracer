@@ -1,4 +1,3 @@
-
 import { WebGLContext } from './WebGLContext';
 import { IUnboundTexture, Texture } from './Texture';
 
@@ -58,13 +57,12 @@ export class FrameBuffer {
       texture.getRawObject(),
       mipmapLevel
     );
-
   }
 
   getPixels(x: number, y: number, width: number, height: number): Uint8Array {
     const gl = WebGLContext.getContext();
     const pixels = new Uint8Array(width * height * 4);
-    gl.readPixels(x,y, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    gl.readPixels(x, y, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
     return pixels;
   }
 }
