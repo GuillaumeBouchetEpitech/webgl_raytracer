@@ -1,6 +1,6 @@
 import {
-  ShaderProgram,
-  GeometryWrapper
+  GeometryWrapper,
+  IUnboundShader
 } from '../../../../../../browser/webgl2';
 
 import * as glm from 'gl-matrix';
@@ -8,14 +8,14 @@ import * as glm from 'gl-matrix';
 const k_bufferSize = 14 * 1024;
 
 export class WireFramesStackRenderer {
-  private _shader: ShaderProgram;
+  private _shader: IUnboundShader;
   private _geometry: GeometryWrapper.Geometry;
 
   private _buffer = new Float32Array(k_bufferSize);
   private _currentSize: number = 0;
 
   constructor(
-    inShader: ShaderProgram,
+    inShader: IUnboundShader,
     inGeometryDef: GeometryWrapper.GeometryDefinition
   ) {
     this._shader = inShader;

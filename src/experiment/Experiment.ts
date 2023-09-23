@@ -31,6 +31,7 @@ const k_maxFramesUntilNextCheck = 60;
 
 export class Experiment {
   private _canvasElement: HTMLCanvasElement;
+  private _animationFrameHandle: number = 0;
   private _def: Omit<ExperimentDef, 'canvasElement'>;
 
   private _freeFlyController: FreeFlyController;
@@ -76,12 +77,16 @@ export class Experiment {
       GlobalKeyboardManager.activate();
       GlobalTouchManager.activate(this._canvasElement);
 
-      // GlobalVisibilityManager.activate();
-      // GlobalVisibilityManager.addVisibilityChange((isVisible) => {
-      //   if (isVisible === false) {
-      //     this.stop();
-      //   }
-      // });
+      GlobalVisibilityManager.activate();
+      GlobalVisibilityManager.addVisibilityChange((isVisible) => {
+        if (isVisible === false) {
+          this._def.logger.log('document visibility changed: hidden');
+          this.stop();
+        } else {
+          this._def.logger.log('document visibility changed: visible');
+          this.start();
+        }
+      });
 
       GlobalPointerLockManager.allowPointerLockedOnClickEvent(
         this._canvasElement
@@ -215,7 +220,9 @@ export class Experiment {
   }
 
   stop() {
+    if (!this.isRunning()) return;
     this._running = false;
+    window.cancelAnimationFrame(this._animationFrameHandle);
   }
 
   isRunning() {
@@ -231,7 +238,8 @@ export class Experiment {
       if (!this._running || this._errorGraphicContext) return;
 
       // plan the next frame
-      window.requestAnimationFrame(tick);
+
+      this._animationFrameHandle = window.requestAnimationFrame(tick);
 
       this._mainLoop();
     };

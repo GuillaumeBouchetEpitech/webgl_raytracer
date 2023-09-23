@@ -94,6 +94,7 @@ export class TestScene2 {
       const allBoxes: {
         pos: glm.ReadonlyVec3;
         size: glm.ReadonlyVec3;
+        color?: glm.ReadonlyVec3;
         reflection?: number;
       }[] = [
         { pos: [-2, 4, -1], size: [1, 1, 0.125] },
@@ -105,19 +106,19 @@ export class TestScene2 {
         { pos: [+2, 4 - 1, 0], size: [1, 0.125, 1] },
         { pos: [+2, 4 + 1, 0], size: [1, 0.125, 1] },
 
-        { pos: [0, 8, -8], size: [8, 8, 0.125], reflection: 0.2 },
-        { pos: [-8, 8, 0], size: [0.125, 8, 8], reflection: 0.2 },
-        { pos: [+8, 8, 0], size: [0.125, 8, 8], reflection: 0.2 },
-        { pos: [0, -0, 0], size: [8, 0.125, 8], reflection: 0.2 }
+        { pos: [0, 8, -8], size: [8, 8, 0.125], color: [0.5,0.5,1.0] },
+        { pos: [-8, 8, 0], size: [0.125, 8, 8], color: [0.5,0.5,1.0] },
+        { pos: [+8, 8, 0], size: [0.125, 8, 8], color: [0.5,0.5,1.0] },
+        { pos: [0, -0, 0], size: [8, 0.125, 8], reflection: 0.3 }
       ];
-      allBoxes.forEach(({ pos, size, reflection }) => {
+      allBoxes.forEach(({ pos, size, color, reflection }) => {
         renderer.rayTracerRenderer.pushBox({
           position: pos,
           angleX: 0,
           angleY: 0,
           angleZ: 0,
           boxSize: size,
-          color: [1, 1, 1],
+          color: color ?? [1, 1, 1],
           reflection: reflection ?? 0,
           chessboard: false,
           lightEnabled: true,
@@ -126,8 +127,6 @@ export class TestScene2 {
       });
 
       {
-        // lightPos
-
         const allRotatedBoxes: {
           pos: glm.ReadonlyVec3;
           angleY: number;

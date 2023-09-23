@@ -1,7 +1,9 @@
-import { ShaderProgram, GeometryWrapper } from '../../../../../browser/webgl2';
-// import { ICamera } from '../../../camera/Camera';
+import { ShaderProgram, GeometryWrapper, IUnboundShader } from '../../../../../browser/webgl2';
 
-import * as shaders from './shaders';
+// @ts-ignore
+import stackRendererVertex from "./shaders/stack-renderer.glsl.vert"
+// @ts-ignore
+import stackRendererFragment from "./shaders/stack-renderer.glsl.frag"
 
 import { WireFramesStackRenderer } from './internals/WireFramesStackRenderer';
 import { TrianglesStackRenderer } from './internals/TrianglesStackRenderer';
@@ -54,15 +56,15 @@ export interface IStackRenderers {
 }
 
 export class StackRenderers implements IStackRenderers {
-  private _shader: ShaderProgram;
+  private _shader: IUnboundShader;
 
   private _wireFramesStackRenderer: WireFramesStackRenderer;
   private _trianglesStackRenderer: TrianglesStackRenderer;
 
   constructor() {
     this._shader = new ShaderProgram('StackRenderers', {
-      vertexSrc: shaders.stackRenderer.vertex,
-      fragmentSrc: shaders.stackRenderer.fragment,
+      vertexSrc: stackRendererVertex,
+      fragmentSrc: stackRendererFragment,
       attributes: ['a_vertex_position', 'a_vertex_color'],
       uniforms: ['u_composedMatrix']
     });
@@ -187,8 +189,8 @@ export class StackRenderers implements IStackRenderers {
       return;
     }
 
-    this._shader.bind(() => {
-      this._shader.setMatrix4Uniform('u_composedMatrix', inComposedMatrix);
+    this._shader.bind((bound) => {
+      bound.setMatrix4Uniform('u_composedMatrix', inComposedMatrix);
 
       this._wireFramesStackRenderer.flush();
       this._trianglesStackRenderer.flush();
@@ -196,8 +198,8 @@ export class StackRenderers implements IStackRenderers {
   }
 
   safeRender(inComposedMatrix: glm.ReadonlyMat4, inCallback: () => void) {
-    this._shader.bind(() => {
-      this._shader.setMatrix4Uniform('u_composedMatrix', inComposedMatrix);
+    this._shader.bind((bound) => {
+      bound.setMatrix4Uniform('u_composedMatrix', inComposedMatrix);
 
       inCallback();
 

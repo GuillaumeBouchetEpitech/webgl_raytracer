@@ -4,10 +4,22 @@ import {
   Texture,
   FrameBuffer,
   ShaderProgram,
-  GeometryWrapper
+  GeometryWrapper,
+  IUnboundFrameBuffer,
+  IUnboundShader,
+  IUnboundTexture,
+  IUnboundDataTexture
 } from '../../../../../browser/webgl2';
 
-import { rayTracer, texture } from './shaders';
+// @ts-ignore
+import rayTracerVertex from "./shaders/ray-tracer.glsl.vert"
+// @ts-ignore
+import rayTracerFragment from "./shaders/ray-tracer.glsl.frag"
+
+// @ts-ignore
+import textureVertex from "./shaders/texture.glsl.vert"
+// @ts-ignore
+import textureFragment from "./shaders/texture.glsl.frag"
 
 import * as glm from 'gl-matrix';
 
@@ -156,21 +168,21 @@ export class RayTracerRenderer implements IRayTracerRenderer {
   private _resolutionCoef: number = 1;
   private _antiAliasing: boolean = false;
 
-  private _rayTracerShaderProgram: ShaderProgram;
-  private _textureShaderProgram: ShaderProgram;
+  private _rayTracerShaderProgram: IUnboundShader;
+  private _textureShaderProgram: IUnboundShader;
 
   private _rayTracerGeometry: GeometryWrapper.Geometry;
   private _screenGeometry: GeometryWrapper.Geometry;
 
-  private _finalTexture: Texture;
-  private _frameBuffer: FrameBuffer;
+  private _finalTexture: IUnboundTexture;
+  private _frameBuffer: IUnboundFrameBuffer;
 
-  private _sceneDataTexture: DataTexture;
+  private _sceneDataTexture: IUnboundDataTexture;
   private _spheres: IInternalSphere[] = [];
   private _boxes: InternalBox[] = [];
   private _triangles: ITriangle[] = [];
 
-  private _lightsDataTexture: DataTexture;
+  private _lightsDataTexture: IUnboundDataTexture;
   private _sunLights: ISunLight[] = [];
   private _spotLights: ISpotLight[] = [];
 
@@ -183,8 +195,8 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     this._renderHeight = this._canvasHeight = inDef.canvasHeight;
 
     this._rayTracerShaderProgram = new ShaderProgram('RayTracerRenderer-1', {
-      vertexSrc: rayTracer.vertex,
-      fragmentSrc: rayTracer.fragment,
+      vertexSrc: rayTracerVertex,
+      fragmentSrc: rayTracerFragment,
       attributes: ['a_vertexPosition', 'a_plotPosition'],
       uniforms: [
         'u_cameraEye',
@@ -209,17 +221,22 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     });
 
     this._textureShaderProgram = new ShaderProgram('RayTracerRenderer-1', {
-      vertexSrc: texture.vertex,
-      fragmentSrc: texture.fragment,
+      vertexSrc: textureVertex,
+      fragmentSrc: textureFragment,
       attributes: ['a_vertexPosition', 'a_vertexTextureCoord'],
       uniforms: ['u_texture', 'u_step']
     });
 
     this._finalTexture = new Texture();
-    this._finalTexture.allocate(this._renderWidth, this._renderHeight);
+    this._finalTexture.initialize();
+    this._finalTexture.preBind((boundTexture) => {
+      boundTexture.allocate(this._renderWidth, this._renderHeight);
+    });
 
     this._frameBuffer = new FrameBuffer();
-    this._frameBuffer.attachTexture(this._finalTexture);
+    this._frameBuffer.bind((boundFrameBuffer) => {
+      boundFrameBuffer.attachTexture(this._finalTexture);
+    });
     // this._frameBuffer = new FrameBuffer({
     //   width: this._renderWidth,
     //   height: this._renderHeight,
@@ -447,224 +464,226 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     const scaledWidth = Math.floor(this._renderWidth);
     const scaledHeight = Math.floor(this._renderHeight);
 
-    this._frameBuffer.bind();
-    gl.viewport(0, 0, scaledWidth, scaledHeight);
-    gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
-    // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    this._frameBuffer.bind(() => {
 
-    {
-      // raytracing pass
+      gl.viewport(0, 0, scaledWidth, scaledHeight);
+      gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
+      // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-      const shader = this._rayTracerShaderProgram;
+      {
+        // raytracing pass
 
-      shader.bind(() => {
-        shader.setFloat3Uniform(
-          'u_cameraEye',
-          this._camera.position[0],
-          this._camera.position[1],
-          this._camera.position[2]
-        );
+        const shader = this._rayTracerShaderProgram;
 
-        //
-        //
-        //
-
-        {
-          // scene data
-
-          const sceneDataValues: number[] = [];
-
-          {
-            {
-              // spheres
-
-              shader.setInteger1Uniform('u_spheresStart', 0);
-
-              for (const sphere of this._spheres) {
-                // add sphere
-
-                sceneDataValues.push(
-                  sphere.position[0],
-                  sphere.position[1],
-                  sphere.position[2]
-                );
-                sceneDataValues.push(sphere.radius);
-
-                sceneDataValues.push(
-                  sphere.color[0],
-                  sphere.color[1],
-                  sphere.color[2]
-                );
-                sceneDataValues.push(sphere.reflection);
-
-                sceneDataValues.push(sphere.shadowEnabled ? 1 : 0);
-                sceneDataValues.push(sphere.lightEnabled ? 1 : 0);
-
-                sceneDataValues.push(sphere.chessboard ? 1 : 0);
-              }
-
-              shader.setInteger1Uniform(
-                'u_spheresStop',
-                sceneDataValues.length
-              );
-            } // spheres
-
-            {
-              // boxes
-
-              shader.setInteger1Uniform('u_boxesStart', sceneDataValues.length);
-
-              for (const box of this._boxes) {
-                // add box
-
-                for (let ii = 0; ii < 16; ++ii)
-                  sceneDataValues.push(box.matrix[ii]);
-
-                sceneDataValues.push(
-                  box.boxSize[0],
-                  box.boxSize[1],
-                  box.boxSize[2]
-                );
-
-                sceneDataValues.push(box.color[0], box.color[1], box.color[2]);
-                sceneDataValues.push(box.reflection);
-
-                sceneDataValues.push(box.shadowEnabled ? 1 : 0);
-                sceneDataValues.push(box.lightEnabled ? 1 : 0);
-
-                sceneDataValues.push(box.chessboard ? 1 : 0);
-              }
-
-              shader.setInteger1Uniform('u_boxesStop', sceneDataValues.length);
-            } // boxes
-
-            {
-              // triangles
-
-              shader.setInteger1Uniform(
-                'u_trianglesStart',
-                sceneDataValues.length
-              );
-
-              for (const triangle of this._triangles) {
-                // add triangle
-
-                sceneDataValues.push(
-                  triangle.v0[0],
-                  triangle.v0[1],
-                  triangle.v0[2]
-                );
-                sceneDataValues.push(
-                  triangle.v1[0],
-                  triangle.v1[1],
-                  triangle.v1[2]
-                );
-                sceneDataValues.push(
-                  triangle.v2[0],
-                  triangle.v2[1],
-                  triangle.v2[2]
-                );
-
-                sceneDataValues.push(
-                  triangle.color[0],
-                  triangle.color[1],
-                  triangle.color[2]
-                ); // color
-                sceneDataValues.push(triangle.reflection); // reflection
-
-                sceneDataValues.push(triangle.shadowEnabled ? 1 : 0); // shadowEnabled
-                sceneDataValues.push(triangle.lightEnabled ? 1 : 0); // lightEnabled
-              }
-
-              shader.setInteger1Uniform(
-                'u_trianglesStop',
-                sceneDataValues.length
-              );
-            } // triangles
-          }
-
-          gl.activeTexture(gl.TEXTURE0 + 0);
-          this._sceneDataTexture.bind();
-
-          this._sceneDataTexture.update(sceneDataValues);
-
-          shader.setInteger1Uniform('u_sceneTextureData', 0);
-          shader.setInteger1Uniform(
-            'u_sceneTextureSize',
-            sceneDataValues.length
+        shader.bind((boundShader) => {
+          boundShader.setFloat3Uniform(
+            'u_cameraEye',
+            this._camera.position[0],
+            this._camera.position[1],
+            this._camera.position[2]
           );
-        } // scene data
 
-        {
-          // lights data
-
-          const lightsDataValues: number[] = [];
+          //
+          //
+          //
 
           {
-            // sun lights
+            // scene data
 
-            shader.setInteger1Uniform('u_sunLightsStart', 0);
+            const sceneDataValues: number[] = [];
 
-            for (const sunLight of this._sunLights) {
-              // add sun light
+            {
+              {
+                // spheres
 
-              lightsDataValues.push(
-                sunLight.direction[0],
-                sunLight.direction[1],
-                sunLight.direction[2]
-              );
-              lightsDataValues.push(sunLight.intensity);
+                boundShader.setInteger1Uniform('u_spheresStart', 0);
+
+                for (const sphere of this._spheres) {
+                  // add sphere
+
+                  sceneDataValues.push(
+                    sphere.position[0],
+                    sphere.position[1],
+                    sphere.position[2]
+                  );
+                  sceneDataValues.push(sphere.radius);
+
+                  sceneDataValues.push(
+                    sphere.color[0],
+                    sphere.color[1],
+                    sphere.color[2]
+                  );
+                  sceneDataValues.push(sphere.reflection);
+
+                  sceneDataValues.push(sphere.shadowEnabled ? 1 : 0);
+                  sceneDataValues.push(sphere.lightEnabled ? 1 : 0);
+
+                  sceneDataValues.push(sphere.chessboard ? 1 : 0);
+                }
+
+                boundShader.setInteger1Uniform(
+                  'u_spheresStop',
+                  sceneDataValues.length
+                );
+              } // spheres
+
+              {
+                // boxes
+
+                boundShader.setInteger1Uniform('u_boxesStart', sceneDataValues.length);
+
+                for (const box of this._boxes) {
+                  // add box
+
+                  for (let ii = 0; ii < 16; ++ii)
+                    sceneDataValues.push(box.matrix[ii]);
+
+                  sceneDataValues.push(
+                    box.boxSize[0],
+                    box.boxSize[1],
+                    box.boxSize[2]
+                  );
+
+                  sceneDataValues.push(box.color[0], box.color[1], box.color[2]);
+                  sceneDataValues.push(box.reflection);
+
+                  sceneDataValues.push(box.shadowEnabled ? 1 : 0);
+                  sceneDataValues.push(box.lightEnabled ? 1 : 0);
+
+                  sceneDataValues.push(box.chessboard ? 1 : 0);
+                }
+
+                boundShader.setInteger1Uniform('u_boxesStop', sceneDataValues.length);
+              } // boxes
+
+              {
+                // triangles
+
+                boundShader.setInteger1Uniform(
+                  'u_trianglesStart',
+                  sceneDataValues.length
+                );
+
+                for (const triangle of this._triangles) {
+                  // add triangle
+
+                  sceneDataValues.push(
+                    triangle.v0[0],
+                    triangle.v0[1],
+                    triangle.v0[2]
+                  );
+                  sceneDataValues.push(
+                    triangle.v1[0],
+                    triangle.v1[1],
+                    triangle.v1[2]
+                  );
+                  sceneDataValues.push(
+                    triangle.v2[0],
+                    triangle.v2[1],
+                    triangle.v2[2]
+                  );
+
+                  sceneDataValues.push(
+                    triangle.color[0],
+                    triangle.color[1],
+                    triangle.color[2]
+                  ); // color
+                  sceneDataValues.push(triangle.reflection); // reflection
+
+                  sceneDataValues.push(triangle.shadowEnabled ? 1 : 0); // shadowEnabled
+                  sceneDataValues.push(triangle.lightEnabled ? 1 : 0); // lightEnabled
+                }
+
+                boundShader.setInteger1Uniform(
+                  'u_trianglesStop',
+                  sceneDataValues.length
+                );
+              } // triangles
             }
 
-            shader.setInteger1Uniform(
-              'u_sunLightsStop',
-              lightsDataValues.length
+            gl.activeTexture(gl.TEXTURE0 + 0);
+            this._sceneDataTexture.preBind((boundDataTexture) => {
+              boundDataTexture.update(sceneDataValues);
+            });
+
+            boundShader.setInteger1Uniform('u_sceneTextureData', 0);
+            boundShader.setInteger1Uniform(
+              'u_sceneTextureSize',
+              sceneDataValues.length
             );
-          } // sun lights
+          } // scene data
 
           {
-            // spot lights
+            // lights data
 
-            shader.setInteger1Uniform(
-              'u_spotLightsStart',
-              lightsDataValues.length
-            );
+            const lightsDataValues: number[] = [];
 
-            for (const spotLight of this._spotLights) {
-              // add spot light
+            {
+              // sun lights
 
-              lightsDataValues.push(
-                spotLight.position[0],
-                spotLight.position[1],
-                spotLight.position[2]
+              boundShader.setInteger1Uniform('u_sunLightsStart', 0);
+
+              for (const sunLight of this._sunLights) {
+                // add sun light
+
+                lightsDataValues.push(
+                  sunLight.direction[0],
+                  sunLight.direction[1],
+                  sunLight.direction[2]
+                );
+                lightsDataValues.push(sunLight.intensity);
+              }
+
+              boundShader.setInteger1Uniform(
+                'u_sunLightsStop',
+                lightsDataValues.length
               );
-              lightsDataValues.push(spotLight.radius);
-              lightsDataValues.push(spotLight.intensity);
-            }
+            } // sun lights
 
-            shader.setInteger1Uniform(
-              'u_spotLightsStop',
-              lightsDataValues.length
-            );
-          } // spot lights
+            {
+              // spot lights
 
-          gl.activeTexture(gl.TEXTURE0 + 1);
-          this._lightsDataTexture.bind();
+              boundShader.setInteger1Uniform(
+                'u_spotLightsStart',
+                lightsDataValues.length
+              );
 
-          this._lightsDataTexture.update(lightsDataValues);
+              for (const spotLight of this._spotLights) {
+                // add spot light
 
-          shader.setInteger1Uniform('u_lightsTextureData', 1);
-        } // lights data
+                lightsDataValues.push(
+                  spotLight.position[0],
+                  spotLight.position[1],
+                  spotLight.position[2]
+                );
+                lightsDataValues.push(spotLight.radius);
+                lightsDataValues.push(spotLight.intensity);
+              }
 
-        //
-        //
-        //
+              boundShader.setInteger1Uniform(
+                'u_spotLightsStop',
+                lightsDataValues.length
+              );
+            } // spot lights
 
-        this._rayTracerGeometry.render();
-      });
-    } // raytracing pass
+            gl.activeTexture(gl.TEXTURE0 + 1);
+            this._lightsDataTexture.preBind((boundDataTexture) => {
+              boundDataTexture.update(lightsDataValues);
+            });
 
-    FrameBuffer.unbind();
+            boundShader.setInteger1Uniform('u_lightsTextureData', 1);
+          } // lights data
+
+          //
+          //
+          //
+
+          this._rayTracerGeometry.render();
+        });
+      } // raytracing pass
+
+    });
+
     gl.viewport(0, 0, this._canvasWidth, this._canvasHeight);
     gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
 
@@ -673,28 +692,26 @@ export class RayTracerRenderer implements IRayTracerRenderer {
 
       const shader = this._textureShaderProgram;
 
-      shader.bind(() => {
+      shader.bind((boundShader) => {
         // shader.setInteger1Uniform('u_texture', 0);
         // gl.activeTexture(gl.TEXTURE0 + 0);
         // this._finalTexture.bind();
-        shader.setTextureUniform('u_texture', this._finalTexture, 0);
+        boundShader.setTextureUniform('u_texture', this._finalTexture, 0);
 
         // anti aliasing setup
 
-        // const u_step = shader.getUniform('u_step');
+        // const u_step = boundShader.getUniform('u_step');
 
         if (this._antiAliasing) {
           const stepX = (1 - this._renderWidth / this._canvasWidth) * 0.005;
           const stepY = (1 - this._renderHeight / this._canvasHeight) * 0.005;
 
-          shader.setFloat2Uniform('u_step', stepX, stepY);
+          boundShader.setFloat2Uniform('u_step', stepX, stepY);
         } else {
-          shader.setFloat2Uniform('u_step', 0, 0);
+          boundShader.setFloat2Uniform('u_step', 0, 0);
         }
 
         this._screenGeometry.render();
-
-        Texture.unbind();
       });
     } // texture pass
 
@@ -726,7 +743,9 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     this._renderWidth = Math.floor(this._canvasWidth * this._resolutionCoef);
     this._renderHeight = Math.floor(this._canvasHeight * this._resolutionCoef);
 
-    this._finalTexture.resize(this._renderWidth, this._renderHeight);
+    this._finalTexture.preBind((boundTexture) => {
+      boundTexture.resize(this._renderWidth, this._renderHeight);
+    })
   }
 
   getResolutionCoef(): number {

@@ -1,6 +1,17 @@
 import { WebGLContext } from './WebGLContext';
 
-export class DataTexture {
+export interface IUnboundDataTexture {
+  initialize(data?: number[]): void;
+  rawBind(): void;
+  preBind(inCallback: (bound: IBoundDataTexture) => void): void;
+  bind(inCallback: (bound: IBoundDataTexture) => void): void;
+}
+
+export interface IBoundDataTexture extends IUnboundDataTexture {
+  update(data: number[]): void;
+}
+
+export class DataTexture implements IBoundDataTexture {
   private _texture: WebGLTexture | null = null;
 
   // initialize(data: number[] = [], numComponents: number = 1) {
@@ -68,11 +79,28 @@ export class DataTexture {
     );
   }
 
-  bind() {
+  rawBind() {
     if (!this._texture) throw new Error('data texture not initialized');
 
     const gl = WebGLContext.getContext();
 
     gl.bindTexture(gl.TEXTURE_2D, this._texture);
   }
+
+  preBind(inCallback: (bound: IBoundDataTexture) => void): void {
+    this.rawBind();
+    inCallback(this);
+  }
+
+  bind(inCallback: (bound: IBoundDataTexture) => void): void {
+    this.preBind(inCallback);
+    DataTexture.unbind();
+  }
+
+  static unbind(): void {
+    const gl = WebGLContext.getContext();
+
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  }
+
 }
