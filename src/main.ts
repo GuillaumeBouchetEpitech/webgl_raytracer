@@ -4,49 +4,65 @@ import { Logger } from './experiment/utilities/Logger';
 
 import { Experiment } from './experiment/Experiment';
 
+let logger: Logger | undefined = undefined;
+let mainDemo: Experiment | undefined = undefined;
+
+//
+//
+//
+//
+//
+
+const _queryHtmlElement = <T extends Element>(inName: string): T => {
+  const newElement = document.querySelector<T>(inName);
+  if (!newElement) {
+    throw new Error(`html element "${inName}" not found`);
+  }
+  return newElement;
+};
+
+const _queryCanvas = (inName: string) => _queryHtmlElement<HTMLCanvasElement>(inName);
+const _queryProgress = (inName: string) => _queryHtmlElement<HTMLProgressElement>(inName);
+const _queryInput = (inName: string) => _queryHtmlElement<HTMLInputElement>(inName);
+
+//
+//
+//
+//
+//
+
+const onPageError = async (err: ErrorEvent) => {
+  if (logger) {
+    logger.error(err.message);
+  } else {
+    console.error(err.message);
+  }
+
+  if (mainDemo) {
+    mainDemo.stop();
+  }
+};
+window.addEventListener('error', onPageError);
+
+//
+//
+//
+//
+//
+
 const onPageLoad = async () => {
-  let logger: Logger;
-  let mainDemo: Experiment | null = null;
-  const onPageError = async (err: ErrorEvent) => {
-    if (logger) {
-      logger.error(err.message);
-    } else {
-      console.error(err.message);
-    }
-
-    if (mainDemo) {
-      mainDemo.stop();
-    }
-  };
-  window.addEventListener('error', onPageError);
-
   logger = new Logger('loggerOutput');
-  logger.log('page loaded');
+  logger.log('[SETUP] page loaded');
 
   //
   // HTML elements check
   //
 
-  const _queryHtmlElement = <T extends Element>(inName: string): T => {
-    const newElement = document.querySelector<T>(inName);
-    if (!newElement) {
-      throw new Error(`html element "${inName}" not found`);
-    }
-    return newElement;
-  };
-
-  const canvasElement =
-    _queryHtmlElement<HTMLCanvasElement>('#rendering-canvas');
-  const perfAutoScaling = _queryHtmlElement<HTMLElement>(
-    '#auto-scaling-enabled'
-  );
-  const resolution = _queryHtmlElement<HTMLElement>('#resolution');
-  const anti_aliasing_enabled = _queryHtmlElement<HTMLElement>(
-    '#anti-aliasing-enabled'
-  );
-  const debug_mode_enabled = _queryHtmlElement<HTMLElement>(
-    '#debug-mode-enabled'
-  );
+  const canvasElement = _queryCanvas('#rendering-canvas');
+  const perfAutoScaling = _queryInput('#auto-scaling-enabled');
+  const resolution = _queryProgress('#resolution');
+  const anti_aliasing_enabled = _queryInput('#anti-aliasing-enabled');
+  const debug_mode_enabled = _queryInput('#debug-mode-enabled');
 
   //
   // browser features check
@@ -69,15 +85,15 @@ const onPageLoad = async () => {
     debug_mode_enabled
   });
 
-  logger.log('initializing');
+  logger.log('[SETUP] Demo: initializing');
 
   await mainDemo.init();
 
-  logger.log('initialized');
+  logger.log('[SETUP] Demo: initialized');
 
   mainDemo.start();
 
-  logger.log('running');
+  logger.log('[SETUP] Demo: running');
 };
 
 window.addEventListener('load', onPageLoad, false);

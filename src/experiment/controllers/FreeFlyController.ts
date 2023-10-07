@@ -68,7 +68,7 @@ export class FreeFlyController {
     return this._isActivated;
   }
 
-  update(elapsedTime: number) {
+  update(elapsedSecTime: number) {
     let moveForward = false;
     let moveBackward = false;
     let strafeLeft = false;
@@ -136,7 +136,7 @@ export class FreeFlyController {
     // keyboard
     //
 
-    const currentLinearSpeed = this._movingSpeed * elapsedTime;
+    const currentLinearSpeed = this._movingSpeed * elapsedSecTime;
 
     const scaledForward = glm.vec3.fromValues(0, 0, 0);
     glm.vec3.scale(scaledForward, this._forwardAxis, currentLinearSpeed);
@@ -166,7 +166,7 @@ export class FreeFlyController {
     //
     //
 
-    const currentAngularSpeed = this._keyboardSensibility * elapsedTime;
+    const currentAngularSpeed = this._keyboardSensibility * elapsedSecTime;
 
     if (GlobalKeyboardManager.isPressed('ArrowUp')) {
       lookDeltaY += currentAngularSpeed;

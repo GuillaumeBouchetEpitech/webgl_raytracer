@@ -18,13 +18,18 @@ import { FreeFlyController } from './controllers/FreeFlyController';
 import { Renderer } from './graphics/Renderer';
 import * as scenes from './scenes/intex';
 
+import * as glm from 'gl-matrix';
+
+const _clamp = (inValue: number, inMin: number, inMax: number) => Math.min(Math.max(inValue, inMin), inMax);
+
+
 interface ExperimentDef {
   canvasElement: HTMLCanvasElement;
   logger: Logger;
-  perfAutoScaling: HTMLElement;
-  resolution: HTMLElement;
-  anti_aliasing_enabled: HTMLElement;
-  debug_mode_enabled: HTMLElement;
+  perfAutoScaling: HTMLInputElement;
+  resolution: HTMLProgressElement;
+  anti_aliasing_enabled: HTMLInputElement;
+  debug_mode_enabled: HTMLInputElement;
 }
 
 const k_maxFramesUntilNextCheck = 60;
@@ -41,10 +46,10 @@ export class Experiment {
   private _running: boolean;
   private _errorGraphicContext: boolean;
 
-  private _currFrameTime: number = Date.now();
+  private _currFrameMsecTime: number = Date.now();
   private _frameProfiler = new FrameProfiler();
 
-  private _continuousTime = 0;
+  private _continuousSecTime = 0;
 
   private _perfAutoScalingEnabled = true;
   private _framesUntilNextCheck = k_maxFramesUntilNextCheck;
@@ -147,14 +152,13 @@ export class Experiment {
     //
 
     this._def.resolution.addEventListener('input', (event) => {
-      // const newValue = (event as any).target.value;
-      const newValue = (this._def.resolution as any).value;
-      this._setResolution(11 - newValue);
+      const newValue = this._def.resolution.value;
+      this._setResolution(newValue);
+      this._logResolution();
     });
 
     this._def.anti_aliasing_enabled.addEventListener('click', () => {
-      const newValue =
-        (this._def.anti_aliasing_enabled as any).checked === true;
+      const newValue = this._def.anti_aliasing_enabled.checked === true;
 
       this._renderer.rayTracerRenderer.setAntiAliasing(newValue);
 
@@ -163,19 +167,14 @@ export class Experiment {
       );
     });
 
-    {
-      const currValue = (this._def.resolution as any).value;
-      this._setResolution(11 - currValue);
-    }
-
-    this._def.logger.log('user interface initialized');
+    this._setResolution(this._def.resolution.value);
 
     // performance auto-scaling
     this._def.perfAutoScaling.addEventListener('input', () => {
       this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
 
       this._perfAutoScalingEnabled =
-        (this._def.perfAutoScaling as any).checked === true;
+        this._def.perfAutoScaling.checked === true;
 
       this._def.logger.log(
         `Performance auto scaler change: ${
@@ -248,19 +247,18 @@ export class Experiment {
   }
 
   private _mainLoop() {
-    const currentTime = Date.now();
-    // let deltaTime = Math.min(currentTime - this._currFrameTime, 30);
-    let deltaTime = currentTime - this._currFrameTime;
-    this._currFrameTime = currentTime;
-    this._frameProfiler.pushDelta(deltaTime);
+    const currentMsecTime = Date.now();
+    const deltaMsecTime = currentMsecTime - this._currFrameMsecTime;
+    this._currFrameMsecTime = currentMsecTime;
+    this._frameProfiler.pushDelta(deltaMsecTime);
 
-    this._handlePerformanceAutoScaling(deltaTime);
+    this._handlePerformanceAutoScaling(deltaMsecTime);
 
-    const elapsedTime = deltaTime / 1000;
+    const elapsedSecTime = deltaMsecTime / 1000;
 
-    this._continuousTime += elapsedTime;
+    this._continuousSecTime += elapsedSecTime;
 
-    this._freeFlyController.update(elapsedTime);
+    this._freeFlyController.update(elapsedSecTime);
 
     GlobalMouseManager.resetDelta();
 
@@ -273,9 +271,9 @@ export class Experiment {
       gl.disable(gl.DEPTH_TEST);
     }
 
-    this._continuousTime += elapsedTime;
+    this._continuousSecTime += elapsedSecTime;
 
-    this._scene.run(this._renderer, elapsedTime);
+    this._scene.run(this._renderer, elapsedSecTime);
 
     this._renderer.rayTracerRenderer.lookAt(
       this._freeFlyController.getPosition(),
@@ -285,25 +283,19 @@ export class Experiment {
 
     this._renderer.rayTracerRenderer.render();
 
-    const showDebug = (this._def.debug_mode_enabled as any).checked === true;
+    const showDebug = this._def.debug_mode_enabled.checked === true;
     if (showDebug) {
       this._renderer.safeSceneWireFrame(() => {
         this._renderer.setupDebugRenderer();
-        this._renderer.stackRenderers.pushLine(
-          [0, 0, 0],
-          [100, 0, 0],
-          [1, 0, 0]
-        );
-        this._renderer.stackRenderers.pushLine(
-          [0, 0, 0],
-          [0, 100, 0],
-          [0, 1, 0]
-        );
-        this._renderer.stackRenderers.pushLine(
-          [0, 0, 0],
-          [0, 0, 100],
-          [0, 0, 1]
-        );
+
+        const axisOrigin: glm.ReadonlyVec3 = [0, 0, 0];
+        const axisX: glm.ReadonlyVec3 = [100, 0, 0];
+        const axisY: glm.ReadonlyVec3 = [0, 100, 0];
+        const axisZ: glm.ReadonlyVec3 = [0, 0, 100];
+
+        this._renderer.stackRenderers.pushLine(axisOrigin, axisX, [1, 0, 0]);
+        this._renderer.stackRenderers.pushLine(axisOrigin, axisY, [0, 1, 0]);
+        this._renderer.stackRenderers.pushLine(axisOrigin, axisZ, [0, 0, 1]);
       });
     }
 
@@ -333,43 +325,54 @@ export class Experiment {
     this._renderer.rayTracerRenderer.reset();
   }
 
-  private _setResolution(newValue: number) {
-    this._renderer.rayTracerRenderer.setResolutionCoef(1 / newValue);
+  private _setResolution(inValue: number) {
+    const safeValue = _clamp(inValue, 0, 9); // [0..9]
+    const newValue = (10 - safeValue); // [1..10]
+    const newCoef = 1 / newValue; // [0..1]
+    this._renderer.rayTracerRenderer.setResolutionCoef(newCoef);
+  }
 
-    const newSize = this._renderer.rayTracerRenderer.getCurrentSize();
+  private _logResolution() {
+
+    const rayTracerRenderer = this._renderer.rayTracerRenderer;
+
+    const newCoef = rayTracerRenderer.getResolutionCoef();
+    const newSize = rayTracerRenderer.getCurrentSize();
     const totalPixels = newSize[0] * newSize[1];
 
     this._def.logger.log(
-      `resolution changed (1/${newValue}) => ${newSize[0]}x${newSize[1]} (${totalPixels}px)`
+      `resolution changed (1/${Math.ceil(1 / newCoef)}) => ${newSize[0]}x${newSize[1]} (${totalPixels}px)`
     );
   }
 
-  private _handlePerformanceAutoScaling(inDelta: number) {
-    if (this._perfAutoScalingEnabled !== true) return;
+  private _handlePerformanceAutoScaling(inDeltaMsecTime: number) {
+    if (this._perfAutoScalingEnabled !== true) {
+      return;
+    }
 
-    if (inDelta <= 20) {
+    if (inDeltaMsecTime <= 20) {
       this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
       return;
     }
 
-    // // prevent large delta time
-    // inDelta = 20;
-
     --this._framesUntilNextCheck;
 
-    if (this._framesUntilNextCheck > 0) return;
+    if (this._framesUntilNextCheck > 0) {
+      return;
+    }
 
     this._def.logger.log(
       `performance auto scaling: slow framerate, scaling down resolution`
     );
 
-    const currValue = parseInt((this._def.resolution as any).value, 10);
+    const currValue = this._def.resolution.value;
     const newValue = currValue - 1;
 
-    if (newValue >= 1 && newValue <= 10) {
-      this._setResolution(11 - newValue);
+    if (newValue >= 0 && newValue <= 9) {
+      this._setResolution(newValue);
+      this._logResolution();
 
-      (this._def.resolution as any).value = `${newValue}`;
+      this._def.resolution.value = newValue;
     }
 
     this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
