@@ -21,9 +21,12 @@ const _queryHtmlElement = <T extends Element>(inName: string): T => {
   return newElement;
 };
 
-const _queryCanvas = (inName: string) => _queryHtmlElement<HTMLCanvasElement>(inName);
-const _queryProgress = (inName: string) => _queryHtmlElement<HTMLProgressElement>(inName);
-const _queryInput = (inName: string) => _queryHtmlElement<HTMLInputElement>(inName);
+const _queryCanvas = (inName: string) =>
+  _queryHtmlElement<HTMLCanvasElement>(inName);
+const _queryProgress = (inName: string) =>
+  _queryHtmlElement<HTMLProgressElement>(inName);
+const _queryInput = (inName: string) =>
+  _queryHtmlElement<HTMLInputElement>(inName);
 
 //
 //

@@ -20,8 +20,8 @@ import * as scenes from './scenes/intex';
 
 import * as glm from 'gl-matrix';
 
-const _clamp = (inValue: number, inMin: number, inMax: number) => Math.min(Math.max(inValue, inMin), inMax);
-
+const _clamp = (inValue: number, inMin: number, inMax: number) =>
+  Math.min(Math.max(inValue, inMin), inMax);
 
 interface ExperimentDef {
   canvasElement: HTMLCanvasElement;
@@ -173,8 +173,7 @@ export class Experiment {
     this._def.perfAutoScaling.addEventListener('input', () => {
       this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
 
-      this._perfAutoScalingEnabled =
-        this._def.perfAutoScaling.checked === true;
+      this._perfAutoScalingEnabled = this._def.perfAutoScaling.checked === true;
 
       this._def.logger.log(
         `Performance auto scaler change: ${
@@ -327,13 +326,12 @@ export class Experiment {
 
   private _setResolution(inValue: number) {
     const safeValue = _clamp(inValue, 0, 9); // [0..9]
-    const newValue = (10 - safeValue); // [1..10]
+    const newValue = 10 - safeValue; // [1..10]
     const newCoef = 1 / newValue; // [0..1]
     this._renderer.rayTracerRenderer.setResolutionCoef(newCoef);
   }
 
   private _logResolution() {
-
     const rayTracerRenderer = this._renderer.rayTracerRenderer;
 
     const newCoef = rayTracerRenderer.getResolutionCoef();
@@ -341,7 +339,9 @@ export class Experiment {
     const totalPixels = newSize[0] * newSize[1];
 
     this._def.logger.log(
-      `resolution changed (1/${Math.ceil(1 / newCoef)}) => ${newSize[0]}x${newSize[1]} (${totalPixels}px)`
+      `resolution changed (1/${Math.ceil(1 / newCoef)}) => ${newSize[0]}x${
+        newSize[1]
+      } (${totalPixels}px)`
     );
   }
 
