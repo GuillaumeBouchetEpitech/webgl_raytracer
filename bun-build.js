@@ -29,12 +29,12 @@ const asyncRun = async () => {
   const isRelease = process.argv[2] === 'release';
 
   const config = {
-    entrypoints: [`./src/main.ts`],
+    entrypoints: [`./projects/webgl-ray-tracer/src/main.ts`],
     outdir: './dist',
     target: 'browser',
     format: "esm",
-    root: `./src`,
-    naming: `[dir]/main.[ext]`,
+    root: `./projects/webgl-ray-tracer`,
+    naming: `bundle.js`,
     plugins: [GlslFilesLoaderPlugin],
   };
 
@@ -50,6 +50,10 @@ const asyncRun = async () => {
 
   const result = await Bun.build(config);
 
-  console.log('result', result);
+  if (result?.success === true) {
+    console.log('SUCCESS');
+  } else {
+    console.log('ERROR.result', result);
+  }
 };
 asyncRun();
