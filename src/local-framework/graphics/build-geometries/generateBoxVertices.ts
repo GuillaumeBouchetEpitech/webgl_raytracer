@@ -1,8 +1,6 @@
-
 import * as glm from 'gl-matrix';
 
 export const generateBoxVertices = (inSize: glm.ReadonlyVec3): number[] => {
-
   const hSizeX = inSize[0] * 0.5;
   const hSizeY = inSize[1] * 0.5;
   const hSizeZ = inSize[2] * 0.5;
@@ -13,7 +11,7 @@ export const generateBoxVertices = (inSize: glm.ReadonlyVec3): number[] => {
     [0, -1, 0], // 2
     [0, +1, 0], // 3
     [0, 0, -1], // 4
-    [0, 0, +1], // 5
+    [0, 0, +1] // 5
   ];
 
   const k_vertices: glm.ReadonlyVec3[] = [
@@ -24,7 +22,7 @@ export const generateBoxVertices = (inSize: glm.ReadonlyVec3): number[] => {
     [-hSizeX, -hSizeY, +hSizeZ], // 4
     [+hSizeX, -hSizeY, +hSizeZ], // 5
     [-hSizeX, +hSizeY, +hSizeZ], // 6
-    [+hSizeX, +hSizeY, +hSizeZ], // 7
+    [+hSizeX, +hSizeY, +hSizeZ] // 7
   ];
 
   const k_indices: glm.ReadonlyVec4[] = [
@@ -47,7 +45,7 @@ export const generateBoxVertices = (inSize: glm.ReadonlyVec3): number[] => {
     [6, 7, 3, /*normal => */ 3],
     // -y 0145
     [0, 1, 4, /*normal => */ 2],
-    [4, 1, 5, /*normal => */ 2],
+    [4, 1, 5, /*normal => */ 2]
   ];
 
   const vertices: number[] = [];
@@ -75,7 +73,7 @@ export const generateBoxVertices = (inSize: glm.ReadonlyVec3): number[] => {
       vertex3[2],
       normal[0],
       normal[1],
-      normal[2],
+      normal[2]
     );
   }
 

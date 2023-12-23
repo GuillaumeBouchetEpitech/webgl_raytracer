@@ -1,4 +1,3 @@
-
 import { graphics } from '@local-framework';
 const {
   WebGLContext,
@@ -6,7 +5,7 @@ const {
   Texture,
   FrameBuffer,
   ShaderProgram,
-  GeometryWrapper,
+  GeometryWrapper
 } = graphics.webgl2;
 
 // @ts-ignore
@@ -21,7 +20,7 @@ import textureFragment from './shaders/texture.glsl.frag';
 
 import * as glm from 'gl-matrix';
 
-const _degreeToRad = (angle: number) => angle * Math.PI / 180;
+const _degreeToRad = (angle: number) => (angle * Math.PI) / 180;
 
 export interface IDefinition {
   canvasWidth: number;
@@ -422,7 +421,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     target: glm.ReadonlyVec3,
     up: glm.ReadonlyVec3
   ) {
-
     glm.vec3.copy(this._camera.position, eye);
 
     //
@@ -685,7 +683,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       const shader = this._textureShaderProgram;
 
       shader.bind((boundShader) => {
-
         boundShader.setTextureUniform('u_texture', this._finalTexture, 0);
 
         // anti aliasing setup

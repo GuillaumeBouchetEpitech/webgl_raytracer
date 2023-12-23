@@ -1,4 +1,3 @@
-
 import { system, graphics } from '@local-framework';
 const {
   GlobalMouseManager,
@@ -305,9 +304,22 @@ export class Experiment {
       const touchEventsPos: glm.ReadonlyVec2 = [7 + 20, 260];
       const boardPos: glm.ReadonlyVec2 = [7, 35];
 
-      graphics.renderers.addKeyStrokesWidgets(keyEventsPos, this._renderer.stackRenderers, this._renderer.textRenderer);
-      graphics.renderers.addArrowStrokesWidgets(touchEventsPos, this._renderer.stackRenderers, this._renderer.textRenderer);
-      graphics.renderers.addKeysTouchesWidgets(this._canvasElement, boardPos, this._renderer.stackRenderers, this._renderer.textRenderer);
+      graphics.renderers.addKeyStrokesWidgets(
+        keyEventsPos,
+        this._renderer.stackRenderers,
+        this._renderer.textRenderer
+      );
+      graphics.renderers.addArrowStrokesWidgets(
+        touchEventsPos,
+        this._renderer.stackRenderers,
+        this._renderer.textRenderer
+      );
+      graphics.renderers.addKeysTouchesWidgets(
+        this._canvasElement,
+        boardPos,
+        this._renderer.stackRenderers,
+        this._renderer.textRenderer
+      );
     }
 
     graphics.renderers.renderFpsMeter(

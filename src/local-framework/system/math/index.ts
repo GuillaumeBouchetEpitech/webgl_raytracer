@@ -1,3 +1,2 @@
-
-export * as ik from "./inverse-kinematic"
-export * from "./clamp"
+export * as ik from './inverse-kinematic';
+export * from './clamp';

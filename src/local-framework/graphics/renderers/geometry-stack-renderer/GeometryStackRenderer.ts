@@ -29,7 +29,7 @@ export class GeometryStackRenderer {
         'a_offsetPosition',
         'a_offsetOrientation',
         'a_offsetScale',
-        'a_offsetColor',
+        'a_offsetColor'
       ],
       uniforms: ['u_composedMatrix', 'u_lightPos']
     });
@@ -77,13 +77,13 @@ export class GeometryStackRenderer {
   createAlias(alias: number, bufferSize: number, vertices: number[]): void {
     const aliasGeometry = this._aliasedGeometriesMap.get(alias);
     if (aliasGeometry) {
-      throw new Error("alias already exist, alias: " + alias);
+      throw new Error('alias already exist, alias: ' + alias);
     }
 
     const newAlias: IAliasedGeometry = {
       geometry: new webgl2.GeometryWrapper.Geometry(this._shader, this._geoDef),
       buffer: new Float32Array(bufferSize * 13),
-      currentSize: 0,
+      currentSize: 0
     };
 
     newAlias.geometry.updateBuffer(0, vertices, vertices.length);
@@ -93,14 +93,14 @@ export class GeometryStackRenderer {
   deleteAlias(alias: number): void {
     const aliasGeometry = this._aliasedGeometriesMap.get(alias);
     if (!aliasGeometry) {
-      throw new Error("alias not found, alias: " + alias);
+      throw new Error('alias not found, alias: ' + alias);
     }
     this._aliasedGeometriesMap.delete(alias);
   }
   clearAlias(alias: number): void {
     const aliasGeometry = this._aliasedGeometriesMap.get(alias);
     if (!aliasGeometry) {
-      throw new Error("alias not found, alias: " + alias);
+      throw new Error('alias not found, alias: ' + alias);
     }
     aliasGeometry.currentSize = 0;
   }
@@ -109,12 +109,11 @@ export class GeometryStackRenderer {
     position: glm.ReadonlyVec3,
     orientation: glm.ReadonlyQuat,
     scale: glm.ReadonlyVec3,
-    color: glm.ReadonlyVec3,
+    color: glm.ReadonlyVec3
   ): void {
-
     const aliasGeometry = this._aliasedGeometriesMap.get(alias);
     if (!aliasGeometry) {
-      throw new Error("alias not found, alias: " + alias);
+      throw new Error('alias not found, alias: ' + alias);
     }
 
     aliasGeometry.buffer[aliasGeometry.currentSize++] = position[0];
@@ -131,7 +130,6 @@ export class GeometryStackRenderer {
     aliasGeometry.buffer[aliasGeometry.currentSize++] = color[1];
     aliasGeometry.buffer[aliasGeometry.currentSize++] = color[2];
     // aliasGeometry.currentSize += 13;
-
   }
 
   flush(
@@ -139,11 +137,10 @@ export class GeometryStackRenderer {
     lightPos: glm.ReadonlyVec3,
     clearStack: boolean = true
   ) {
-
     let canRender = false;
-    [...this._aliasedGeometriesMap.values()].forEach(val => {
+    [...this._aliasedGeometriesMap.values()].forEach((val) => {
       if (val.currentSize > 0) {
-        canRender = true
+        canRender = true;
       }
     });
 
@@ -153,10 +150,14 @@ export class GeometryStackRenderer {
 
     this._shader.bind((boundShader) => {
       boundShader.setMatrix4Uniform('u_composedMatrix', composedMatrix);
-      boundShader.setFloat3Uniform('u_lightPos', lightPos[0], lightPos[1], lightPos[2]);
+      boundShader.setFloat3Uniform(
+        'u_lightPos',
+        lightPos[0],
+        lightPos[1],
+        lightPos[2]
+      );
 
-      [...this._aliasedGeometriesMap.values()].forEach(val => {
-
+      [...this._aliasedGeometriesMap.values()].forEach((val) => {
         if (val.currentSize === 0) {
           return;
         }
@@ -168,15 +169,12 @@ export class GeometryStackRenderer {
         if (clearStack === true) {
           val.currentSize = 0;
         }
-
       });
-
     });
-
   }
 
   clear(): void {
-    [...this._aliasedGeometriesMap.values()].forEach(val => {
+    [...this._aliasedGeometriesMap.values()].forEach((val) => {
       val.currentSize = 0;
     });
   }

@@ -1,3 +1,2 @@
-
-export * from "./circleCircleIntersectionPoints"
-export * from "./limb-animator"
+export * from './circleCircleIntersectionPoints';
+export * from './limb-animator';

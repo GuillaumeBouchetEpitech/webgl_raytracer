@@ -1,7 +1,10 @@
-
 import * as glm from 'gl-matrix';
 
-export const computeNormal = (inPosA: glm.ReadonlyVec3, inPosB: glm.ReadonlyVec3, inPosC: glm.ReadonlyVec3): glm.vec3 => {
+export const computeNormal = (
+  inPosA: glm.ReadonlyVec3,
+  inPosB: glm.ReadonlyVec3,
+  inPosC: glm.ReadonlyVec3
+): glm.vec3 => {
   const normal = glm.vec3.cross(
     glm.vec3.create(),
     glm.vec3.sub(glm.vec3.create(), inPosA, inPosB),

@@ -1,21 +1,14 @@
 import { graphics } from '@local-framework';
-const {
-  WebGLContext,
-} = graphics.webgl2;
-const {
-  Camera,
-} = graphics.camera;
-const {
-  TextRenderer,
-  StackRenderers,
-} = graphics.renderers;
+const { WebGLContext } = graphics.webgl2;
+const { Camera } = graphics.camera;
+const { TextRenderer, StackRenderers } = graphics.renderers;
 
 import {
   RayTracerRenderer,
   ITriangle,
   IPublicSphere,
   IRayTracerRenderer,
-  InternalBox,
+  InternalBox
 } from './renderers';
 
 import * as glm from 'gl-matrix';

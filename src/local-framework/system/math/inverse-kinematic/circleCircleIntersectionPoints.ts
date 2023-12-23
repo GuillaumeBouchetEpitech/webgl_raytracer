@@ -1,4 +1,3 @@
-
 import * as glm from 'gl-matrix';
 
 // Let EPS (epsilon) be a small value
@@ -8,27 +7,28 @@ const EPS = 0.0000001;
 // function may be outside its domain of [-1, +1] which would return
 // the value NaN which we do not want.
 const _safeAcos = (x: number): number => {
-  if (x >= +1.0)
-    return 0.0;
-  if (x <= -1.0)
-    return Math.PI;
+  if (x >= +1.0) return 0.0;
+  if (x <= -1.0) return Math.PI;
   return Math.acos(x);
-}
+};
 
 // Rotates a point about a fixed point at some angle 'a'
-const _rotatePoint = (fp: glm.ReadonlyVec2, pt: glm.ReadonlyVec2, a: number): glm.vec2 => {
+const _rotatePoint = (
+  fp: glm.ReadonlyVec2,
+  pt: glm.ReadonlyVec2,
+  a: number
+): glm.vec2 => {
   const x = pt[0] - fp[0];
   const y = pt[1] - fp[1];
   const xRot = x * Math.cos(a) + y * Math.sin(a);
   const yRot = y * Math.cos(a) - x * Math.sin(a);
   return glm.vec2.fromValues(fp[0] + xRot, fp[1] + yRot);
-}
-
+};
 
 export interface ICircle {
   center: glm.ReadonlyVec2;
   radius: number;
-};
+}
 
 // Given two circles this method finds the intersection
 // point(s) of the two circles (if any exists)
@@ -51,9 +51,19 @@ export interface ICircle {
  *         \_____/
  *
  */
-export const circleCircleIntersectionPoints = (c1: Readonly<ICircle>, c2: Readonly<ICircle>): [glm.vec2, glm.vec2] | [glm.vec2] | undefined => {
-
-  let r1: number, R2: number, d: number, dx: number, dy: number, c1x: number, c1y: number, C2x: number, C2y: number;
+export const circleCircleIntersectionPoints = (
+  c1: Readonly<ICircle>,
+  c2: Readonly<ICircle>
+): [glm.vec2, glm.vec2] | [glm.vec2] | undefined => {
+  let r1: number,
+    R2: number,
+    d: number,
+    dx: number,
+    dy: number,
+    c1x: number,
+    c1y: number,
+    C2x: number,
+    C2y: number;
 
   if (c1.radius < c2.radius) {
     r1 = c1.radius;
@@ -80,27 +90,24 @@ export const circleCircleIntersectionPoints = (c1: Readonly<ICircle>, c2: Readon
 
   // There are an infinite number of solutions
   // Seems appropriate to also return null
-  if (d < EPS && Math.abs(R2 - r1) < EPS)
-    return;
+  if (d < EPS && Math.abs(R2 - r1) < EPS) return;
 
   // No intersection (circles centered at the
   // same place with different size)
-  if (d < EPS)
-    return;
+  if (d < EPS) return;
 
   const x = (dx / d) * R2 + C2x;
   const y = (dy / d) * R2 + C2y;
   const P = glm.vec2.fromValues(x, y);
 
   // Single intersection (kissing circles)
-  if (Math.abs((R2 + r1) - d) < EPS || Math.abs(R2 - (r1 + d)) < EPS) {
+  if (Math.abs(R2 + r1 - d) < EPS || Math.abs(R2 - (r1 + d)) < EPS) {
     return [P];
   }
 
   // No intersection. Either the small circle contained within
   // big circle or circles are simply disjoint.
-  if ((d + r1) < R2 || (R2 + r1 < d))
-    return;
+  if (d + r1 < R2 || R2 + r1 < d) return;
 
   const C = glm.vec2.fromValues(C2x, C2y);
   const angle = _safeAcos((r1 * r1 - d * d - R2 * R2) / (-2.0 * d * R2));
@@ -108,4 +115,4 @@ export const circleCircleIntersectionPoints = (c1: Readonly<ICircle>, c2: Readon
   const pt2 = _rotatePoint(C, P, -angle);
 
   return [pt1, pt2];
-}
+};

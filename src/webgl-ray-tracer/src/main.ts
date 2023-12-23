@@ -1,4 +1,3 @@
-
 import { system } from '@local-framework';
 
 import { Logger } from './experiment/utilities/Logger';
@@ -59,7 +58,6 @@ const onPageLoad = async () => {
   logger.log('[SETUP] page loaded');
 
   try {
-
     //
     // HTML elements check
     //
@@ -104,7 +102,6 @@ const onPageLoad = async () => {
     logger.error(`Error: "${(err as Error)?.message}"`);
     throw err;
   }
-
 };
 
 window.addEventListener('load', onPageLoad, false);

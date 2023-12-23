@@ -91,8 +91,6 @@ export class TestScene2 {
         shadowEnabled: false
       });
 
-
-
       // simple reflective sphere
       renderer.rayTracerRenderer.pushSphere({
         position: [0, 7, 1],
@@ -130,8 +128,6 @@ export class TestScene2 {
       //   lightEnabled: false,
       //   shadowEnabled: true
       // });
-
-
 
       const allBoxes: {
         pos: glm.ReadonlyVec3;

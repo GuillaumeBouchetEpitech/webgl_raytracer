@@ -1,14 +1,17 @@
-
 import * as glm from 'gl-matrix';
 
-import {convertToPerFacesNormals} from "./convertToPerFacesNormals"
+import { convertToPerFacesNormals } from './convertToPerFacesNormals';
 
 const _exploreSpherePatch = (
   quality: number,
   v01: glm.ReadonlyVec3,
   v02: glm.ReadonlyVec3,
   v03: glm.ReadonlyVec3,
-  onTriangle: (normal1: glm.ReadonlyVec3, normal2: glm.ReadonlyVec3, normal3: glm.ReadonlyVec3) => void
+  onTriangle: (
+    normal1: glm.ReadonlyVec3,
+    normal2: glm.ReadonlyVec3,
+    normal3: glm.ReadonlyVec3
+  ) => void
 ) => {
   if (quality <= 0) {
     onTriangle(v02, v01, v03);
@@ -37,7 +40,11 @@ const _exploreSpherePatch = (
 
 export const generateSphereTriangles = (
   quality: number,
-  onTriangle: (normal1: glm.ReadonlyVec3, normal2: glm.ReadonlyVec3, normal3: glm.ReadonlyVec3) => void
+  onTriangle: (
+    normal1: glm.ReadonlyVec3,
+    normal2: glm.ReadonlyVec3,
+    normal3: glm.ReadonlyVec3
+  ) => void
 ): void => {
   const k_icx = 0.525731112119133606;
   const k_icz = 0.850650808352039932;
@@ -97,7 +104,6 @@ export const generateSphereVertices = (
   modelMat4: glm.ReadonlyMat4,
   perFaceNormals: boolean = false
 ): number[] => {
-
   const vertices: number[] = [];
 
   const tmpVec3A = glm.vec3.create();
@@ -105,45 +111,48 @@ export const generateSphereVertices = (
 
   generateSphereTriangles(
     quality,
-    (normal1: glm.ReadonlyVec3, normal2: glm.ReadonlyVec3, normal3: glm.ReadonlyVec3) => {
-
+    (
+      normal1: glm.ReadonlyVec3,
+      normal2: glm.ReadonlyVec3,
+      normal3: glm.ReadonlyVec3
+    ) => {
       tmpVec3A[0] = tmpVec3A[1] = tmpVec3A[2] = 0;
       glm.vec3.transformMat4(tmpVec3A, normal1, modelMat4);
       glm.vec3.scale(tmpVec3B, tmpVec3A, radius),
-      vertices.push(
-        tmpVec3B[0],
-        tmpVec3B[1],
-        tmpVec3B[2],
-        tmpVec3A[0],
-        tmpVec3A[1],
-        tmpVec3A[2],
-      );
+        vertices.push(
+          tmpVec3B[0],
+          tmpVec3B[1],
+          tmpVec3B[2],
+          tmpVec3A[0],
+          tmpVec3A[1],
+          tmpVec3A[2]
+        );
 
       tmpVec3A[0] = tmpVec3A[1] = tmpVec3A[2] = 0;
       glm.vec3.transformMat4(tmpVec3A, normal2, modelMat4);
       glm.vec3.scale(tmpVec3B, tmpVec3A, radius),
-      vertices.push(
-        tmpVec3B[0],
-        tmpVec3B[1],
-        tmpVec3B[2],
-        tmpVec3A[0],
-        tmpVec3A[1],
-        tmpVec3A[2],
-      );
+        vertices.push(
+          tmpVec3B[0],
+          tmpVec3B[1],
+          tmpVec3B[2],
+          tmpVec3A[0],
+          tmpVec3A[1],
+          tmpVec3A[2]
+        );
 
       tmpVec3A[0] = tmpVec3A[1] = tmpVec3A[2] = 0;
       glm.vec3.transformMat4(tmpVec3A, normal3, modelMat4);
       glm.vec3.scale(tmpVec3B, tmpVec3A, radius),
-      vertices.push(
-        tmpVec3B[0],
-        tmpVec3B[1],
-        tmpVec3B[2],
-        tmpVec3A[0],
-        tmpVec3A[1],
-        tmpVec3A[2],
-      );
-
-    });
+        vertices.push(
+          tmpVec3B[0],
+          tmpVec3B[1],
+          tmpVec3B[2],
+          tmpVec3A[0],
+          tmpVec3A[1],
+          tmpVec3A[2]
+        );
+    }
+  );
 
   if (perFaceNormals) {
     convertToPerFacesNormals(vertices);
