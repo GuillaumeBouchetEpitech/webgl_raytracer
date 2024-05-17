@@ -2,6 +2,7 @@
 
 ## Live Demo
 
+### Disclaimer(s)
 * It does require WebGL2
 * It might not work on smartphones
 * Chromium based web browsers behave the best so far
@@ -9,27 +10,36 @@
 * The resolution will be scaled down if performance issues arise
 * Some people like it with a low resolution and no anti aliasing
 
+### Demo
 Beyond that: [follow that link to see for yourself](http://guillaumebouchetepitech.github.io/webgl_raytracer/index.html).
 
-# How To Build
+## How To Build
 
-### Only Once
+Tested with: node@18 + npm@8
+
 ```bash
-npm install -g bun # if not already installed
-bun install
+# only once
+npm install
+```
+```bash
+# watch for changes
+# ---> nodemon, typescript + shader files
+# and build debug version
+# ---> bun.js fast debug build with inlined sourcemap (~0.1s)
+# ---> type safety is NOT applied
+npm run watch
 ```
 
-### Release Build
 ```bash
-npm run build-release # minified
+# build release version
+# ---> rollup.js build with minification passes and comments removal (~4.5s)
+# ---> type safety is applied
+npm run build-release
 ```
 
-### Debug Build
 ```bash
-npm run build debug # inlined sourcemap
-```
-
-### Watch mode
-```bash
-npm run watch # watch for changes and build the debug version
+# build debug version
+# ---> rollup.js build with inlined sourcemap (~3.5s)
+# ---> type safety is applied
+npm run build debug
 ```
