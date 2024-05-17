@@ -59,6 +59,11 @@ export class CubeMap implements IUnboundCubeMap, IBoundCubeMap {
     this._minBufferSize = this._width * this._height * 4;
   }
 
+  dispose() {
+    const gl = WebGLContext.getContext();
+    gl.deleteTexture(this._texture);
+  }
+
   rawBind(): void {
     if (!this._texture) throw new Error('cube map: not initialized');
     const gl = WebGLContext.getContext();

@@ -40,10 +40,10 @@ export class TestScene1 {
         angleZ: 0,
         boxSize: [30, 1, 30],
         color: [0.5, 1, 0.5],
-        reflection: 0.2,
-        chessboard: false,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0.2,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       });
 
       // triangle
@@ -52,9 +52,9 @@ export class TestScene1 {
         v1: [10, 10, 1],
         v2: [10, 5, 1],
         color: [1, 1, 1],
-        reflection: 0.1,
-        shadowEnabled: true,
-        lightEnabled: true
+        reflectionFactor: 0.1,
+        castShadowEnabled: true,
+        receiveLightEnabled: true
       });
 
       // pillars
@@ -65,10 +65,10 @@ export class TestScene1 {
         angleZ: 0,
         boxSize: [1, 5, 1],
         color: [1, 1, 1],
-        reflection: 0,
-        chessboard: false,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       });
       renderer.rayTracerRenderer.pushBox({
         position: [+10, 0, -10],
@@ -77,10 +77,10 @@ export class TestScene1 {
         angleZ: 0,
         boxSize: [1, 5, 1],
         color: [1, 1, 1],
-        reflection: 0,
-        chessboard: false,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       });
       renderer.rayTracerRenderer.pushBox({
         position: [-10, 0, +10],
@@ -89,10 +89,10 @@ export class TestScene1 {
         angleZ: 0,
         boxSize: [1, 5, 1],
         color: [1, 1, 1],
-        reflection: 0,
-        chessboard: false,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       });
       renderer.rayTracerRenderer.pushBox({
         position: [+10, 0, +10],
@@ -101,10 +101,10 @@ export class TestScene1 {
         angleZ: 0,
         boxSize: [1, 5, 1],
         color: [1, 1, 1],
-        reflection: 0,
-        chessboard: false,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       });
 
       // space ship
@@ -115,10 +115,10 @@ export class TestScene1 {
         angleZ: 0,
         boxSize: [2.0, 0.5, 1.0],
         color: [1.0, 0.0, 0.0],
-        reflection: 0,
-        chessboard: false,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       }); // body
       renderer.rayTracerRenderer.pushBox({
         position: [5 + 1.0, 0 + 0.5, 10 + 0.0],
@@ -127,10 +127,10 @@ export class TestScene1 {
         angleZ: 0,
         boxSize: [0.75, 0.25, 0.5],
         color: [0.5, 0.5, 0.5],
-        reflection: 0,
-        chessboard: false,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       }); // cockpit
       renderer.rayTracerRenderer.pushBox({
         position: [5 - 1.0, 0 - 0.25, 10 + 1.5],
@@ -139,10 +139,10 @@ export class TestScene1 {
         angleZ: 0,
         boxSize: [1.0, 0.25, 0.5],
         color: [1.0, 1.0, 0.0],
-        reflection: 0,
-        chessboard: false,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       }); // wing (left)
       renderer.rayTracerRenderer.pushBox({
         position: [5 - 1.0, 0 - 0.25, 10 - 1.5],
@@ -151,10 +151,10 @@ export class TestScene1 {
         angleZ: 0,
         boxSize: [1.0, 0.25, 0.5],
         color: [1.0, 1.0, 0.0],
-        reflection: 0,
-        chessboard: false,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       }); // wing (right)
       renderer.rayTracerRenderer.pushBox({
         position: [5 - 1.0, 0 + 1.0, 10 + 0.0],
@@ -163,10 +163,10 @@ export class TestScene1 {
         angleZ: 0,
         boxSize: [1.0, 0.5, 0.25],
         color: [1.0, 1.0, 0.0],
-        reflection: 0,
-        chessboard: false,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       }); // wing (top)
 
       //
@@ -176,19 +176,21 @@ export class TestScene1 {
         position: [15, 0, 15],
         radius: 1,
         color: [1, 1, 1],
-        reflection: 0.5,
-        chessboard: false,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0.5,
+        refractionFactor: 0.0,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       });
       renderer.rayTracerRenderer.pushSphere({
         position: [5, 0, 5],
         radius: 1,
         color: [1, 1, 1],
-        reflection: 0.5,
-        chessboard: false,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0.5,
+        refractionFactor: 0.0,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       });
 
       //
@@ -205,10 +207,10 @@ export class TestScene1 {
         angleZ: angleZ,
         boxSize: [2, 1, 0.5],
         color: [1, 0.5, 0.5],
-        reflection: 0.8,
-        chessboard: true,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0.8,
+        chessboardEnabled: true,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       });
       renderer.rayTracerRenderer.pushBox({
         position: [0, 2.5, 0],
@@ -217,10 +219,10 @@ export class TestScene1 {
         angleZ: angleZ,
         boxSize: [2, 1, 0.5],
         color: [1, 0.5, 0.5],
-        reflection: 0.8,
-        chessboard: true,
-        lightEnabled: true,
-        shadowEnabled: true
+        reflectionFactor: 0.8,
+        chessboardEnabled: true,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
       });
 
       //
@@ -237,10 +239,11 @@ export class TestScene1 {
           ],
           radius: 0.5,
           color: [coef, 1 - coef, 0],
-          reflection: 0,
-          chessboard: false,
-          lightEnabled: true,
-          shadowEnabled: true
+          reflectionFactor: 0,
+          refractionFactor: 0.0,
+          chessboardEnabled: false,
+          receiveLightEnabled: true,
+          castShadowEnabled: true
         });
       }
 
@@ -274,19 +277,21 @@ export class TestScene1 {
           position: posA,
           radius: 0.5,
           color: [1, 1, 1],
-          reflection: 0,
-          chessboard: false,
-          lightEnabled: false,
-          shadowEnabled: false
+          reflectionFactor: 0,
+          refractionFactor: 0.0,
+          chessboardEnabled: false,
+          receiveLightEnabled: false,
+          castShadowEnabled: false
         });
         renderer.rayTracerRenderer.pushSphere({
           position: posB,
           radius: 0.5,
           color: [1, 1, 1],
-          reflection: 0,
-          chessboard: false,
-          lightEnabled: false,
-          shadowEnabled: false
+          reflectionFactor: 0,
+          refractionFactor: 0.0,
+          chessboardEnabled: false,
+          receiveLightEnabled: false,
+          castShadowEnabled: false
         });
 
         // actual spot lights
@@ -384,10 +389,11 @@ export class TestScene1 {
                 position: flashParticles[ii].pos,
                 radius: size,
                 color: [1, 1, 1],
-                reflection: 0,
-                chessboard: false,
-                lightEnabled: false,
-                shadowEnabled: false
+                reflectionFactor: 0,
+                refractionFactor: 0.0,
+                chessboardEnabled: false,
+                receiveLightEnabled: false,
+                castShadowEnabled: false
               });
 
               // actual spot light
@@ -432,10 +438,11 @@ export class TestScene1 {
                 position: smokeParticles[ii].pos,
                 radius: size,
                 color: color,
-                reflection: 0,
-                chessboard: false,
-                lightEnabled: true,
-                shadowEnabled: true
+                reflectionFactor: 0,
+                refractionFactor: 0.0,
+                chessboardEnabled: false,
+                receiveLightEnabled: true,
+                castShadowEnabled: true
               });
             }
 

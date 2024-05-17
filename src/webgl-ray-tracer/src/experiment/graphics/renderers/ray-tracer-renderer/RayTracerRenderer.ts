@@ -32,20 +32,22 @@ export interface IPublicSphere {
   position: glm.ReadonlyVec3;
   radius: number;
   color: glm.ReadonlyVec3;
-  reflection: number;
-  chessboard: boolean;
-  shadowEnabled: boolean;
-  lightEnabled: boolean;
+  reflectionFactor: number;
+  refractionFactor: number;
+  chessboardEnabled: boolean;
+  castShadowEnabled: boolean;
+  receiveLightEnabled: boolean;
 }
 
 export interface IInternalSphere {
   position: glm.ReadonlyVec3;
   radius: number;
   color: glm.ReadonlyVec3;
-  reflection: number;
-  shadowEnabled: boolean;
-  lightEnabled: boolean;
-  chessboard: boolean;
+  reflectionFactor: number;
+  refractionFactor: number;
+  castShadowEnabled: boolean;
+  receiveLightEnabled: boolean;
+  chessboardEnabled: boolean;
 }
 
 export interface IPublicBox {
@@ -55,20 +57,20 @@ export interface IPublicBox {
   angleZ: number;
   boxSize: glm.ReadonlyVec3;
   color: glm.ReadonlyVec3;
-  reflection: number;
-  chessboard: boolean;
-  shadowEnabled: boolean;
-  lightEnabled: boolean;
+  reflectionFactor: number;
+  chessboardEnabled: boolean;
+  castShadowEnabled: boolean;
+  receiveLightEnabled: boolean;
 }
 
 export interface InternalBox {
   matrix: glm.mat4;
   boxSize: glm.ReadonlyVec3;
   color: glm.ReadonlyVec3;
-  reflection: number;
-  shadowEnabled: boolean;
-  lightEnabled: boolean;
-  chessboard: boolean;
+  reflectionFactor: number;
+  castShadowEnabled: boolean;
+  receiveLightEnabled: boolean;
+  chessboardEnabled: boolean;
 }
 
 export interface ITriangle {
@@ -76,9 +78,9 @@ export interface ITriangle {
   v1: glm.ReadonlyVec3;
   v2: glm.ReadonlyVec3;
   color: glm.ReadonlyVec3;
-  reflection: number;
-  shadowEnabled: boolean;
-  lightEnabled: boolean;
+  reflectionFactor: number;
+  castShadowEnabled: boolean;
+  receiveLightEnabled: boolean;
 }
 
 export interface ISunLight {
@@ -103,10 +105,10 @@ export interface IRayTracerRenderer {
     position,
     radius,
     color,
-    reflection,
-    chessboard,
-    shadowEnabled,
-    lightEnabled
+    reflectionFactor,
+    chessboardEnabled,
+    castShadowEnabled,
+    receiveLightEnabled
   }: IPublicSphere): void;
 
   pushBox({
@@ -116,10 +118,10 @@ export interface IRayTracerRenderer {
     angleZ,
     boxSize,
     color,
-    reflection,
-    chessboard,
-    shadowEnabled,
-    lightEnabled
+    reflectionFactor,
+    chessboardEnabled,
+    castShadowEnabled,
+    receiveLightEnabled
   }: IPublicBox): void;
 
   pushTriangle({
@@ -127,9 +129,9 @@ export interface IRayTracerRenderer {
     v1,
     v2,
     color,
-    reflection,
-    shadowEnabled,
-    lightEnabled
+    reflectionFactor,
+    castShadowEnabled,
+    receiveLightEnabled
   }: ITriangle): void;
 
   pushSunLight({ direction, intensity }: ISunLight): void;
@@ -260,7 +262,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     rayTracerVertices.push(+1.0, -1.0); // bottom right
     rayTracerVertices.push(-1.0, -1.0); // bottom left
 
-    this._rayTracerGeometry.updateBuffer(
+    this._rayTracerGeometry.allocateBuffer(
       0,
       rayTracerVertices,
       rayTracerVertices.length
@@ -289,7 +291,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     screenVertices.push(+1.0, -1.0, 1, 0); // bottom right
     screenVertices.push(-1.0, -1.0, 0, 0); // bottom left
 
-    this._screenGeometry.updateBuffer(0, screenVertices, screenVertices.length);
+    this._screenGeometry.allocateBuffer(0, screenVertices, screenVertices.length);
     this._screenGeometry.setPrimitiveStart(0);
     this._screenGeometry.setPrimitiveCount(4);
 
@@ -297,10 +299,10 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     //
 
     this._sceneDataTexture = new DataTexture();
-    this._sceneDataTexture.initialize();
+    this._sceneDataTexture.initialize(2048);
 
     this._lightsDataTexture = new DataTexture();
-    this._lightsDataTexture.initialize();
+    this._lightsDataTexture.initialize(2048);
 
     this._camera = {
       position: glm.vec3.fromValues(0, 0, 0),
@@ -313,23 +315,28 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     position,
     radius,
     color,
-    reflection,
-    chessboard,
-    shadowEnabled,
-    lightEnabled
+    reflectionFactor,
+    refractionFactor,
+    chessboardEnabled,
+    castShadowEnabled,
+    receiveLightEnabled
   }: IPublicSphere): void {
-    if (radius <= 0) throw new Error('invalid sphere radius');
-    if (reflection < 0 || reflection > 1)
+    if (radius <= 0) {
+      throw new Error('invalid sphere radius');
+    }
+    if (reflectionFactor < 0 || reflectionFactor > 1) {
       throw new Error('invalid sphere reflection');
+    }
 
     this._spheres.push({
       position: [position[0], position[1], position[2]],
       radius,
       color: [color[0], color[1], color[2]],
-      reflection,
-      chessboard,
-      shadowEnabled,
-      lightEnabled
+      reflectionFactor,
+      refractionFactor,
+      chessboardEnabled,
+      castShadowEnabled,
+      receiveLightEnabled
     });
   }
 
@@ -340,15 +347,17 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     angleZ,
     boxSize,
     color,
-    reflection,
-    chessboard,
-    shadowEnabled,
-    lightEnabled
+    reflectionFactor,
+    chessboardEnabled,
+    castShadowEnabled,
+    receiveLightEnabled
   }: IPublicBox): void {
-    if (boxSize[0] <= 0 || boxSize[1] <= 0 || boxSize[2] <= 0)
+    if (boxSize[0] <= 0 || boxSize[1] <= 0 || boxSize[2] <= 0) {
       throw new Error('invalid box size');
-    if (reflection < 0 || reflection > 1)
+    }
+    if (reflectionFactor < 0 || reflectionFactor > 1) {
       throw new Error('invalid box reflection');
+    }
 
     const mat4 = glm.mat4.create();
     glm.mat4.identity(mat4);
@@ -361,10 +370,10 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       matrix: mat4,
       boxSize: glm.vec3.clone(boxSize),
       color: glm.vec3.clone(color),
-      reflection,
-      chessboard,
-      shadowEnabled,
-      lightEnabled
+      reflectionFactor,
+      chessboardEnabled,
+      castShadowEnabled,
+      receiveLightEnabled
     });
   }
 
@@ -373,21 +382,22 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     v1,
     v2,
     color,
-    reflection,
-    shadowEnabled,
-    lightEnabled
+    reflectionFactor,
+    castShadowEnabled,
+    receiveLightEnabled
   }: ITriangle) {
-    if (reflection < 0 || reflection > 1)
+    if (reflectionFactor < 0 || reflectionFactor > 1) {
       throw new Error('invalid triangle reflection');
+    }
 
     this._triangles.push({
       v0: glm.vec3.clone(v0),
       v1: glm.vec3.clone(v1),
       v2: glm.vec3.clone(v2),
       color: glm.vec3.clone(color),
-      reflection,
-      shadowEnabled,
-      lightEnabled
+      reflectionFactor,
+      castShadowEnabled,
+      receiveLightEnabled
     });
   }
 
@@ -439,10 +449,45 @@ export class RayTracerRenderer implements IRayTracerRenderer {
   }
 
   render() {
+
+    // texture pass first
+    // -> we render the previous frame to avoid potential webgl queue blocking
+    this._renderTexturePass();
+    this._renderRayTracingPass();
+  }
+
+  private _renderTexturePass() {
+    const gl = WebGLContext.getContext();
+
+    gl.viewport(0, 0, this._canvasWidth, this._canvasHeight);
+    gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
+
+    const shader = this._textureShaderProgram;
+
+    shader.bind((boundShader) => {
+      boundShader.setTextureUniform('u_texture', this._finalTexture, 0);
+
+      // anti aliasing setup
+
+      if (this._antiAliasing) {
+        const stepX = (1 - this._renderWidth / this._canvasWidth) * 0.005;
+        const stepY = (1 - this._renderHeight / this._canvasHeight) * 0.005;
+
+        boundShader.setFloat2Uniform('u_step', stepX, stepY);
+      } else {
+        boundShader.setFloat2Uniform('u_step', 0, 0);
+      }
+
+      this._screenGeometry.render();
+    });
+  }
+
+  private _renderRayTracingPass() {
+
     const gl = WebGLContext.getContext();
 
     const farCorners = this._computeCameraFarCorners();
-    this._rayTracerGeometry.updateBuffer(1, farCorners, farCorners.length);
+    this._rayTracerGeometry.allocateBuffer(1, farCorners, farCorners.length);
 
     const scaledWidth = Math.floor(this._renderWidth);
     const scaledHeight = Math.floor(this._renderHeight);
@@ -494,12 +539,13 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                     sphere.color[1],
                     sphere.color[2]
                   );
-                  sceneDataValues.push(sphere.reflection);
+                  sceneDataValues.push(sphere.reflectionFactor);
+                  sceneDataValues.push(sphere.refractionFactor); // 8
 
-                  sceneDataValues.push(sphere.shadowEnabled ? 1 : 0);
-                  sceneDataValues.push(sphere.lightEnabled ? 1 : 0);
+                  sceneDataValues.push(sphere.castShadowEnabled ? 1 : 0);
+                  sceneDataValues.push(sphere.receiveLightEnabled ? 1 : 0);
 
-                  sceneDataValues.push(sphere.chessboard ? 1 : 0);
+                  sceneDataValues.push(sphere.chessboardEnabled ? 1 : 0);
                 }
 
                 boundShader.setInteger1Uniform(
@@ -533,12 +579,12 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                     box.color[1],
                     box.color[2]
                   );
-                  sceneDataValues.push(box.reflection);
+                  sceneDataValues.push(box.reflectionFactor);
 
-                  sceneDataValues.push(box.shadowEnabled ? 1 : 0);
-                  sceneDataValues.push(box.lightEnabled ? 1 : 0);
+                  sceneDataValues.push(box.castShadowEnabled ? 1 : 0);
+                  sceneDataValues.push(box.receiveLightEnabled ? 1 : 0);
 
-                  sceneDataValues.push(box.chessboard ? 1 : 0);
+                  sceneDataValues.push(box.chessboardEnabled ? 1 : 0);
                 }
 
                 boundShader.setInteger1Uniform(
@@ -579,10 +625,10 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                     triangle.color[1],
                     triangle.color[2]
                   ); // color
-                  sceneDataValues.push(triangle.reflection); // reflection
+                  sceneDataValues.push(triangle.reflectionFactor); // reflection
 
-                  sceneDataValues.push(triangle.shadowEnabled ? 1 : 0); // shadowEnabled
-                  sceneDataValues.push(triangle.lightEnabled ? 1 : 0); // lightEnabled
+                  sceneDataValues.push(triangle.castShadowEnabled ? 1 : 0); // castShadow
+                  sceneDataValues.push(triangle.receiveLightEnabled ? 1 : 0); // receiveLight
                 }
 
                 boundShader.setInteger1Uniform(
@@ -594,7 +640,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
 
             gl.activeTexture(gl.TEXTURE0 + 0);
             this._sceneDataTexture.preBind((boundDataTexture) => {
-              boundDataTexture.update(sceneDataValues);
+              boundDataTexture.update(0, sceneDataValues);
             });
 
             boundShader.setInteger1Uniform('u_sceneTextureData', 0);
@@ -659,7 +705,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
 
             gl.activeTexture(gl.TEXTURE0 + 1);
             this._lightsDataTexture.preBind((boundDataTexture) => {
-              boundDataTexture.update(lightsDataValues);
+              boundDataTexture.update(0, lightsDataValues);
             });
 
             boundShader.setInteger1Uniform('u_lightsTextureData', 1);
@@ -673,32 +719,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
         });
       } // raytracing pass
     });
-
-    gl.viewport(0, 0, this._canvasWidth, this._canvasHeight);
-    gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
-
-    {
-      // texture pass
-
-      const shader = this._textureShaderProgram;
-
-      shader.bind((boundShader) => {
-        boundShader.setTextureUniform('u_texture', this._finalTexture, 0);
-
-        // anti aliasing setup
-
-        if (this._antiAliasing) {
-          const stepX = (1 - this._renderWidth / this._canvasWidth) * 0.005;
-          const stepY = (1 - this._renderHeight / this._canvasHeight) * 0.005;
-
-          boundShader.setFloat2Uniform('u_step', stepX, stepY);
-        } else {
-          boundShader.setFloat2Uniform('u_step', 0, 0);
-        }
-
-        this._screenGeometry.render();
-      });
-    } // texture pass
   }
 
   reset(): void {

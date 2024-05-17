@@ -63,6 +63,7 @@ export interface IStackRenderers {
     inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ): void;
 
+  safeRender(inComposedMatrix: glm.ReadonlyMat4, inCallback: () => void): void;
   flush(composedMatrix: glm.ReadonlyMat4): void;
   clear(): void;
 }

@@ -22,31 +22,108 @@
                 border-color: #8F8F8F;
             }
 
-            #rendering-canvas {
-                position: relative;
-                left: 0px;
-                top: 0px;
-                width: 800px;
-                height: 600px;
+            #central-area {
+
+                border: 0px none;
+                margin: 0px auto; /* horizontally centered */
+                padding: 0px none;
+
+                width: 100%;
+                min-width: 200px;
+                min-height: 200px;
+                max-width: 800px;
+                max-height: 600px;
+
             }
 
-            #ui-container {
-                position: absolute;
-                left: 810px;
-                top: 10px;
+            #main-area, #rendering-canvas {
+
+                border: 0px none;
+                margin: 0px auto; /* horizontally centered */
+                padding: 0px none;
+
+                width: 100%;
+                min-width: 200px;
+                min-height: 200px;
+                max-width: 800px;
+                max-height: 600px;
+            }
+
+            #error-text {
+                border: 0px none;
+                margin: 0px auto; /* horizontally centered */
+                padding: 0px none;
+
+                width: 100%;
+                min-width: 200px;
+                min-height: 200px;
+                max-width: 800px;
+                max-height: 600px;
+
+                font-size: 20px;
+                color: white;
+                font-family: 'Lucida Console', Monaco, monospace;
+                text-align: center;
+                outline: none;
+                display: none; /* hidden from the start */
+            }
+
+            #sub-area {
+                border: 0px none;
+                margin: 0px auto; /* horizontally centered */
+                padding: 0px none;
+
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                flex-flow: row wrap;
+                justify-content: center;
+                align-items: flex-start;
+                align-content: flex-start;
+                row-gap: 5px;
+                column-gap: 5px;
+
+                width: 100%;
+                min-width: 200px;
+                min-height: 200px;
+                max-width: 800px;
+                max-height: 600px;
             }
 
             #loggerOutput {
-                width: 95%;
-                left: 0px;
-                top: 0px;
+                width: 480px;
+                height: 200px;
+                /* left: 0px;
+                top: 0px; */
+
                 border: 0px none;
-                padding: 0px none;
+                padding: 0px;
+                margin: 0px;
+
                 background-color: black;
                 color: white;
                 font-family: 'Lucida Console', Monaco, monospace;
                 outline: none;
-                display: block;
+                /* display: block; */
+                /* display: flex; */
+            }
+
+            #ui-container {
+                border: 0px none;
+                padding: 0px;
+                margin: 0px;
+
+                /* display: flex; */
+                /* top: 0px; */
+                width: 300px;
+                position: relative;
+                /* right: 0px;
+                top: 0px; */
+            }
+            #ui-container p, #ui-container p a {
+                padding: 0px;
+                margin: 0px;
+                color: #ff6666;
             }
         </style>
 
@@ -54,40 +131,47 @@
 
     <body>
 
-        <div>
+        <div id="central-area">
+            <div id="main-area">
 
-            <canvas id="rendering-canvas" width="800" height="600"></canvas>
+                <canvas id="rendering-canvas" width="800" height="600"></canvas>
+                <p id="error-text">Loading</p>
+
+            </div>
+
+            <div id="sub-area">
+
+                <div id="ui-container">
+
+                    <p>Source Code: <a href="https://github.com/GuillaumeBouchetEpitech/webgl_raytracer">Github Link</a></p>
+
+                    <table>
+                        <tr>
+                            <td>Performance<br>Auto Scaling</td>
+                            <td><input id="auto-scaling-enabled" type="checkbox" checked></td>
+                        </tr>
+                        <tr>
+                            <td>Resolution</td>
+                            <td><input id="resolution" type="range" min="0" max="9" value="9"></td>
+                        </tr>
+                        <tr>
+                            <td>AntiAliasing<br/>(for low resolution)</td>
+                            <td><input id="anti-aliasing-enabled" type="checkbox"></td>
+                        </tr>
+
+                        <tr>
+                            <td>Debug Mode</td>
+                            <td><input id="debug-mode-enabled" type="checkbox"></td>
+                        </tr>
+
+                    </table>
+                </div>
+
+                <textarea id="loggerOutput" rows="10" readonly></textarea>
+
+            </div>
 
         </div>
-
-        <div id="ui-container">
-
-            <p>Source Code: <a href="https://github.com/GuillaumeBouchetEpitech/webgl_raytracer">Github Link</a></p>
-
-            <table>
-
-                <tr>
-                    <td>Performance<br>Auto Scaling</td>
-                    <td><input id="auto-scaling-enabled" type="checkbox" checked></td>
-                </tr>
-                <tr>
-                    <td>Resolution</td>
-                    <td><input id="resolution" type="range" min="0" max="9" value="9"></td>
-                </tr>
-                <tr>
-                    <td>AntiAliasing<br/>(for low resolution)</td>
-                    <td><input id="anti-aliasing-enabled" type="checkbox"></td>
-                </tr>
-
-                <tr>
-                    <td>Debug Mode</td>
-                    <td><input id="debug-mode-enabled" type="checkbox"></td>
-                </tr>
-
-            </table>
-        </div>
-
-        <textarea id="loggerOutput" rows="10" readonly></textarea>
 
         <script src="./dist/bundle.js"></script>
 

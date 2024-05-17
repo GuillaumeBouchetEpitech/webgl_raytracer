@@ -67,10 +67,11 @@ export class TestScene2 {
         position: [0, 10, 10],
         radius: 0.25,
         color: [1, 1, 1],
-        reflection: 0,
-        chessboard: false,
-        lightEnabled: false,
-        shadowEnabled: false
+        reflectionFactor: 0,
+        refractionFactor: 0.0,
+        chessboardEnabled: false,
+        receiveLightEnabled: false,
+        castShadowEnabled: false
       });
 
       // actual spot lights
@@ -85,10 +86,11 @@ export class TestScene2 {
         position: lightPos,
         radius: 0.25,
         color: [1, 1, 1],
-        reflection: 0,
-        chessboard: false,
-        lightEnabled: false,
-        shadowEnabled: false
+        reflectionFactor: 0,
+        refractionFactor: 0.0,
+        chessboardEnabled: false,
+        receiveLightEnabled: false,
+        castShadowEnabled: false
       });
 
       // simple reflective sphere
@@ -96,10 +98,11 @@ export class TestScene2 {
         position: [0, 7, 1],
         radius: 1.0,
         color: [1, 1, 1],
-        reflection: 1.0,
-        chessboard: false,
-        lightEnabled: false,
-        shadowEnabled: true
+        reflectionFactor: 0.0,
+        refractionFactor: 0.5,
+        chessboardEnabled: false,
+        receiveLightEnabled: false,
+        castShadowEnabled: true
       });
 
       // // simple reflective box
@@ -111,10 +114,10 @@ export class TestScene2 {
       //   boxSize: [0.8,0.8,0.8],
 
       //   color: [1, 1, 1],
-      //   reflection: 1.0,
-      //   chessboard: false,
-      //   lightEnabled: false,
-      //   shadowEnabled: true
+      //   reflectionFactor: 1.0,
+      //   chessboardEnabled: false,
+      //   receiveLightEnabled: false,
+      //   castShadowEnabled: true
       // });
 
       // // simple reflective triangle
@@ -124,32 +127,36 @@ export class TestScene2 {
       //   v2: [0, 8, 2],
 
       //   color: [1, 1, 1],
-      //   reflection: 1.0,
-      //   lightEnabled: false,
-      //   shadowEnabled: true
+      //   reflectionFactor: 1.0,
+      //   receiveLightEnabled: false,
+      //   castShadowEnabled: true
       // });
 
       const allBoxes: {
         pos: glm.ReadonlyVec3;
         size: glm.ReadonlyVec3;
         color?: glm.ReadonlyVec3;
-        reflection?: number;
+        reflectionFactor?: number;
       }[] = [
-        { pos: [-2, 4, -1], size: [1, 1, 0.125] },
-        { pos: [-2, 4, +1], size: [1, 1, 0.125] },
-        { pos: [-2, 4 - 1, 0], size: [1, 0.125, 1] },
-        { pos: [-2, 4 + 1, 0], size: [1, 0.125, 1] },
-        { pos: [+2, 4, -1], size: [1, 1, 0.125] },
-        { pos: [+2, 4, +1], size: [1, 1, 0.125] },
-        { pos: [+2, 4 - 1, 0], size: [1, 0.125, 1] },
-        { pos: [+2, 4 + 1, 0], size: [1, 0.125, 1] },
+        // hollow box 1
+        { pos: [-2, 4, -1], size: [1, 1.125, 0.125] },
+        { pos: [-2, 4, +1], size: [1, 1.125, 0.125] },
+        { pos: [-2, 4 - 1, 0], size: [1, 0.125, 1.125] },
+        { pos: [-2, 4 + 1, 0], size: [1, 0.125, 1.125] },
 
+        // hollow box 2
+        { pos: [+2, 4, -1], size: [1, 1.125, 0.125] },
+        { pos: [+2, 4, +1], size: [1, 1.125, 0.125] },
+        { pos: [+2, 4 - 1, 0], size: [1, 0.125, 1.125] },
+        { pos: [+2, 4 + 1, 0], size: [1, 0.125, 1.125] },
+
+        // background
         { pos: [0, 8, -8], size: [8, 8, 0.125], color: [1.0, 0.5, 0.5] },
         { pos: [-8, 8, 0], size: [0.125, 8, 8], color: [0.5, 1.0, 0.5] },
         { pos: [+8, 8, 0], size: [0.125, 8, 8], color: [0.5, 0.5, 1.0] },
-        { pos: [0, -0, 0], size: [8, 0.125, 8], reflection: 0.3 }
+        { pos: [0,  0,-1], size: [8, 0.125, 8], reflectionFactor: 0.3 }
       ];
-      allBoxes.forEach(({ pos, size, color, reflection }) => {
+      allBoxes.forEach(({ pos, size, color, reflectionFactor }) => {
         renderer.rayTracerRenderer.pushBox({
           position: pos,
           angleX: 0,
@@ -157,10 +164,10 @@ export class TestScene2 {
           angleZ: 0,
           boxSize: size,
           color: color ?? [1, 1, 1],
-          reflection: reflection ?? 0,
-          chessboard: false,
-          lightEnabled: true,
-          shadowEnabled: true
+          reflectionFactor: reflectionFactor ?? 0,
+          chessboardEnabled: false,
+          receiveLightEnabled: true,
+          castShadowEnabled: true
         });
       });
 
@@ -177,7 +184,7 @@ export class TestScene2 {
               0 + 1 * Math.sin(continuousAngle)
             ],
             angleY: -continuousAngle,
-            size: [0.125, 1.0, 1.0]
+            size: [0.125, 1.0, 1.125]
           },
           {
             pos: [
@@ -186,7 +193,7 @@ export class TestScene2 {
               0 - 1 * Math.sin(continuousAngle)
             ],
             angleY: -continuousAngle,
-            size: [0.125, 1.0, 1.0]
+            size: [0.125, 1.0, 1.125]
           },
           {
             pos: [
@@ -223,10 +230,10 @@ export class TestScene2 {
             angleZ: 0,
             boxSize: size,
             color: [0, 1, 0],
-            reflection: 0,
-            chessboard: false,
-            lightEnabled: true,
-            shadowEnabled: true
+            reflectionFactor: 0,
+            chessboardEnabled: false,
+            receiveLightEnabled: true,
+            castShadowEnabled: true
           });
         });
       }

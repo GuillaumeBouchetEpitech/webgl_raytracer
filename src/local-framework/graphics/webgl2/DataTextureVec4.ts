@@ -1,24 +1,24 @@
 import { WebGLContext } from './WebGLContext';
 
-export interface IUnboundDataTexture {
-  initialize(data: number[] | number): void;
+export interface IUnboundDataTextureVec4 {
+  initialize(data: [number, number, number, number][]): void;
   rawBind(): void;
-  preBind(inCallback: (bound: IBoundDataTexture) => void): void;
-  bind(inCallback: (bound: IBoundDataTexture) => void): void;
+  preBind(inCallback: (bound: IBoundDataTextureVec4) => void): void;
+  bind(inCallback: (bound: IBoundDataTextureVec4) => void): void;
 }
 
-export interface IBoundDataTexture extends IUnboundDataTexture {
-  allocate(data: number[] | number): void;
-  update(start: number, data: number[]): void;
+export interface IBoundDataTextureVec4 extends IUnboundDataTextureVec4 {
+  allocate(data: [number, number, number, number][]): void;
+  update(start: number, data: [number, number, number, number][]): void;
 }
 
-export class DataTexture implements IBoundDataTexture {
+export class DataTextureVec4 implements IBoundDataTextureVec4 {
   private _texture: WebGLTexture | null = null;
 
-  private _buffer: Float32Array | undefined;
+  private _buffer: Uint8Array | undefined;
 
   // initialize(data: number[] = [], numComponents: number = 1) {
-  initialize(data: number[] | number) {
+  initialize(data: [number, number, number, number][] = []) {
     if (this._texture) {
       throw new Error('data texture already initialized');
     }
@@ -48,31 +48,19 @@ export class DataTexture implements IBoundDataTexture {
   }
 
   // update(data: number[], numComponents: number = 1) {
-  allocate(data: number[] | number) {
+  allocate(data: [number, number, number, number][]) {
     if (!this._texture) {
       throw new Error('data texture not initialized');
     }
-    const dataSize = Array.isArray(data) ? data.length : data;
-    if (dataSize <= 0) {
+    if (data.length <= 0) {
       throw new Error('texture: width must be positive');
-    }
-    if (dataSize > 2048) {
-      throw new Error(
-        `data texture max size is 2048 (input was ${dataSize})`
-      );
     }
 
     const gl = WebGLContext.getContext();
 
     gl.bindTexture(gl.TEXTURE_2D, this._texture);
 
-    if (Array.isArray(data)) {
-      this._buffer = new Float32Array(data);
-    }
-    else {
-      this._buffer = new Float32Array(data);
-    }
-
+    this._buffer = new Uint8Array(data.flat());
 
     // // expand the data to 4 values per pixel.
     // const numElements = data.length / numComponents;
@@ -85,12 +73,12 @@ export class DataTexture implements IBoundDataTexture {
     // }
 
     const level = 0;
-    const internalFormat = gl.R32F;
-    const width = dataSize;
+    const internalFormat = gl.RGBA;
+    const width = data.length;
     const height = 1;
     const border = 0;
-    const format = gl.RED;
-    const type = gl.FLOAT;
+    const format = gl.RGBA;
+    const type = gl.UNSIGNED_BYTE;
     gl.texImage2D(
       gl.TEXTURE_2D,
       level,
@@ -104,7 +92,7 @@ export class DataTexture implements IBoundDataTexture {
     );
   }
 
-  update(start: number, data: number[]) {
+  update(start: number, data: [number, number, number, number][]) {
     if (!this._texture) {
       throw new Error('data texture not initialized');
     }
@@ -121,19 +109,20 @@ export class DataTexture implements IBoundDataTexture {
 
     gl.bindTexture(gl.TEXTURE_2D, this._texture);
 
-    // this._buffer = new Float32Array(data);
+    // this._buffer = new Uint8Array(data.flat());
 
     for (let ii = 0; ii < data.length; ++ii) {
-      this._buffer[ii] = data[ii];
+      this._buffer[ii * 4 + 0] = data[ii][0];
+      this._buffer[ii * 4 + 1] = data[ii][1];
+      this._buffer[ii * 4 + 2] = data[ii][2];
+      this._buffer[ii * 4 + 3] = data[ii][3];
     }
 
     const level = 0;
-    // const internalFormat = gl.R32F;
     const width = data.length;
     const height = 1;
-    // const border = 0;
-    const format = gl.RED;
-    const type = gl.FLOAT;
+    const format = gl.RGBA;
+    const type = gl.UNSIGNED_BYTE;
 
     const xoffset = start;
     const yoffset = 0; // must stay 0
@@ -163,14 +152,14 @@ export class DataTexture implements IBoundDataTexture {
     gl.bindTexture(gl.TEXTURE_2D, this._texture);
   }
 
-  preBind(inCallback: (bound: IBoundDataTexture) => void): void {
+  preBind(inCallback: (bound: IBoundDataTextureVec4) => void): void {
     this.rawBind();
     inCallback(this);
   }
 
-  bind(inCallback: (bound: IBoundDataTexture) => void): void {
+  bind(inCallback: (bound: IBoundDataTextureVec4) => void): void {
     this.preBind(inCallback);
-    DataTexture.unbind();
+    DataTextureVec4.unbind();
   }
 
   static unbind(): void {

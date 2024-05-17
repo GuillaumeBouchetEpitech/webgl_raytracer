@@ -23,7 +23,7 @@ interface ExperimentDef {
   canvasElement: HTMLCanvasElement;
   logger: Logger;
   perfAutoScaling: HTMLInputElement;
-  resolution: HTMLProgressElement;
+  resolution: HTMLInputElement;
   anti_aliasing_enabled: HTMLInputElement;
   debug_mode_enabled: HTMLInputElement;
 }
@@ -50,8 +50,8 @@ export class Experiment {
   private _perfAutoScalingEnabled = true;
   private _framesUntilNextCheck = k_maxFramesUntilNextCheck;
 
-  // private _scene = new scenes.TestScene1();
-  private _scene = new scenes.TestScene2();
+  private _scene = new scenes.TestScene1();
+  // private _scene = new scenes.TestScene2();
 
   constructor(inDef: ExperimentDef) {
     this._canvasElement = inDef.canvasElement;
@@ -59,16 +59,13 @@ export class Experiment {
 
     this._freeFlyController = new FreeFlyController({
       coordinates: ['Z', 'X', 'Y'],
-      // position: [-10, 9, 22],
-      // theta: Math.PI * 0.85,
-      // phi: -Math.PI * 0.15,
       position: [-10, 13, 15],
       theta: Math.PI * 0.85,
       phi: -Math.PI * 0.15,
-      mouseSensibility: 0.1,
-      keyboardSensibility: Math.PI * 0.45,
-      touchSensibility: 0.3,
-      movingSpeed: 10
+      mouseSensibility: 6,
+      keyboardSensibility: Math.PI * 0.55,
+      touchSensibility: 4,
+      movingSpeed: 16
     });
 
     //
@@ -148,7 +145,7 @@ export class Experiment {
     //
 
     this._def.resolution.addEventListener('input', (event) => {
-      const newValue = this._def.resolution.value;
+      const newValue = this._def.resolution.value as unknown as number;
       this._setResolution(newValue);
       this._logResolution();
     });
@@ -163,7 +160,7 @@ export class Experiment {
       );
     });
 
-    this._setResolution(this._def.resolution.value);
+    this._setResolution(this._def.resolution.value as unknown as number);
 
     // performance auto-scaling
     this._def.perfAutoScaling.addEventListener('input', () => {
@@ -216,7 +213,8 @@ export class Experiment {
   stop() {
     if (!this.isRunning()) return;
     this._running = false;
-    window.cancelAnimationFrame(this._animationFrameHandle);
+    // window.cancelAnimationFrame(this._animationFrameHandle);
+    window.clearTimeout(this._animationFrameHandle);
   }
 
   isRunning() {
@@ -229,11 +227,14 @@ export class Experiment {
 
   private _tick() {
     const tick = () => {
-      if (!this._running || this._errorGraphicContext) return;
+      if (!this._running || this._errorGraphicContext) {
+        return;
+      }
 
       // plan the next frame
 
-      this._animationFrameHandle = window.requestAnimationFrame(tick);
+      // this._animationFrameHandle = window.requestAnimationFrame(tick);
+      this._animationFrameHandle = window.setTimeout(tick, 1000/60);
 
       this._mainLoop();
     };
@@ -241,6 +242,7 @@ export class Experiment {
     tick();
   }
 
+  // #region main loop
   private _mainLoop() {
     const currentMsecTime = Date.now();
     const deltaMsecTime = currentMsecTime - this._currFrameMsecTime;
@@ -260,41 +262,24 @@ export class Experiment {
     //
     //
 
-    {
-      const gl = WebGLContext.getContext();
-
-      gl.disable(gl.DEPTH_TEST);
-    }
-
     this._continuousSecTime += elapsedSecTime;
 
     this._scene.run(this._renderer, elapsedSecTime);
 
-    this._renderer.rayTracerRenderer.lookAt(
-      this._freeFlyController.getPosition(),
-      this._freeFlyController.getTarget(),
-      this._freeFlyController.getUpAxis()
-    );
+    //
+    //
 
-    this._renderer.rayTracerRenderer.render();
+    this._renderScene();
+    this._renderHud();
+  }
+  // #endregion main loop
 
-    const showDebug = this._def.debug_mode_enabled.checked === true;
-    if (showDebug) {
-      this._renderer.safeSceneWireFrame(() => {
-        this._renderer.setupDebugRenderer();
 
-        const axisOrigin: glm.ReadonlyVec3 = [0, 0, 0];
-        const axisX: glm.ReadonlyVec3 = [100, 0, 0];
-        const axisY: glm.ReadonlyVec3 = [0, 100, 0];
-        const axisZ: glm.ReadonlyVec3 = [0, 0, 100];
-
-        this._renderer.stackRenderers.pushLine(axisOrigin, axisX, [1, 0, 0]);
-        this._renderer.stackRenderers.pushLine(axisOrigin, axisY, [0, 1, 0]);
-        this._renderer.stackRenderers.pushLine(axisOrigin, axisZ, [0, 0, 1]);
-      });
-    }
+  // #region hud
+  private _renderHud() {
 
     const gl = WebGLContext.getContext();
+    gl.viewport(0, 0, this._canvasElement.width, this._canvasElement.height);
     gl.clear(gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
@@ -335,7 +320,44 @@ export class Experiment {
     this._renderer.flushHudText();
 
     this._renderer.rayTracerRenderer.reset();
+
   }
+  // #endregion hud
+
+  // #region scene
+  private _renderScene() {
+
+    {
+      const gl = WebGLContext.getContext();
+
+      gl.disable(gl.DEPTH_TEST);
+    }
+
+    this._renderer.rayTracerRenderer.lookAt(
+      this._freeFlyController.getPosition(),
+      this._freeFlyController.getTarget(),
+      this._freeFlyController.getUpAxis()
+    );
+
+    this._renderer.rayTracerRenderer.render();
+
+    const showDebug = this._def.debug_mode_enabled.checked === true;
+    if (showDebug) {
+      this._renderer.safeSceneWireFrame(() => {
+        this._renderer.setupDebugRenderer();
+
+        const axisOrigin: glm.ReadonlyVec3 = [0, 0, 0];
+        const axisX: glm.ReadonlyVec3 = [100, 0, 0];
+        const axisY: glm.ReadonlyVec3 = [0, 100, 0];
+        const axisZ: glm.ReadonlyVec3 = [0, 0, 100];
+
+        this._renderer.stackRenderers.pushLine(axisOrigin, axisX, [1, 0, 0]);
+        this._renderer.stackRenderers.pushLine(axisOrigin, axisY, [0, 1, 0]);
+        this._renderer.stackRenderers.pushLine(axisOrigin, axisZ, [0, 0, 1]);
+      });
+    }
+  }
+  // #endregion scene
 
   private _setResolution(inValue: number) {
     const safeValue = _clamp(inValue, 0, 9); // [0..9]
@@ -378,14 +400,14 @@ export class Experiment {
       `performance auto scaling: slow framerate, scaling down resolution`
     );
 
-    const currValue = this._def.resolution.value;
+    const currValue = (this._def.resolution.value as unknown as number);
     const newValue = currValue - 1;
 
     if (newValue >= 0 && newValue <= 9) {
       this._setResolution(newValue);
       this._logResolution();
 
-      this._def.resolution.value = newValue;
+      this._def.resolution.value = newValue as unknown as string;
     }
 
     this._framesUntilNextCheck = k_maxFramesUntilNextCheck;

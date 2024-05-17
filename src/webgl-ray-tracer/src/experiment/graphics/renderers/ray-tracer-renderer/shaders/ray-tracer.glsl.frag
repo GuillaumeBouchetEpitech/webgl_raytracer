@@ -8,11 +8,11 @@ precision highp float;
 //
 
 
-// Indices of refraction
+// Indices of refractionFactor
 const float Air = 1.0;
 const float Glass = 1.51714;
 
-// Air to glass ratio of the indices of refraction (Eta)
+// Air to glass ratio of the indices of refractionFactor (Eta)
 const float Eta = Air / Glass;
 
 // see http://en.wikipedia.org/wiki/Refractive_index Reflectivity
@@ -61,7 +61,7 @@ out vec4 o_color;
 
 const float     g_ambiantLight = 0.05;
 
-const int       g_reflectionMax = 2;
+const int       g_maxTotalReflection = 2;
 const bool      g_shadowsEnabled = true;
 
 const vec3      g_backgroundColor = vec3(0.1);
@@ -77,11 +77,12 @@ struct RayValues
 struct RayResult
 {
   bool hasHit;
-  float depth;
+  float distance;
   vec3 position;
   vec3 normal;
   vec4 color;
-  float reflection;
+  float reflectionFactor;
+  float refractionFactor;
   bool lightEnabled;
 };
 
@@ -125,7 +126,7 @@ vec3 getLightsVec3ByIndex(int index)
 //
 //
 
-bool intersectSphere(RayValues ray, float radius, out float distance, out vec3 normal)
+bool intersectSphere(RayValues ray, float radius, out float outDistance, out vec3 normal)
 {
   float nearValue = 0.001; // TODO: hardcoded
   float farValue = 100.0; // TODO: hardcoded
@@ -143,7 +144,7 @@ bool intersectSphere(RayValues ray, float radius, out float distance, out vec3 n
   if (d1 >= nearValue && d1 <= farValue)
   {
     normal = normalize(ray.origin + ray.direction * d1);
-    distance = d1;
+    outDistance = d1;
     return true;
   }
 
@@ -151,14 +152,14 @@ bool intersectSphere(RayValues ray, float radius, out float distance, out vec3 n
   if (d2 >= nearValue && d2 <= farValue)
   {
     normal = normalize(ray.origin + ray.direction * d2);
-    distance = d2;
+    outDistance = d2;
     return true;
   }
 
   return false;
 }
 
-bool intersectBox(RayValues ray, vec3 boxSize, out float distance, out vec3 normal)
+bool intersectBox(RayValues ray, vec3 boxSize, out float outDistance, out vec3 normal)
 {
   float nearValue = 0.001; // TODO: hardcoded
   float farValue = 100.0; // TODO: hardcoded
@@ -192,21 +193,21 @@ bool intersectBox(RayValues ray, vec3 boxSize, out float distance, out vec3 norm
   if (tN >= nearValue && tN <= farValue)
   {
     normal = normalize(-sign(ray.direction) * step(t1.yzx, t1.xyz) * step(t1.zxy, t1.xyz));
-    distance = tN;
+    outDistance = tN;
     return true;
   }
 
   if (tF >= nearValue && tF <= farValue)
   {
     normal = normalize(-sign(ray.direction) * step(t1.yzx, t1.xyz) * step(t1.zxy, t1.xyz));
-    distance = tF;
+    outDistance = tF;
     return true;
   }
 
   return false;
 }
 
-bool intersectTriangle(RayValues ray, vec3 v0, vec3 v1, vec3 v2, out float distance, out vec3 normal)
+bool intersectTriangle(RayValues ray, vec3 v0, vec3 v1, vec3 v2, out float outDistance, out vec3 normal)
 {
   float nearValue = 0.001; // TODO: hardcoded
   float farValue = 100.0; // TODO: hardcoded
@@ -227,7 +228,7 @@ bool intersectTriangle(RayValues ray, vec3 v0, vec3 v1, vec3 v2, out float dista
   }
 
   normal = normalize(-n);
-  distance = t;
+  outDistance = t;
   return true;
 }
 
@@ -264,11 +265,12 @@ bool intersectTriangle(RayValues ray, vec3 v0, vec3 v1, vec3 v2, out float dista
 //
 //
 
-bool intersectScene(RayValues ray, out RayResult result, bool shadowMode)
+bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
 {
   float bestDistance = -1.0;
 
-  result.hasHit = false;
+  outBestResult.hasHit = false;
+  outBestResult.distance = -1.0;
 
   if (u_sceneTextureSize <= 0) {
     return false;
@@ -277,11 +279,11 @@ bool intersectScene(RayValues ray, out RayResult result, bool shadowMode)
   RayValues tmpRay;
   vec3 normal;
 
-  for (int index = u_spheresStart; index < u_spheresStop; index += 11)
+  for (int index = u_spheresStart; index < u_spheresStop; index += 12)
   {
-    bool shadowEnabled = (getSceneDataByIndex(index + 8) != 0.0);
+    bool castShadow = (getSceneDataByIndex(index + 9) != 0.0);
 
-    if (shadowMode && !shadowEnabled) {
+    if (shadowMode && !castShadow) {
       continue;
     }
 
@@ -297,48 +299,49 @@ bool intersectScene(RayValues ray, out RayResult result, bool shadowMode)
     float currDistance = 0.0;
     if (
       !intersectSphere(tmpRay, radius, currDistance, normal) ||
-      (bestDistance > 0.0 && currDistance > bestDistance)
+      (outBestResult.distance > 0.0 && currDistance > outBestResult.distance)
     ) {
       continue;
     }
 
-    bestDistance = currDistance;
+    outBestResult.hasHit = true;
+    outBestResult.distance = currDistance;
+    outBestResult.position = ray.origin + currDistance * ray.direction;
+    outBestResult.normal = normal;
+    outBestResult.refractionFactor = 0.0;
 
-    result.hasHit = true;
-    result.depth = bestDistance;
-    result.position = ray.origin + bestDistance * ray.direction;
-    result.normal = normal;
+    bool chessboardMaterialEnabled = (getSceneDataByIndex(index + 11) != 0.0);
 
-    bool chessboardMaterial = (getSceneDataByIndex(index + 10) != 0.0);
-
-    if (chessboardMaterial)
+    if (chessboardMaterialEnabled)
     {
-      // vec3 txPos = (txx * vec4(result.position - center, 1.0)).xyz;
-      vec3 txPos = (vec4(result.position - center, 1.0)).xyz;
+      // vec3 txPos = (txx * vec4(outBestResult.position - center, 1.0)).xyz;
+      vec3 txPos = (vec4(outBestResult.position - center, 1.0)).xyz;
       // chessboard color effect
       if (fract(txPos.x * 0.2) > 0.5 == fract(txPos.z * 0.2) > 0.5 == fract(txPos.y * 0.2) > 0.5)
       {
-        result.color = vec4(1.0);
-        result.reflection = 0.3;
+        outBestResult.color = vec4(1.0);
+        outBestResult.reflectionFactor = 0.3;
       }
       else
       {
-        result.color = vec4(0.0, 0.4, 0.45, 1.0);
-        result.reflection = 0.0;
+        outBestResult.color = vec4(0.0, 0.4, 0.45, 1.0);
+        outBestResult.reflectionFactor = 0.0;
       }
     }
     else
     {
       vec3 color = getSceneVec3ByIndex(index + 4);
 
-      float reflection = getSceneDataByIndex(index + 7);
+      float reflectionFactor = getSceneDataByIndex(index + 7);
+      float refractionFactor = getSceneDataByIndex(index + 8);
 
-      result.color = vec4(color, 0.5);
-      result.reflection = reflection;
+      outBestResult.color = vec4(color, 0.5);
+      outBestResult.reflectionFactor = reflectionFactor;
+      outBestResult.refractionFactor = refractionFactor;
     }
 
-    bool lightEnabled = (getSceneDataByIndex(index + 9) != 0.0);
-    result.lightEnabled = lightEnabled;
+    bool lightEnabled = (getSceneDataByIndex(index + 10) != 0.0);
+    outBestResult.lightEnabled = lightEnabled;
 
     // if (shadowMode)
     //     return true;
@@ -346,9 +349,9 @@ bool intersectScene(RayValues ray, out RayResult result, bool shadowMode)
 
   for (int index = u_boxesStart; index < u_boxesStop; index += 26)
   {
-    bool shadowEnabled = (getSceneDataByIndex(index + 23) != 0.0);
+    bool castShadow = (getSceneDataByIndex(index + 23) != 0.0);
 
-    if (shadowMode && !shadowEnabled) {
+    if (shadowMode && !castShadow) {
       continue;
     }
 
@@ -388,51 +391,50 @@ bool intersectScene(RayValues ray, out RayResult result, bool shadowMode)
     float currDistance = 0.0;
     if (
       !intersectBox(tmpRay, boxSize, currDistance, normal) ||
-      (bestDistance > 0.0 && currDistance > bestDistance)
+      (outBestResult.distance > 0.0 && currDistance > outBestResult.distance)
     ) {
       continue;
     }
 
-    bestDistance = currDistance;
-
     // convert normal from box space to world space
     normal = (normalTransformationMatrix * vec4(normal, 0.0)).xyz;
 
-    result.hasHit = true;
-    result.depth = bestDistance;
-    result.position = ray.origin + bestDistance * ray.direction;
-    result.normal = normal;
+    outBestResult.hasHit = true;
+    outBestResult.distance = currDistance;
+    outBestResult.position = ray.origin + currDistance * ray.direction;
+    outBestResult.normal = normal;
+    outBestResult.refractionFactor = 0.0; // TODO
 
-    bool chessboardMaterial = (getSceneDataByIndex(index + 25) != 0.0);
+    bool chessboardMaterialEnabled = (getSceneDataByIndex(index + 25) != 0.0);
 
-    if (chessboardMaterial)
+    if (chessboardMaterialEnabled)
     {
-      vec3 txPos = (inversedTransformationMatrix * vec4(result.position, 1.0)).xyz;
+      vec3 txPos = (inversedTransformationMatrix * vec4(outBestResult.position, 1.0)).xyz;
 
       // chessboard color effect
       if (fract(txPos.x * 0.2) > 0.5 == fract(txPos.z * 0.2) > 0.5 == fract(txPos.y * 0.2) > 0.5)
       {
-        result.color = vec4(1.0);
-        result.reflection = 0.3;
+        outBestResult.color = vec4(1.0);
+        outBestResult.reflectionFactor = 0.3;
       }
       else
       {
-        result.color = vec4(0.0, 0.4, 0.45, 1.0);
-        result.reflection = 0.0;
+        outBestResult.color = vec4(0.0, 0.4, 0.45, 1.0);
+        outBestResult.reflectionFactor = 0.0;
       }
     }
     else
     {
       vec3 color = getSceneVec3ByIndex(index + 19);
 
-      float reflection = getSceneDataByIndex(index + 22);
+      float reflectionFactor = getSceneDataByIndex(index + 22);
 
-      result.color = vec4(color, 1.0);
-      result.reflection = reflection;
+      outBestResult.color = vec4(color, 1.0);
+      outBestResult.reflectionFactor = reflectionFactor;
     }
 
     bool lightEnabled = (getSceneDataByIndex(index + 24) != 0.0);
-    result.lightEnabled = lightEnabled;
+    outBestResult.lightEnabled = lightEnabled;
 
     // if (shadowMode)
     //     return true;
@@ -440,9 +442,9 @@ bool intersectScene(RayValues ray, out RayResult result, bool shadowMode)
 
   for (int index = u_trianglesStart; index < u_trianglesStop; index += 15)
   {
-    bool shadowEnabled = (getSceneDataByIndex(index + 13) != 0.0);
+    bool castShadow = (getSceneDataByIndex(index + 13) != 0.0);
 
-    if (shadowMode && !shadowEnabled) {
+    if (shadowMode && !castShadow) {
       continue;
     }
 
@@ -456,27 +458,26 @@ bool intersectScene(RayValues ray, out RayResult result, bool shadowMode)
     float currDistance = 0.0;
     if (
       !intersectTriangle(tmpRay, v0, v1, v2, currDistance, normal) ||
-      (bestDistance > 0.0 && currDistance > bestDistance)
+      (outBestResult.distance > 0.0 && currDistance > outBestResult.distance)
     ) {
       continue;
     }
 
-    bestDistance = currDistance;
-
-    result.hasHit = true;
-    result.depth = bestDistance;
-    result.position = ray.origin + bestDistance * ray.direction;
-    result.normal = normal;
+    outBestResult.hasHit = true;
+    outBestResult.distance = currDistance;
+    outBestResult.position = ray.origin + currDistance * ray.direction;
+    outBestResult.normal = normal;
+    outBestResult.refractionFactor = 0.0; // TODO
 
     vec3 color = getSceneVec3ByIndex(index + 9);
 
-    float reflection = getSceneDataByIndex(index + 12);
+    float reflectionFactor = getSceneDataByIndex(index + 12);
 
-    result.color = vec4(color, 1.0);
-    result.reflection = reflection;
+    outBestResult.color = vec4(color, 1.0);
+    outBestResult.reflectionFactor = reflectionFactor;
 
     bool lightEnabled = (getSceneDataByIndex(index + 14) != 0.0);
-    result.lightEnabled = lightEnabled;
+    outBestResult.lightEnabled = lightEnabled;
 
     // if (shadowMode)
     //     return true;
@@ -495,18 +496,18 @@ bool intersectScene(RayValues ray, out RayResult result, bool shadowMode)
 
     // if (val > 0.0 && (bestDistance <= 0.0 || val < bestDistance))
     // {
-    //     result.hasHit = true;
-    //     result.depth = val;
-    //     result.position = ray.origin + val * ray.direction;
-    //     result.normal = vec3(planeNormal);
-    //     result.color = vec4(1.0, 1.0, 1.0, 1.0);
-    //     result.reflection = 0.0;
-    //     result.lightEnabled = true;
+    //     outBestResult.hasHit = true;
+    //     outBestResult.distance = val;
+    //     outBestResult.position = ray.origin + val * ray.direction;
+    //     outBestResult.normal = vec3(planeNormal);
+    //     outBestResult.color = vec4(1.0, 1.0, 1.0, 1.0);
+    //     outBestResult.reflectionFactor = 0.0;
+    //     outBestResult.lightEnabled = true;
     // }
 
   } // plane test
 
-  return result.hasHit;
+  return outBestResult.hasHit;
 }
 
 float lightAt(vec3 impactPosition, vec3 impactNormal, vec3 viewer)
@@ -525,10 +526,11 @@ float lightAt(vec3 impactPosition, vec3 impactNormal, vec3 viewer)
     float coef = localIntensity;
     lightDir = normalize(lightDir);
 
-    // is the light blocked by an object?
+    // is the sun light blocked by an object?
     RayResult result;
     if (intersectScene(RayValues(impactPosition, lightDir), result, true)) {
-      continue; // an object is shadowing this light: ignore this light
+      // light ray is blocked, skip this light
+      continue;
     }
 
     //
@@ -536,8 +538,8 @@ float lightAt(vec3 impactPosition, vec3 impactNormal, vec3 viewer)
     //
 
     float intensity = 0.0;
-    vec3 reflection = reflect(-lightDir, impactNormal);
-    intensity += 0.6 * pow(max(dot(reflection, viewer), 0.0), 30.0);
+    vec3 reflectionFactor = reflect(-lightDir, impactNormal);
+    intensity += 0.6 * pow(max(dot(reflectionFactor, viewer), 0.0), 30.0);
     intensity += 1.0 * dot(lightDir, impactNormal);
 
     intensity *= coef;
@@ -559,10 +561,11 @@ float lightAt(vec3 impactPosition, vec3 impactNormal, vec3 viewer)
 
     vec3 lightToImpactVec3 = lightPos - impactPosition;
 
-    // is too far?
+    // is it out of the spot light effect radius?
     float lightToImpactDistance = length(lightToImpactVec3);
     if (lightToImpactDistance > lightRadius) {
-      continue; // too far
+      // out of range, do not apply this light
+      continue;
     }
 
     lightDir.x = lightToImpactVec3.x / lightToImpactDistance; // normalize
@@ -579,12 +582,13 @@ float lightAt(vec3 impactPosition, vec3 impactNormal, vec3 viewer)
 
     RayResult result;
     if (
-      // is the light blocked by an object?
+      // is the spot light blocked by an object?
       intersectScene(RayValues(impactPosition, lightDir), result, true) &&
-      // avoid "opposite shadows"
-      result.depth < lightToImpactDistance
+      // is the blocking object in range of the spot light effect radius?
+      result.distance < lightToImpactDistance
     ) {
-      continue; // shadow
+      // light ray is blocked, skip this light
+      continue;
     }
 
     //
@@ -592,8 +596,8 @@ float lightAt(vec3 impactPosition, vec3 impactNormal, vec3 viewer)
     //
 
     float intensity = 0.0;
-    vec3 reflection = reflect(-lightDir, impactNormal);
-    intensity += 0.6 * pow(max(dot(reflection, viewer), 0.0), 30.0);
+    vec3 reflectionFactor = reflect(-lightDir, impactNormal);
+    intensity += 0.6 * pow(max(dot(reflectionFactor, viewer), 0.0), 30.0);
     intensity += 1.0 * dot(lightDir, impactNormal);
 
     intensity *= coef;
@@ -619,15 +623,19 @@ void main()
   RayResult result;
 
   result.position = u_cameraEye;
-  result.reflection = 1.0;
+  result.reflectionFactor = 1.0;
   result.lightEnabled = true;
 
-  float lastReflection = 1.0;
+  float lastReflectionFactor = 1.0;
+  float lastRefractionFactor = 1.0;
 
-  const int maxIteration = g_reflectionMax;
+  const int maxIteration = g_maxTotalReflection;
   for (int iterationLeft = maxIteration; iterationLeft >= 0; --iterationLeft)
   {
-    if (result.reflection <= 0.05) {
+    if (
+      result.reflectionFactor <= 0.05 &&
+      result.refractionFactor <= 0.05
+    ) {
       break;
     }
 
@@ -638,6 +646,13 @@ void main()
     result.hasHit = intersectScene(currRay, result, false);
 
     vec3 tmpColor = g_backgroundColor;
+
+    if (result.refractionFactor > 0.05) {
+
+      lastRefractionFactor *= result.refractionFactor;
+
+      continue;
+    }
 
     if (result.hasHit)
     {
@@ -657,17 +672,20 @@ void main()
       tmpColor = result.color.xyz * lightIntensity;
     }
 
-    finalPixelColor = finalPixelColor * (1.0 - lastReflection) + tmpColor * lastReflection;
+    finalPixelColor = finalPixelColor * (1.0 - lastReflectionFactor) + tmpColor * lastReflectionFactor;
 
     if (mustStop || !result.hasHit)
     {
       break;
     }
 
-    lastReflection *= result.reflection;
+    lastReflectionFactor *= result.reflectionFactor;
 
-    // rayDir = reflect(rayDir, result.normal);
-    rayDir = refract(rayDir, result.normal, Eta);
+    rayDir = reflect(rayDir, result.normal);
+
+    // result.refractionFactor
+    // rayDir = refract(rayDir, result.normal, Eta);
+
   }
 
   o_color = vec4(finalPixelColor, 1.0);

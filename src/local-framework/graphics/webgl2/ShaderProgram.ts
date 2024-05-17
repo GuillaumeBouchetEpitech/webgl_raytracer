@@ -1,5 +1,8 @@
+import { IUnboundTextureArray } from './TextureArray';
 import { IUnboundCubeMap } from './CubeMap';
 import { IUnboundTexture } from './Texture';
+import { IUnboundDataTexture } from './DataTexture';
+import { IUnboundDataTextureVec4 } from './DataTextureVec4';
 import { WebGLContext } from './WebGLContext';
 
 import * as glm from 'gl-matrix';
@@ -22,7 +25,12 @@ export interface IUnboundShader {
 export interface IBoundShader {
   setTextureUniform(
     inName: string,
-    inTexture: IUnboundTexture | IUnboundCubeMap,
+    inTexture:
+      | IUnboundTexture
+      | IUnboundTextureArray
+      | IUnboundCubeMap
+      | IUnboundDataTexture
+      | IUnboundDataTextureVec4,
     inIndex: number
   ): void;
   setInteger1Uniform(inName: string, inValue: number): void;
@@ -41,6 +49,7 @@ export interface IBoundShader {
     inValueY: number,
     inValueZ: number
   ): void;
+  setMatrix3Uniform(inName: string, inMatrix: glm.ReadonlyMat3): void;
   setMatrix4Uniform(inName: string, inMatrix: glm.ReadonlyMat4): void;
 }
 
@@ -65,7 +74,9 @@ export class ShaderProgram {
     //
 
     const program = gl.createProgram();
-    if (!program) throw new Error('could not create a shader program');
+    if (!program) {
+      throw new Error('could not create a shader program');
+    }
 
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
@@ -92,6 +103,11 @@ export class ShaderProgram {
       this._getUniforms(opt.uniforms);
     });
     // ShaderProgram.unbind();
+  }
+
+  dispose() {
+    const gl = WebGLContext.getContext();
+    gl.deleteProgram(this._program);
   }
 
   // rawBind() {
@@ -134,22 +150,30 @@ export class ShaderProgram {
 
   getAttribute(name: string) {
     const attribute = this._attributes.get(name);
-    if (attribute === undefined)
+    if (attribute === undefined) {
       throw new Error(`attribute not found: ${name}`);
+    }
 
     return attribute;
   }
 
   getUniform(name: string) {
     const uniform = this._uniforms.get(name);
-    if (uniform === undefined) throw new Error(`uniform not found: ${name}`);
+    if (uniform === undefined) {
+      throw new Error(`uniform not found: ${name}`);
+    }
 
     return uniform;
   }
 
   setTextureUniform(
     inName: string,
-    inTexture: IUnboundTexture | IUnboundCubeMap,
+    inTexture:
+      | IUnboundTexture
+      | IUnboundTextureArray
+      | IUnboundCubeMap
+      | IUnboundDataTexture
+      | IUnboundDataTextureVec4,
     inIndex: number
   ) {
     const gl = WebGLContext.getContext();
@@ -199,6 +223,11 @@ export class ShaderProgram {
     gl.uniform3f(this.getUniform(inName), inValueX, inValueY, inValueZ);
   }
 
+  setMatrix3Uniform(inName: string, inMatrix: glm.ReadonlyMat3): void {
+    const gl = WebGLContext.getContext();
+    gl.uniformMatrix3fv(this.getUniform(inName), false, inMatrix as glm.mat3);
+  }
+
   setMatrix4Uniform(inName: string, inMatrix: glm.ReadonlyMat4) {
     const gl = WebGLContext.getContext();
     gl.uniformMatrix4fv(this.getUniform(inName), false, inMatrix as glm.mat4);
@@ -210,8 +239,9 @@ export class ShaderProgram {
     for (let ii = 0; ii < attributes.length; ++ii) {
       const value = gl.getAttribLocation(this._program, attributes[ii]);
 
-      if (value < 0)
+      if (value < 0) {
         throw new Error(`attribute not found => ${attributes[ii]}`);
+      }
 
       this._attributes.set(attributes[ii], value);
     }
@@ -223,8 +253,9 @@ export class ShaderProgram {
     for (let ii = 0; ii < uniforms.length; ++ii) {
       const value = gl.getUniformLocation(this._program, uniforms[ii]);
 
-      if (value === null)
+      if (value === null) {
         throw new Error(`uniform not found => ${uniforms[ii]}`);
+      }
 
       this._uniforms.set(uniforms[ii], value);
     }
@@ -236,7 +267,9 @@ export class ShaderProgram {
     const gl = WebGLContext.getContext();
 
     const shader = gl.createShader(type);
-    if (!shader) throw new Error('could not create a shader');
+    if (!shader) {
+      throw new Error('could not create a shader');
+    }
 
     gl.shaderSource(shader, src);
     gl.compileShader(shader);
