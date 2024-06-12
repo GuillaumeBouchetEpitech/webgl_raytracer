@@ -93,17 +93,17 @@ export class TestScene2 {
         castShadowEnabled: false
       });
 
-      // simple reflective sphere
-      renderer.rayTracerRenderer.pushSphere({
-        position: [0, 7, 1],
-        radius: 1.0,
-        color: [1, 1, 1],
-        reflectionFactor: 0.0,
-        refractionFactor: 0.5,
-        chessboardEnabled: false,
-        receiveLightEnabled: false,
-        castShadowEnabled: true
-      });
+      // // simple reflective sphere
+      // renderer.rayTracerRenderer.pushSphere({
+      //   position: [0, 7, 1],
+      //   radius: 1.0,
+      //   color: [1, 1, 1],
+      //   reflectionFactor: 0.0,
+      //   refractionFactor: 0.5,
+      //   chessboardEnabled: false,
+      //   receiveLightEnabled: false,
+      //   castShadowEnabled: true
+      // });
 
       // // simple reflective box
       // renderer.rayTracerRenderer.pushBox({

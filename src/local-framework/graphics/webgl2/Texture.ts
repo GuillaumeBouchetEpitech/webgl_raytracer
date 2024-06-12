@@ -22,11 +22,7 @@ export enum TextureRepeat {
 }
 
 export interface IBoundTexture {
-  load(
-    inImage: HTMLImageElement,
-    mode?: TextureFilter,
-    repeat?: TextureRepeat
-  ): void;
+  loadFromImage(inImage: HTMLImageElement, mode?: TextureFilter, repeat?: TextureRepeat): void;
   loadFromMemory(
     inWidth: number,
     inHeight: number,
@@ -34,24 +30,9 @@ export interface IBoundTexture {
     mode?: TextureFilter,
     repeat?: TextureRepeat
   ): void;
-  allocate(
-    inWidth: number,
-    inHeight: number,
-    mode?: TextureFilter,
-    repeat?: TextureRepeat
-  ): void;
-  allocateDepth(
-    inWidth: number,
-    inHeight: number,
-    mode?: TextureFilter,
-    repeat?: TextureRepeat
-  ): void;
-  resize(
-    inWidth: number,
-    inHeight: number,
-    mode?: TextureFilter,
-    repeat?: TextureRepeat
-  ): void;
+  allocate(inWidth: number, inHeight: number, mode?: TextureFilter, repeat?: TextureRepeat): void;
+  allocateDepth(inWidth: number, inHeight: number, mode?: TextureFilter, repeat?: TextureRepeat): void;
+  resize(inWidth: number, inHeight: number, mode?: TextureFilter, repeat?: TextureRepeat): void;
   getRawObject(): WebGLTexture;
 }
 
@@ -89,7 +70,7 @@ export class Texture implements IUnboundTexture, IBoundTexture {
     gl.bindTexture(gl.TEXTURE_2D, null);
   }
 
-  load(
+  loadFromImage(
     inImage: HTMLImageElement,
     mode: TextureFilter = TextureFilter.pixelated,
     repeat: TextureRepeat = TextureRepeat.noRepeat
@@ -164,26 +145,9 @@ export class Texture implements IUnboundTexture, IBoundTexture {
     const srcType = isDepthTexture ? gl.FLOAT : gl.UNSIGNED_BYTE;
 
     if (inPixels instanceof HTMLImageElement) {
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        level,
-        internalFormat,
-        srcFormat,
-        srcType,
-        inPixels
-      );
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, inPixels);
     } else {
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        level,
-        internalFormat,
-        inWidth,
-        inHeight,
-        border,
-        srcFormat,
-        srcType,
-        inPixels
-      );
+      gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, inWidth, inHeight, border, srcFormat, srcType, inPixels);
     }
 
     if (repeat === TextureRepeat.noRepeat) {
@@ -204,11 +168,7 @@ export class Texture implements IUnboundTexture, IBoundTexture {
     } else if (mode === TextureFilter.mipmap) {
       gl.generateMipmap(gl.TEXTURE_2D);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-      gl.texParameteri(
-        gl.TEXTURE_2D,
-        gl.TEXTURE_MIN_FILTER,
-        gl.LINEAR_MIPMAP_LINEAR
-      );
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     }
   }
 

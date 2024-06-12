@@ -79,17 +79,7 @@ export class DataTextureVec4 implements IBoundDataTextureVec4 {
     const border = 0;
     const format = gl.RGBA;
     const type = gl.UNSIGNED_BYTE;
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      level,
-      internalFormat,
-      width,
-      height,
-      border,
-      format,
-      type,
-      this._buffer
-    );
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, format, type, this._buffer);
   }
 
   update(start: number, data: [number, number, number, number][]) {
@@ -128,18 +118,7 @@ export class DataTextureVec4 implements IBoundDataTextureVec4 {
     const yoffset = 0; // must stay 0
     const srcOffset = 0;
 
-    gl.texSubImage2D(
-      gl.TEXTURE_2D,
-      level,
-      xoffset,
-      yoffset,
-      width,
-      height,
-      format,
-      type,
-      this._buffer,
-      srcOffset
-    );
+    gl.texSubImage2D(gl.TEXTURE_2D, level, xoffset, yoffset, width, height, format, type, this._buffer, srcOffset);
   }
 
   rawBind() {

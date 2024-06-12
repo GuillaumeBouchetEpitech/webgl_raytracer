@@ -18,7 +18,6 @@ const float Eta = Air / Glass;
 // see http://en.wikipedia.org/wiki/Refractive_index Reflectivity
 const float R0 = ((Air - Glass) * (Air - Glass)) / ((Air + Glass) * (Air + Glass));
 
-
 //
 //
 //
@@ -126,8 +125,12 @@ vec3 getLightsVec3ByIndex(int index)
 //
 //
 
-bool intersectSphere(RayValues ray, float radius, out float outDistance, out vec3 normal)
-{
+bool intersectSphere(
+  RayValues ray,
+  float radius,
+  out float outDistance,
+  out vec3 normal
+) {
   float nearValue = 0.001; // TODO: hardcoded
   float farValue = 100.0; // TODO: hardcoded
 
@@ -647,13 +650,6 @@ void main()
 
     vec3 tmpColor = g_backgroundColor;
 
-    if (result.refractionFactor > 0.05) {
-
-      lastRefractionFactor *= result.refractionFactor;
-
-      continue;
-    }
-
     if (result.hasHit)
     {
       float lightIntensity = 1.0;
@@ -671,6 +667,26 @@ void main()
 
       tmpColor = result.color.xyz * lightIntensity;
     }
+
+    // vec3 incident = normalize( vec3( vertex - camera ) );
+
+    // if (result.refractionFactor > 0.05) {
+
+    //   finalPixelColor = finalPixelColor * (1.0 - lastReflectionFactor) + tmpColor * lastReflectionFactor;
+
+    //   if (mustStop || !result.hasHit)
+    //   {
+    //     break;
+    //   }
+
+    //   // lastReflectionFactor *= result.reflectionFactor;
+    //   lastRefractionFactor *= result.refractionFactor;
+
+    //   // rayDir = refract(rayDir, result.normal);
+    //   rayDir = refract(rayDir, result.normal, Eta);
+
+    //   continue;
+    // }
 
     finalPixelColor = finalPixelColor * (1.0 - lastReflectionFactor) + tmpColor * lastReflectionFactor;
 

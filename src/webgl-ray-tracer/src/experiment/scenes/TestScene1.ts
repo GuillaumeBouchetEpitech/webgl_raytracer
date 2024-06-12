@@ -57,55 +57,23 @@ export class TestScene1 {
         receiveLightEnabled: true
       });
 
-      // pillars
-      renderer.rayTracerRenderer.pushBox({
-        position: [-10, 0, -10],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
-        boxSize: [1, 5, 1],
-        color: [1, 1, 1],
-        reflectionFactor: 0,
-        chessboardEnabled: false,
-        receiveLightEnabled: true,
-        castShadowEnabled: true
-      });
-      renderer.rayTracerRenderer.pushBox({
-        position: [+10, 0, -10],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
-        boxSize: [1, 5, 1],
-        color: [1, 1, 1],
-        reflectionFactor: 0,
-        chessboardEnabled: false,
-        receiveLightEnabled: true,
-        castShadowEnabled: true
-      });
-      renderer.rayTracerRenderer.pushBox({
-        position: [-10, 0, +10],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
-        boxSize: [1, 5, 1],
-        color: [1, 1, 1],
-        reflectionFactor: 0,
-        chessboardEnabled: false,
-        receiveLightEnabled: true,
-        castShadowEnabled: true
-      });
-      renderer.rayTracerRenderer.pushBox({
-        position: [+10, 0, +10],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
-        boxSize: [1, 5, 1],
-        color: [1, 1, 1],
-        reflectionFactor: 0,
-        chessboardEnabled: false,
-        receiveLightEnabled: true,
-        castShadowEnabled: true
-      });
+      // 4 pillars
+      for (let xx = -1; xx <= 1; xx += 2)
+      for (let zz = -1; zz <= 1; zz += 2) {
+
+        renderer.rayTracerRenderer.pushBox({
+          position: [xx*10, 0, zz*10],
+          angleX: 0,
+          angleY: 0,
+          angleZ: 0,
+          boxSize: [1, 5, 1],
+          color: [1, 1, 1],
+          reflectionFactor: 0,
+          chessboardEnabled: false,
+          receiveLightEnabled: true,
+          castShadowEnabled: true
+        });
+      }
 
       // space ship
       renderer.rayTracerRenderer.pushBox({
@@ -196,15 +164,11 @@ export class TestScene1 {
       //
       //
 
-      const angleX = 0;
-      const angleY = 0;
-      const angleZ = 0;
-
       renderer.rayTracerRenderer.pushBox({
         position: [0, 0, 0],
-        angleX: angleX,
-        angleY: angleY,
-        angleZ: angleZ,
+        angleX: 0,
+        angleY: 0,
+        angleZ: 0,
         boxSize: [2, 1, 0.5],
         color: [1, 0.5, 0.5],
         reflectionFactor: 0.8,
@@ -214,9 +178,9 @@ export class TestScene1 {
       });
       renderer.rayTracerRenderer.pushBox({
         position: [0, 2.5, 0],
-        angleX: angleX,
-        angleY: angleY,
-        angleZ: angleZ,
+        angleX: 0,
+        angleY: 0,
+        angleZ: 0,
         boxSize: [2, 1, 0.5],
         color: [1, 0.5, 0.5],
         reflectionFactor: 0.8,

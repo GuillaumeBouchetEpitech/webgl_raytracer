@@ -1,5 +1,6 @@
 import { WebGLContext } from './WebGLContext';
 import { IBoundTexture } from './Texture';
+import { IBoundRenderBuffer } from './RenderBuffer';
 import { CubeMapType, IBoundCubeMap, getCubeMapType } from './CubeMap';
 
 export interface IUnboundFrameBuffer {
@@ -10,14 +11,9 @@ export interface IUnboundFrameBuffer {
 export interface IBoundFrameBuffer {
   attachTexture(texture: IBoundTexture): void;
   attachDepthTexture(texture: IBoundTexture): void;
+  attachRenderBuffer(texture: IBoundRenderBuffer): void;
   attachCubeMap(texture: IBoundCubeMap, type: CubeMapType): void;
-  getPixels(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    outDst: Uint8Array
-  ): void;
+  getPixels(x: number, y: number, width: number, height: number, outDst: Uint8Array): void;
 }
 
 export class FrameBuffer implements IUnboundFrameBuffer, IBoundFrameBuffer {
@@ -64,13 +60,7 @@ export class FrameBuffer implements IUnboundFrameBuffer, IBoundFrameBuffer {
 
     const mipmapLevel = 0;
 
-    gl.framebufferTexture2D(
-      gl.FRAMEBUFFER,
-      gl.COLOR_ATTACHMENT0,
-      gl.TEXTURE_2D,
-      texture.getRawObject(),
-      mipmapLevel
-    );
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture.getRawObject(), mipmapLevel);
   }
 
   attachDepthTexture(texture: IBoundTexture) {
@@ -82,13 +72,13 @@ export class FrameBuffer implements IUnboundFrameBuffer, IBoundFrameBuffer {
 
     const mipmapLevel = 0;
 
-    gl.framebufferTexture2D(
-      gl.FRAMEBUFFER,
-      gl.DEPTH_ATTACHMENT,
-      gl.TEXTURE_2D,
-      texture.getRawObject(),
-      mipmapLevel
-    );
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, texture.getRawObject(), mipmapLevel);
+  }
+
+  attachRenderBuffer(texture: IBoundRenderBuffer): void {
+    const gl = WebGLContext.getContext();
+
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, texture.getRawObject());
   }
 
   attachCubeMap(texture: IBoundCubeMap, type: CubeMapType) {
@@ -109,13 +99,7 @@ export class FrameBuffer implements IUnboundFrameBuffer, IBoundFrameBuffer {
     );
   }
 
-  getPixels(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    outDst: Uint8Array
-  ): void {
+  getPixels(x: number, y: number, width: number, height: number, outDst: Uint8Array): void {
     const gl = WebGLContext.getContext();
     gl.readPixels(x, y, width, height, gl.RGBA, gl.UNSIGNED_BYTE, outDst);
   }

@@ -50,8 +50,8 @@ export class Experiment {
   private _perfAutoScalingEnabled = true;
   private _framesUntilNextCheck = k_maxFramesUntilNextCheck;
 
-  private _scene = new scenes.TestScene1();
-  // private _scene = new scenes.TestScene2();
+  // private _scene = new scenes.TestScene1();
+  private _scene = new scenes.TestScene2();
 
   constructor(inDef: ExperimentDef) {
     this._canvasElement = inDef.canvasElement;
@@ -64,7 +64,7 @@ export class Experiment {
       phi: -Math.PI * 0.15,
       mouseSensibility: 6,
       keyboardSensibility: Math.PI * 0.55,
-      touchSensibility: 4,
+      touchSensibility: 8,
       movingSpeed: 16
     });
 
@@ -97,11 +97,11 @@ export class Experiment {
         if (isLocked) {
           this._def.logger.log('The pointer lock status is now locked');
 
-          GlobalMouseManager.activate();
+          GlobalMouseManager.activate(this._canvasElement);
         } else {
           this._def.logger.log('The pointer lock status is now unlocked');
 
-          GlobalMouseManager.deactivate();
+          GlobalMouseManager.deactivate(this._canvasElement);
 
           GlobalPointerLockManager.allowPointerLockedOnClickEvent(
             this._canvasElement
@@ -258,6 +258,7 @@ export class Experiment {
     this._freeFlyController.update(elapsedSecTime);
 
     GlobalMouseManager.resetDeltas();
+    GlobalTouchManager.resetDeltas();
 
     //
     //
@@ -284,22 +285,27 @@ export class Experiment {
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
 
+    // the modern web browsers are already applying double buffering
+    // -> so we're in fact triple buffering here
+    // -> which is great -> more time for the WebGL queue to finish on time
+    this._renderer.multipleBuffering.renderHud(this._renderer.mainHudCamera.getComposedMatrix());
+
     {
       const keyEventsPos: glm.ReadonlyVec2 = [7 + 20, 165];
       const touchEventsPos: glm.ReadonlyVec2 = [7 + 20, 260];
       const boardPos: glm.ReadonlyVec2 = [7, 35];
 
-      graphics.renderers.addKeyStrokesWidgets(
+      graphics.renderers.widgets.addKeyStrokesWidgets(
         keyEventsPos,
         this._renderer.stackRenderers,
         this._renderer.textRenderer
       );
-      graphics.renderers.addArrowStrokesWidgets(
+      graphics.renderers.widgets.addArrowStrokesWidgets(
         touchEventsPos,
         this._renderer.stackRenderers,
         this._renderer.textRenderer
       );
-      graphics.renderers.addKeysTouchesWidgets(
+      graphics.renderers.widgets.addKeysTouchesWidgets(
         this._canvasElement,
         boardPos,
         this._renderer.stackRenderers,
@@ -307,7 +313,7 @@ export class Experiment {
       );
     }
 
-    graphics.renderers.renderFpsMeter(
+    graphics.renderers.widgets.renderFpsMeter(
       [10, this._canvasElement.height - 60, 0],
       [100, 50],
       this._frameProfiler,
@@ -327,35 +333,40 @@ export class Experiment {
   // #region scene
   private _renderScene() {
 
-    {
-      const gl = WebGLContext.getContext();
+    this._renderer.multipleBuffering.captureScene(() => {
 
-      gl.disable(gl.DEPTH_TEST);
-    }
+      {
+        const gl = WebGLContext.getContext();
 
-    this._renderer.rayTracerRenderer.lookAt(
-      this._freeFlyController.getPosition(),
-      this._freeFlyController.getTarget(),
-      this._freeFlyController.getUpAxis()
-    );
+        gl.disable(gl.DEPTH_TEST);
+      }
 
-    this._renderer.rayTracerRenderer.render();
+      this._renderer.rayTracerRenderer.lookAt(
+        this._freeFlyController.getPosition(),
+        this._freeFlyController.getTarget(),
+        this._freeFlyController.getUpAxis()
+      );
 
-    const showDebug = this._def.debug_mode_enabled.checked === true;
-    if (showDebug) {
-      this._renderer.safeSceneWireFrame(() => {
-        this._renderer.setupDebugRenderer();
+      this._renderer.rayTracerRenderer.render();
 
-        const axisOrigin: glm.ReadonlyVec3 = [0, 0, 0];
-        const axisX: glm.ReadonlyVec3 = [100, 0, 0];
-        const axisY: glm.ReadonlyVec3 = [0, 100, 0];
-        const axisZ: glm.ReadonlyVec3 = [0, 0, 100];
+      const showDebug = this._def.debug_mode_enabled.checked === true;
+      if (showDebug) {
+        this._renderer.safeSceneWireFrame(() => {
+          this._renderer.setupDebugRenderer();
 
-        this._renderer.stackRenderers.pushLine(axisOrigin, axisX, [1, 0, 0]);
-        this._renderer.stackRenderers.pushLine(axisOrigin, axisY, [0, 1, 0]);
-        this._renderer.stackRenderers.pushLine(axisOrigin, axisZ, [0, 0, 1]);
-      });
-    }
+          const axisOrigin: glm.ReadonlyVec3 = [0, 0, 0];
+          const axisX: glm.ReadonlyVec3 = [100, 0, 0];
+          const axisY: glm.ReadonlyVec3 = [0, 100, 0];
+          const axisZ: glm.ReadonlyVec3 = [0, 0, 100];
+
+          this._renderer.stackRenderers.pushLine(axisOrigin, axisX, [1, 0, 0]);
+          this._renderer.stackRenderers.pushLine(axisOrigin, axisY, [0, 1, 0]);
+          this._renderer.stackRenderers.pushLine(axisOrigin, axisZ, [0, 0, 1]);
+        });
+      }
+
+    });
+
   }
   // #endregion scene
 

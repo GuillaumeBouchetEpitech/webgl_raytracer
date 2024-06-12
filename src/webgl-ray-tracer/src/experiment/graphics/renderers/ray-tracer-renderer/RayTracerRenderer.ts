@@ -365,6 +365,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     glm.mat4.rotateY(mat4, mat4, angleY); // vertical axis first
     glm.mat4.rotateZ(mat4, mat4, angleZ);
     glm.mat4.rotateX(mat4, mat4, angleX);
+    // glm.mat4.scale(mat4, mat4, [0.5,0.5,0.5]);
 
     this._boxes.push({
       matrix: mat4,

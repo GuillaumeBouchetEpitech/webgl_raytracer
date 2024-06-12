@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "*.glsl.vert": "glsl",
+    "*.glsl.frag": "glsl"
+  }
+}

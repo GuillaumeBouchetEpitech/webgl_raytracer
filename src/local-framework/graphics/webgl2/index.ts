@@ -5,6 +5,7 @@ export * from './Error';
 export * from './Fence';
 export * from './FrameBuffer';
 export * as GeometryWrapper from './GeometryWrapper';
+export * from './RenderBuffer';
 export * from './ShaderProgram';
 export * from './Texture';
 export * from './TextureArray';

@@ -27,6 +27,7 @@ export class Renderer {
   private _rayTracerRenderer: RayTracerRenderer;
   private _textRenderer: graphics.renderers.TextRenderer;
   private _stackRenderers: graphics.renderers.StackRenderers;
+  private _multipleBuffering: graphics.renderers.MultiBuffersRendering;
 
   private _debugSceneCamera = new Camera();
   private _mainHudCamera = new Camera();
@@ -48,6 +49,10 @@ export class Renderer {
     });
     this._textRenderer = new TextRenderer();
     this._stackRenderers = new StackRenderers();
+    this._multipleBuffering = new graphics.renderers.MultiBuffersRendering(
+      this._def.canvasDomElement.width,
+      this._def.canvasDomElement.height
+    );
   }
 
   initialize() {
@@ -246,5 +251,15 @@ export class Renderer {
   }
   get textRenderer(): graphics.renderers.ITextRenderer {
     return this._textRenderer;
+  }
+  get multipleBuffering(): graphics.renderers.MultiBuffersRendering {
+    return this._multipleBuffering;
+  }
+
+  get debugSceneCamera(): graphics.camera.ICamera {
+    return this._debugSceneCamera;
+  }
+  get mainHudCamera(): graphics.camera.ICamera {
+    return this._mainHudCamera;
   }
 }

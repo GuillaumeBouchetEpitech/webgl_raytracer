@@ -57,22 +57,21 @@ export class DataTexture implements IBoundDataTexture {
       throw new Error('texture: width must be positive');
     }
     if (dataSize > 2048) {
-      throw new Error(
-        `data texture max size is 2048 (input was ${dataSize})`
-      );
+      throw new Error(`data texture max size is 2048 (input was ${dataSize})`);
     }
 
     const gl = WebGLContext.getContext();
 
     gl.bindTexture(gl.TEXTURE_2D, this._texture);
 
+    // done for type safety compliance reasons
     if (Array.isArray(data)) {
+      // -> new Float32Array(number[])
+      this._buffer = new Float32Array(data);
+    } else {
+      // -> new Float32Array(number)
       this._buffer = new Float32Array(data);
     }
-    else {
-      this._buffer = new Float32Array(data);
-    }
-
 
     // // expand the data to 4 values per pixel.
     // const numElements = data.length / numComponents;
@@ -91,17 +90,7 @@ export class DataTexture implements IBoundDataTexture {
     const border = 0;
     const format = gl.RED;
     const type = gl.FLOAT;
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      level,
-      internalFormat,
-      width,
-      height,
-      border,
-      format,
-      type,
-      this._buffer
-    );
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, format, type, this._buffer);
   }
 
   update(start: number, data: number[]) {
@@ -139,18 +128,7 @@ export class DataTexture implements IBoundDataTexture {
     const yoffset = 0; // must stay 0
     const srcOffset = 0;
 
-    gl.texSubImage2D(
-      gl.TEXTURE_2D,
-      level,
-      xoffset,
-      yoffset,
-      width,
-      height,
-      format,
-      type,
-      this._buffer,
-      srcOffset
-    );
+    gl.texSubImage2D(gl.TEXTURE_2D, level, xoffset, yoffset, width, height, format, type, this._buffer, srcOffset);
   }
 
   rawBind() {
