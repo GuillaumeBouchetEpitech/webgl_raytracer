@@ -234,7 +234,7 @@ export class Experiment {
       // plan the next frame
 
       // this._animationFrameHandle = window.requestAnimationFrame(tick);
-      this._animationFrameHandle = window.setTimeout(tick, 1000/60);
+      this._animationFrameHandle = window.setTimeout(tick, 1000 / 60);
 
       this._mainLoop();
     };
@@ -275,10 +275,8 @@ export class Experiment {
   }
   // #endregion main loop
 
-
   // #region hud
   private _renderHud() {
-
     const gl = WebGLContext.getContext();
     gl.viewport(0, 0, this._canvasElement.width, this._canvasElement.height);
     gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -288,7 +286,9 @@ export class Experiment {
     // the modern web browsers are already applying double buffering
     // -> so we're in fact triple buffering here
     // -> which is great -> more time for the WebGL queue to finish on time
-    this._renderer.multipleBuffering.renderHud(this._renderer.mainHudCamera.getComposedMatrix());
+    this._renderer.multipleBuffering.renderHud(
+      this._renderer.mainHudCamera.getComposedMatrix()
+    );
 
     {
       const keyEventsPos: glm.ReadonlyVec2 = [7 + 20, 165];
@@ -326,15 +326,12 @@ export class Experiment {
     this._renderer.flushHudText();
 
     this._renderer.rayTracerRenderer.reset();
-
   }
   // #endregion hud
 
   // #region scene
   private _renderScene() {
-
     this._renderer.multipleBuffering.captureScene(() => {
-
       {
         const gl = WebGLContext.getContext();
 
@@ -364,9 +361,7 @@ export class Experiment {
           this._renderer.stackRenderers.pushLine(axisOrigin, axisZ, [0, 0, 1]);
         });
       }
-
     });
-
   }
   // #endregion scene
 
@@ -411,7 +406,7 @@ export class Experiment {
       `performance auto scaling: slow framerate, scaling down resolution`
     );
 
-    const currValue = (this._def.resolution.value as unknown as number);
+    const currValue = this._def.resolution.value as unknown as number;
     const newValue = currValue - 1;
 
     if (newValue >= 0 && newValue <= 9) {

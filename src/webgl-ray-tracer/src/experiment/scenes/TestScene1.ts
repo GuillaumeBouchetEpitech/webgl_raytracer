@@ -59,21 +59,20 @@ export class TestScene1 {
 
       // 4 pillars
       for (let xx = -1; xx <= 1; xx += 2)
-      for (let zz = -1; zz <= 1; zz += 2) {
-
-        renderer.rayTracerRenderer.pushBox({
-          position: [xx*10, 0, zz*10],
-          angleX: 0,
-          angleY: 0,
-          angleZ: 0,
-          boxSize: [1, 5, 1],
-          color: [1, 1, 1],
-          reflectionFactor: 0,
-          chessboardEnabled: false,
-          receiveLightEnabled: true,
-          castShadowEnabled: true
-        });
-      }
+        for (let zz = -1; zz <= 1; zz += 2) {
+          renderer.rayTracerRenderer.pushBox({
+            position: [xx * 10, 0, zz * 10],
+            angleX: 0,
+            angleY: 0,
+            angleZ: 0,
+            boxSize: [1, 5, 1],
+            color: [1, 1, 1],
+            reflectionFactor: 0,
+            chessboardEnabled: false,
+            receiveLightEnabled: true,
+            castShadowEnabled: true
+          });
+        }
 
       // space ship
       renderer.rayTracerRenderer.pushBox({

@@ -291,7 +291,11 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     screenVertices.push(+1.0, -1.0, 1, 0); // bottom right
     screenVertices.push(-1.0, -1.0, 0, 0); // bottom left
 
-    this._screenGeometry.allocateBuffer(0, screenVertices, screenVertices.length);
+    this._screenGeometry.allocateBuffer(
+      0,
+      screenVertices,
+      screenVertices.length
+    );
     this._screenGeometry.setPrimitiveStart(0);
     this._screenGeometry.setPrimitiveCount(4);
 
@@ -450,7 +454,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
   }
 
   render() {
-
     // texture pass first
     // -> we render the previous frame to avoid potential webgl queue blocking
     this._renderTexturePass();
@@ -484,7 +487,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
   }
 
   private _renderRayTracingPass() {
-
     const gl = WebGLContext.getContext();
 
     const farCorners = this._computeCameraFarCorners();

@@ -1,2 +1,1 @@
-
-export * from "./setupOutdatedPage";
+export * from './setupOutdatedPage';

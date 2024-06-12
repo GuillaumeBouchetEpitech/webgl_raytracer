@@ -37,12 +37,19 @@ const onPageLoad = async () => {
   // HTML elements check
   //
 
-  const canvasElement = _queryDomElement<HTMLCanvasElement>("#rendering-canvas");
-  const perfAutoScaling = _queryDomElement<HTMLInputElement>('#auto-scaling-enabled');
+  const canvasElement =
+    _queryDomElement<HTMLCanvasElement>('#rendering-canvas');
+  const perfAutoScaling = _queryDomElement<HTMLInputElement>(
+    '#auto-scaling-enabled'
+  );
   const resolution = _queryDomElement<HTMLInputElement>('#resolution');
-  const anti_aliasing_enabled = _queryDomElement<HTMLInputElement>('#anti-aliasing-enabled');
-  const debug_mode_enabled = _queryDomElement<HTMLInputElement>('#debug-mode-enabled');
-  const errorText = _queryDomElement<HTMLParagraphElement>("#error-text")!;
+  const anti_aliasing_enabled = _queryDomElement<HTMLInputElement>(
+    '#anti-aliasing-enabled'
+  );
+  const debug_mode_enabled = _queryDomElement<HTMLInputElement>(
+    '#debug-mode-enabled'
+  );
+  const errorText = _queryDomElement<HTMLParagraphElement>('#error-text')!;
 
   //
   // Error Handling
@@ -58,8 +65,7 @@ const onPageLoad = async () => {
     try {
       // stop the app
       mainDemo.stop();
-    } catch (err) {
-    }
+    } catch (err) {}
     mainDemo = null;
 
     // stop the browser helpers
@@ -72,8 +78,8 @@ const onPageLoad = async () => {
     system.browser.GlobalVisibilityManager.deactivate();
 
     // setup the error message
-    errorText.style.width = "800px";
-    errorText.style.height = "600px";
+    errorText.style.width = '800px';
+    errorText.style.height = '600px';
     errorText.innerHTML = err.message;
 
     // swap the canvas with the error message
@@ -82,11 +88,11 @@ const onPageLoad = async () => {
 
     // disable the user interface
     perfAutoScaling.disabled = true;
-    resolution.min = resolution.max = resolution.value = (0 as unknown as string);
+    resolution.min = resolution.max = resolution.value = 0 as unknown as string;
     anti_aliasing_enabled.disabled = true;
     debug_mode_enabled.disabled = true;
 
-    document.title += " (ERR)";
+    document.title += ' (ERR)';
   };
   window.addEventListener('error', _onPageError);
 
@@ -127,9 +133,10 @@ const onPageLoad = async () => {
 
   const pageMaxTimeInvisible = 60 * 1000; // 60sec
   utilities.setupOutdatedPage(pageMaxTimeInvisible, () => {
-    throw new Error("<br/><br/><br/>The page was inactive for too long<br/><br/>please reload");
+    throw new Error(
+      '<br/><br/><br/>The page was inactive for too long<br/><br/>please reload'
+    );
   });
-
 };
 
 window.addEventListener('load', onPageLoad, false);

@@ -154,7 +154,7 @@ export class TestScene2 {
         { pos: [0, 8, -8], size: [8, 8, 0.125], color: [1.0, 0.5, 0.5] },
         { pos: [-8, 8, 0], size: [0.125, 8, 8], color: [0.5, 1.0, 0.5] },
         { pos: [+8, 8, 0], size: [0.125, 8, 8], color: [0.5, 0.5, 1.0] },
-        { pos: [0,  0,-1], size: [8, 0.125, 8], reflectionFactor: 0.3 }
+        { pos: [0, 0, -1], size: [8, 0.125, 8], reflectionFactor: 0.3 }
       ];
       allBoxes.forEach(({ pos, size, color, reflectionFactor }) => {
         renderer.rayTracerRenderer.pushBox({
