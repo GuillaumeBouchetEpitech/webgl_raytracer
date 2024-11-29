@@ -283,12 +283,12 @@ export class Experiment {
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
 
-    // the modern web browsers are already applying double buffering
-    // -> so we're in fact triple buffering here
-    // -> which is great -> more time for the WebGL queue to finish on time
-    this._renderer.multipleBuffering.renderHud(
-      this._renderer.mainHudCamera.getComposedMatrix()
-    );
+    // // the modern web browsers are already applying double buffering
+    // // -> so we're in fact triple buffering here
+    // // -> which is great -> more time for the WebGL queue to finish on time
+    // this._renderer.multipleBuffering.renderHud(
+    //   this._renderer.mainHudCamera.getComposedMatrix()
+    // );
 
     {
       const keyEventsPos: glm.ReadonlyVec2 = [7 + 20, 165];
@@ -331,9 +331,14 @@ export class Experiment {
 
   // #region scene
   private _renderScene() {
-    this._renderer.multipleBuffering.captureScene(() => {
+    // this._renderer.multipleBuffering.captureScene(() => {
+
       {
         const gl = WebGLContext.getContext();
+
+        // gl.clear(gl.COLOR | gl.DEPTH);
+        // gl.clear(gl.DEPTH_BUFFER_BIT);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         gl.disable(gl.DEPTH_TEST);
       }
@@ -348,6 +353,7 @@ export class Experiment {
 
       const showDebug = this._def.debug_mode_enabled.checked === true;
       if (showDebug) {
+        this._renderer.stackRenderers.clear();
         this._renderer.safeSceneWireFrame(() => {
           this._renderer.setupDebugRenderer();
 
@@ -361,7 +367,7 @@ export class Experiment {
           this._renderer.stackRenderers.pushLine(axisOrigin, axisZ, [0, 0, 1]);
         });
       }
-    });
+    // });
   }
   // #endregion scene
 
