@@ -294,10 +294,9 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     tmpRay.direction = ray.direction;
 
     vec3 center = getSceneVec3ByIndex(index + 0);
+    float radius = getSceneDataByIndex(index + 3);
 
     tmpRay.origin -= center;
-
-    float radius = getSceneDataByIndex(index + 3);
 
     float currDistance = 0.0;
     if (
@@ -320,13 +319,15 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
       // vec3 txPos = (txx * vec4(outBestResult.position - center, 1.0)).xyz;
       vec3 txPos = (vec4(outBestResult.position - center, 1.0)).xyz;
       // chessboard color effect
-      if (fract(txPos.x * 0.2) > 0.5 == fract(txPos.z * 0.2) > 0.5 == fract(txPos.y * 0.2) > 0.5)
+      if (fract(txPos.x * 0.2) > 0.5 == fract(txPos.y * 0.2) > 0.5 == fract(txPos.z * 0.2) > 0.5)
       {
+        // white, reflective
         outBestResult.color = vec4(1.0);
         outBestResult.reflectionFactor = 0.3;
       }
       else
       {
+        // blue/green, mat
         outBestResult.color = vec4(0.0, 0.4, 0.45, 1.0);
         outBestResult.reflectionFactor = 0.0;
       }

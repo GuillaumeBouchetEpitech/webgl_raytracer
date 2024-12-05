@@ -74,67 +74,109 @@ export class TestScene1 {
           });
         }
 
-      // space ship
+      // long wall
       renderer.rayTracerRenderer.pushBox({
-        position: [5, 0, 10],
+        position: [0, 4, -8],
         angleX: 0,
         angleY: 0,
         angleZ: 0,
-        boxSize: [2.0, 0.5, 1.0],
-        color: [1.0, 0.0, 0.0],
+        boxSize: [4.0, 2.0, 0.1],
+        color: [1.0, 1.0, 1.0],
+        reflectionFactor: 0.0,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
+      }); // body
+
+      // upper chunk
+      renderer.rayTracerRenderer.pushBox({
+        position: [0, 5, -6.7],
+        angleX: 0,
+        angleY: 0,
+        angleZ: 0,
+        boxSize: [1.0, 0.1, 1.0],
+        color: [0.0, 0.0, 1.0],
         reflectionFactor: 0,
         chessboardEnabled: false,
         receiveLightEnabled: true,
         castShadowEnabled: true
       }); // body
+
+      // lower chunk
       renderer.rayTracerRenderer.pushBox({
-        position: [5 + 1.0, 0 + 0.5, 10 + 0.0],
+        position: [0, 3, -6.7],
         angleX: 0,
         angleY: 0,
         angleZ: 0,
-        boxSize: [0.75, 0.25, 0.5],
-        color: [0.5, 0.5, 0.5],
+        boxSize: [1.0, 0.1, 1.0],
+        color: [0.0, 0.0, 1.0],
         reflectionFactor: 0,
         chessboardEnabled: false,
         receiveLightEnabled: true,
         castShadowEnabled: true
-      }); // cockpit
-      renderer.rayTracerRenderer.pushBox({
-        position: [5 - 1.0, 0 - 0.25, 10 + 1.5],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
-        boxSize: [1.0, 0.25, 0.5],
-        color: [1.0, 1.0, 0.0],
-        reflectionFactor: 0,
-        chessboardEnabled: false,
-        receiveLightEnabled: true,
-        castShadowEnabled: true
-      }); // wing (left)
-      renderer.rayTracerRenderer.pushBox({
-        position: [5 - 1.0, 0 - 0.25, 10 - 1.5],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
-        boxSize: [1.0, 0.25, 0.5],
-        color: [1.0, 1.0, 0.0],
-        reflectionFactor: 0,
-        chessboardEnabled: false,
-        receiveLightEnabled: true,
-        castShadowEnabled: true
-      }); // wing (right)
-      renderer.rayTracerRenderer.pushBox({
-        position: [5 - 1.0, 0 + 1.0, 10 + 0.0],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
-        boxSize: [1.0, 0.5, 0.25],
-        color: [1.0, 1.0, 0.0],
-        reflectionFactor: 0,
-        chessboardEnabled: false,
-        receiveLightEnabled: true,
-        castShadowEnabled: true
-      }); // wing (top)
+      }); // body
+
+      // // space ship
+      // renderer.rayTracerRenderer.pushBox({
+      //   position: [5, 0, 10],
+      //   angleX: 0,
+      //   angleY: 0,
+      //   angleZ: 0,
+      //   boxSize: [2.0, 0.5, 1.0],
+      //   color: [1.0, 0.0, 0.0],
+      //   reflectionFactor: 0,
+      //   chessboardEnabled: false,
+      //   receiveLightEnabled: true,
+      //   castShadowEnabled: true
+      // }); // body
+      // renderer.rayTracerRenderer.pushBox({
+      //   position: [5 + 1.0, 0 + 0.5, 10 + 0.0],
+      //   angleX: 0,
+      //   angleY: 0,
+      //   angleZ: 0,
+      //   boxSize: [0.75, 0.25, 0.5],
+      //   color: [0.5, 0.5, 0.5],
+      //   reflectionFactor: 0,
+      //   chessboardEnabled: false,
+      //   receiveLightEnabled: true,
+      //   castShadowEnabled: true
+      // }); // cockpit
+      // renderer.rayTracerRenderer.pushBox({
+      //   position: [5 - 1.0, 0 - 0.25, 10 + 1.5],
+      //   angleX: 0,
+      //   angleY: 0,
+      //   angleZ: 0,
+      //   boxSize: [1.0, 0.25, 0.5],
+      //   color: [1.0, 1.0, 0.0],
+      //   reflectionFactor: 0,
+      //   chessboardEnabled: false,
+      //   receiveLightEnabled: true,
+      //   castShadowEnabled: true
+      // }); // wing (left)
+      // renderer.rayTracerRenderer.pushBox({
+      //   position: [5 - 1.0, 0 - 0.25, 10 - 1.5],
+      //   angleX: 0,
+      //   angleY: 0,
+      //   angleZ: 0,
+      //   boxSize: [1.0, 0.25, 0.5],
+      //   color: [1.0, 1.0, 0.0],
+      //   reflectionFactor: 0,
+      //   chessboardEnabled: false,
+      //   receiveLightEnabled: true,
+      //   castShadowEnabled: true
+      // }); // wing (right)
+      // renderer.rayTracerRenderer.pushBox({
+      //   position: [5 - 1.0, 0 + 1.0, 10 + 0.0],
+      //   angleX: 0,
+      //   angleY: 0,
+      //   angleZ: 0,
+      //   boxSize: [1.0, 0.5, 0.25],
+      //   color: [1.0, 1.0, 0.0],
+      //   reflectionFactor: 0,
+      //   chessboardEnabled: false,
+      //   receiveLightEnabled: true,
+      //   castShadowEnabled: true
+      // }); // wing (top)
 
       //
       //
@@ -239,7 +281,7 @@ export class TestScene1 {
         renderer.rayTracerRenderer.pushSphere({
           position: posA,
           radius: 0.5,
-          color: [1, 1, 1],
+          color: [1, 1, 0],
           reflectionFactor: 0,
           refractionFactor: 0.0,
           chessboardEnabled: false,
@@ -249,7 +291,7 @@ export class TestScene1 {
         renderer.rayTracerRenderer.pushSphere({
           position: posB,
           radius: 0.5,
-          color: [1, 1, 1],
+          color: [1, 1, 0],
           reflectionFactor: 0,
           refractionFactor: 0.0,
           chessboardEnabled: false,

@@ -16,6 +16,8 @@ import * as scenes from './scenes/intex';
 
 import * as glm from 'gl-matrix';
 
+const framerate = 60; // if negative -> use vsync (gpu expensive)
+
 const _clamp = (inValue: number, inMin: number, inMax: number) =>
   Math.min(Math.max(inValue, inMin), inMax);
 
@@ -50,8 +52,8 @@ export class Experiment {
   private _perfAutoScalingEnabled = true;
   private _framesUntilNextCheck = k_maxFramesUntilNextCheck;
 
-  // private _scene = new scenes.TestScene1();
-  private _scene = new scenes.TestScene2();
+  private _scene = new scenes.TestScene1();
+  // private _scene = new scenes.TestScene2();
 
   constructor(inDef: ExperimentDef) {
     this._canvasElement = inDef.canvasElement;
@@ -203,7 +205,9 @@ export class Experiment {
   }
 
   start() {
-    if (this.isRunning()) return;
+    if (this.isRunning()) {
+      return;
+    }
 
     this._running = true;
 
@@ -211,10 +215,16 @@ export class Experiment {
   }
 
   stop() {
-    if (!this.isRunning()) return;
+    if (!this.isRunning()) {
+      return;
+    }
     this._running = false;
-    // window.cancelAnimationFrame(this._animationFrameHandle);
-    window.clearTimeout(this._animationFrameHandle);
+
+    if (framerate < 0) {
+      window.cancelAnimationFrame(this._animationFrameHandle);
+    } else {
+      window.clearTimeout(this._animationFrameHandle);
+    }
   }
 
   isRunning() {
@@ -233,8 +243,11 @@ export class Experiment {
 
       // plan the next frame
 
-      // this._animationFrameHandle = window.requestAnimationFrame(tick);
-      this._animationFrameHandle = window.setTimeout(tick, 1000 / 60);
+      if (framerate < 0) {
+        this._animationFrameHandle = window.requestAnimationFrame(tick);
+      } else {
+        this._animationFrameHandle = window.setTimeout(tick, 1000 / framerate);
+      }
 
       this._mainLoop();
     };
