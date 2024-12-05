@@ -722,6 +722,8 @@ export class RayTracerRenderer implements IRayTracerRenderer {
         });
       } // raytracing pass
     });
+
+    gl.viewport(0, 0, this._canvasWidth, this._canvasHeight);
   }
 
   reset(): void {
