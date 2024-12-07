@@ -179,7 +179,13 @@ export class Renderer {
 
     vertices.forEach((vertex) => {
       const pos = glm.vec3.fromValues(0, 0, 0);
-      glm.vec3.transformMat4(pos, vertex, box.matrix);
+
+      const mat4 = glm.mat4.identity(glm.mat4.create());
+      glm.mat4.translate(mat4, mat4, box.position);
+      const mat4b = glm.mat4.fromQuat(glm.mat4.create(), box.orientation);
+      glm.mat4.multiply(mat4, mat4, mat4b);
+
+      glm.vec3.transformMat4(pos, vertex, mat4);
       vertices2.push(pos);
     });
 

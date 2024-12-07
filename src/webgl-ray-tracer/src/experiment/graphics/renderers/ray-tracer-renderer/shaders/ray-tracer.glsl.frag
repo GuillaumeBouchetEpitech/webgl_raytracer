@@ -119,6 +119,43 @@ vec3 getLightsVec3ByIndex(int index)
   );
 }
 
+vec3 apply_quat_to_vec3(vec3 position, vec4 q)
+{
+  vec3 v = position.xyz;
+  return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+mat3 quat_to_mat3(vec4 q)
+{
+
+  // multiply by sqrt(2) to get rid of all the 2.0 factors in the matrix
+  q *= 1.414214;
+
+  float xx = q.x * q.x;
+  float xy = q.x * q.y;
+  float xz = q.x * q.z;
+  float xw = q.x * q.w;
+
+  float yy = q.y * q.y;
+  float yz = q.y * q.z;
+  float yw = q.y * q.w;
+
+  float zz = q.z * q.z;
+  float zw = q.z * q.w;
+
+  return mat3(
+    1.0 - yy - zz,
+    xy + zw,
+    xz - yw,
+
+    xy - zw,
+    1.0 - xx - zz,
+    yz + xw,
+
+    xz + yw,
+    yz - xw,
+    1.0 - xx - yy
+  );
+}
 //
 //
 //
@@ -170,6 +207,10 @@ bool intersectBox(RayValues ray, vec3 boxSize, out float outDistance, out vec3 n
   //
   //
   // sad hack: fix a shadow related bug
+
+  // if (ray.origin.x == 0.0) ray.origin.x = -1e-8;
+  // if (ray.origin.y == 0.0) ray.origin.y = -1e-8;
+  // if (ray.origin.z == 0.0) ray.origin.z = -1e-8;
 
   if (ray.direction.x == 0.0) ray.direction.x = -1e-8;
   if (ray.direction.y == 0.0) ray.direction.y = -1e-8;
@@ -282,9 +323,9 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
   RayValues tmpRay;
   vec3 normal;
 
-  for (int index = u_spheresStart; index < u_spheresStop; index += 12)
+  for (int index = u_spheresStart; index < u_spheresStop; index += 16)
   {
-    bool castShadow = (getSceneDataByIndex(index + 9) != 0.0);
+    bool castShadow = (getSceneDataByIndex(index + 13) != 0.0);
 
     if (shadowMode && !castShadow) {
       continue;
@@ -294,9 +335,20 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     tmpRay.direction = ray.direction;
 
     vec3 center = getSceneVec3ByIndex(index + 0);
-    float radius = getSceneDataByIndex(index + 3);
+    vec4 orientation = vec4(
+      getSceneDataByIndex(index + 3),
+      getSceneDataByIndex(index + 4),
+      getSceneDataByIndex(index + 5),
+      getSceneDataByIndex(index + 6)
+    );
+    float radius = getSceneDataByIndex(index + 7);
 
+    // convert ray from world space to box space
     tmpRay.origin -= center;
+    mat3 normalMatrix = quat_to_mat3(orientation);
+    mat3 inverseNormalMatrix = inverse(normalMatrix);
+    tmpRay.origin = (inverseNormalMatrix * tmpRay.origin);
+    tmpRay.direction = (inverseNormalMatrix * tmpRay.direction);
 
     float currDistance = 0.0;
     if (
@@ -312,12 +364,12 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     outBestResult.normal = normal;
     outBestResult.refractionFactor = 0.0;
 
-    bool chessboardMaterialEnabled = (getSceneDataByIndex(index + 11) != 0.0);
+    bool chessboardMaterialEnabled = (getSceneDataByIndex(index + 15) != 0.0);
 
     if (chessboardMaterialEnabled)
     {
-      // vec3 txPos = (txx * vec4(outBestResult.position - center, 1.0)).xyz;
-      vec3 txPos = (vec4(outBestResult.position - center, 1.0)).xyz;
+      vec3 txPos = inverseNormalMatrix * (outBestResult.position - center);
+
       // chessboard color effect
       if (fract(txPos.x * 0.2) > 0.5 == fract(txPos.y * 0.2) > 0.5 == fract(txPos.z * 0.2) > 0.5)
       {
@@ -334,26 +386,23 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     }
     else
     {
-      vec3 color = getSceneVec3ByIndex(index + 4);
+      vec3 color = getSceneVec3ByIndex(index + 8);
 
-      float reflectionFactor = getSceneDataByIndex(index + 7);
-      float refractionFactor = getSceneDataByIndex(index + 8);
+      float reflectionFactor = getSceneDataByIndex(index + 11);
+      float refractionFactor = getSceneDataByIndex(index + 12);
 
       outBestResult.color = vec4(color, 0.5);
       outBestResult.reflectionFactor = reflectionFactor;
       outBestResult.refractionFactor = refractionFactor;
     }
 
-    bool lightEnabled = (getSceneDataByIndex(index + 10) != 0.0);
+    bool lightEnabled = (getSceneDataByIndex(index + 14) != 0.0);
     outBestResult.lightEnabled = lightEnabled;
-
-    // if (shadowMode)
-    //     return true;
   }
 
-  for (int index = u_boxesStart; index < u_boxesStop; index += 26)
+  for (int index = u_boxesStart; index < u_boxesStop; index += 17)
   {
-    bool castShadow = (getSceneDataByIndex(index + 23) != 0.0);
+    bool castShadow = (getSceneDataByIndex(index + 14) != 0.0);
 
     if (shadowMode && !castShadow) {
       continue;
@@ -362,35 +411,22 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     tmpRay.origin = ray.origin;
     tmpRay.direction = ray.direction;
 
-    mat4 normalTransformationMatrix = mat4(
-      getSceneDataByIndex(index + 0),
-      getSceneDataByIndex(index + 1),
-      getSceneDataByIndex(index + 2),
+    vec3 center = getSceneVec3ByIndex(index + 0);
+    vec4 orientation = vec4(
       getSceneDataByIndex(index + 3),
-
       getSceneDataByIndex(index + 4),
       getSceneDataByIndex(index + 5),
-      getSceneDataByIndex(index + 6),
-      getSceneDataByIndex(index + 7),
-
-      getSceneDataByIndex(index + 8),
-      getSceneDataByIndex(index + 9),
-      getSceneDataByIndex(index + 10),
-      getSceneDataByIndex(index + 11),
-
-      getSceneDataByIndex(index + 12),
-      getSceneDataByIndex(index + 13),
-      getSceneDataByIndex(index + 14),
-      getSceneDataByIndex(index + 15)
+      getSceneDataByIndex(index + 6)
     );
 
-    vec3 boxSize = getSceneVec3ByIndex(index + 16);
+    vec3 boxSize = getSceneVec3ByIndex(index + 7);
 
-    mat4 inversedTransformationMatrix = inverse(normalTransformationMatrix);
+    tmpRay.origin -= center;
 
-    // convert ray from world space to box space
-    tmpRay.origin = (inversedTransformationMatrix * vec4(tmpRay.origin, 1.0)).xyz;
-    tmpRay.direction = (inversedTransformationMatrix * vec4(tmpRay.direction, 0.0)).xyz;
+    mat3 normalMatrix = quat_to_mat3(orientation);
+    mat3 inverseNormalMatrix = inverse(normalMatrix);
+    tmpRay.origin = (inverseNormalMatrix * tmpRay.origin);
+    tmpRay.direction = (inverseNormalMatrix * tmpRay.direction);
 
     float currDistance = 0.0;
     if (
@@ -401,7 +437,7 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     }
 
     // convert normal from box space to world space
-    normal = (normalTransformationMatrix * vec4(normal, 0.0)).xyz;
+    normal = normalMatrix * normal;
 
     outBestResult.hasHit = true;
     outBestResult.distance = currDistance;
@@ -409,11 +445,12 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     outBestResult.normal = normal;
     outBestResult.refractionFactor = 0.0; // TODO
 
-    bool chessboardMaterialEnabled = (getSceneDataByIndex(index + 25) != 0.0);
+    bool chessboardMaterialEnabled = (getSceneDataByIndex(index + 16) != 0.0);
 
     if (chessboardMaterialEnabled)
     {
-      vec3 txPos = (inversedTransformationMatrix * vec4(outBestResult.position, 1.0)).xyz;
+      // the multiplication by 0.999 will remove graphic artifact
+      vec3 txPos = (inverseNormalMatrix * 0.999) * (center - outBestResult.position);
 
       // chessboard color effect
       if (fract(txPos.x * 0.2) > 0.5 == fract(txPos.z * 0.2) > 0.5 == fract(txPos.y * 0.2) > 0.5)
@@ -429,19 +466,16 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     }
     else
     {
-      vec3 color = getSceneVec3ByIndex(index + 19);
+      vec3 color = getSceneVec3ByIndex(index + 10);
 
-      float reflectionFactor = getSceneDataByIndex(index + 22);
+      float reflectionFactor = getSceneDataByIndex(index + 13);
 
       outBestResult.color = vec4(color, 1.0);
       outBestResult.reflectionFactor = reflectionFactor;
     }
 
-    bool lightEnabled = (getSceneDataByIndex(index + 24) != 0.0);
+    bool lightEnabled = (getSceneDataByIndex(index + 15) != 0.0);
     outBestResult.lightEnabled = lightEnabled;
-
-    // if (shadowMode)
-    //     return true;
   }
 
   for (int index = u_trianglesStart; index < u_trianglesStop; index += 15)

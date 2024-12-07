@@ -32,12 +32,13 @@ export class TestScene1 {
     {
       // push scene
 
+      const quat1 = glm.quat.identity(glm.quat.create());
+      // glm.quat.setAxisAngle(quat, [0,1,0], Math.PI * 0.125);
+
       // floor
       renderer.rayTracerRenderer.pushBox({
         position: [0, -4.5, 0],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
+        orientation: quat1,
         boxSize: [30, 1, 30],
         color: [0.5, 1, 0.5],
         reflectionFactor: 0.2,
@@ -60,15 +61,17 @@ export class TestScene1 {
       // 4 pillars
       for (let xx = -1; xx <= 1; xx += 2)
         for (let zz = -1; zz <= 1; zz += 2) {
+
+          const quat2 = glm.quat.identity(glm.quat.create());
+          glm.quat.setAxisAngle(quat2, [0,1.0,0], Math.PI * 0.125);
+
           renderer.rayTracerRenderer.pushBox({
             position: [xx * 10, 0, zz * 10],
-            angleX: 0,
-            angleY: 0,
-            angleZ: 0,
-            boxSize: [1, 5, 1],
+            orientation: quat2,
+            boxSize: [2, 5, 2],
             color: [1, 1, 1],
             reflectionFactor: 0,
-            chessboardEnabled: false,
+            chessboardEnabled: true,
             receiveLightEnabled: true,
             castShadowEnabled: true
           });
@@ -77,9 +80,7 @@ export class TestScene1 {
       // long wall
       renderer.rayTracerRenderer.pushBox({
         position: [0, 4, -8],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
+        orientation: quat1,
         boxSize: [4.0, 2.0, 0.1],
         color: [1.0, 1.0, 1.0],
         reflectionFactor: 0.0,
@@ -91,9 +92,7 @@ export class TestScene1 {
       // upper chunk
       renderer.rayTracerRenderer.pushBox({
         position: [0, 5, -6.7],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
+        orientation: quat1,
         boxSize: [1.0, 0.1, 1.0],
         color: [0.0, 0.0, 1.0],
         reflectionFactor: 0,
@@ -105,9 +104,7 @@ export class TestScene1 {
       // lower chunk
       renderer.rayTracerRenderer.pushBox({
         position: [0, 3, -6.7],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
+        orientation: quat1,
         boxSize: [1.0, 0.1, 1.0],
         color: [0.0, 0.0, 1.0],
         reflectionFactor: 0,
@@ -187,7 +184,7 @@ export class TestScene1 {
         color: [1, 1, 1],
         reflectionFactor: 0.5,
         refractionFactor: 0.0,
-        chessboardEnabled: false,
+        chessboardEnabled: true,
         receiveLightEnabled: true,
         castShadowEnabled: true
       });
@@ -205,11 +202,12 @@ export class TestScene1 {
       //
       //
 
+      const quat3 = glm.quat.identity(glm.quat.create());
+      glm.quat.setAxisAngle(quat3, [1,0,0], Math.PI * 0.125);
+
       renderer.rayTracerRenderer.pushBox({
         position: [0, 0, 0],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
+        orientation: quat3,
         boxSize: [2, 1, 0.5],
         color: [1, 0.5, 0.5],
         reflectionFactor: 0.8,
@@ -219,9 +217,7 @@ export class TestScene1 {
       });
       renderer.rayTracerRenderer.pushBox({
         position: [0, 2.5, 0],
-        angleX: 0,
-        angleY: 0,
-        angleZ: 0,
+        orientation: quat3,
         boxSize: [2, 1, 0.5],
         color: [1, 0.5, 0.5],
         reflectionFactor: 0.8,
@@ -312,7 +308,7 @@ export class TestScene1 {
         });
       } // moving spot lights
 
-      {
+      if (false) {
         // particle handling
 
         {
@@ -454,8 +450,11 @@ export class TestScene1 {
             // increment here (not done in the loop)
             ++ii;
           }
+
         } // smoke particles (timed spot spheres)
+
       } // particle handling
+
     } // push scene
   }
 }

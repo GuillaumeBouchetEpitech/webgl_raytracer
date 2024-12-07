@@ -47,7 +47,6 @@ export class DataTexture implements IBoundDataTexture {
     gl.deleteTexture(this._texture);
   }
 
-  // update(data: number[], numComponents: number = 1) {
   allocate(data: number[] | number) {
     if (!this._texture) {
       throw new Error('data texture not initialized');

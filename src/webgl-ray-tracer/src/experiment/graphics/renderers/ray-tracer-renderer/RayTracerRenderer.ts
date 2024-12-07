@@ -41,6 +41,7 @@ export interface IPublicSphere {
 
 export interface IInternalSphere {
   position: glm.ReadonlyVec3;
+  orientation: glm.ReadonlyQuat;
   radius: number;
   color: glm.ReadonlyVec3;
   reflectionFactor: number;
@@ -52,9 +53,7 @@ export interface IInternalSphere {
 
 export interface IPublicBox {
   position: glm.ReadonlyVec3;
-  angleX: number;
-  angleY: number;
-  angleZ: number;
+  orientation: glm.ReadonlyQuat;
   boxSize: glm.ReadonlyVec3;
   color: glm.ReadonlyVec3;
   reflectionFactor: number;
@@ -64,7 +63,8 @@ export interface IPublicBox {
 }
 
 export interface InternalBox {
-  matrix: glm.mat4;
+  position: glm.ReadonlyVec3;
+  orientation: glm.ReadonlyQuat;
   boxSize: glm.ReadonlyVec3;
   color: glm.ReadonlyVec3;
   reflectionFactor: number;
@@ -113,9 +113,7 @@ export interface IRayTracerRenderer {
 
   pushBox({
     position,
-    angleX,
-    angleY,
-    angleZ,
+    orientation,
     boxSize,
     color,
     reflectionFactor,
@@ -332,8 +330,24 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       throw new Error('invalid sphere reflection');
     }
 
+    const quat = glm.quat.identity(glm.quat.create());
+    glm.quat.setAxisAngle(quat, [0,1,0], Math.PI * 0.25);
+
+    // const mat4 = glm.mat4.create();
+    // glm.mat4.identity(mat4);
+    // glm.mat4.translate(mat4, mat4, position);
+
+    // glm.mat4.rotateY(mat4, mat4, Math.PI * 0.25); // vertical axis first
+
+    // // glm.mat4.rotateY(mat4, mat4, angleY); // vertical axis first
+    // // glm.mat4.rotateZ(mat4, mat4, angleZ);
+    // // glm.mat4.rotateX(mat4, mat4, angleX);
+    // // // glm.mat4.scale(mat4, mat4, [0.5,0.5,0.5]);
+
     this._spheres.push({
       position: [position[0], position[1], position[2]],
+      orientation: [quat[0], quat[1], quat[2], quat[3]],
+      // matrix: mat4,
       radius,
       color: [color[0], color[1], color[2]],
       reflectionFactor,
@@ -346,9 +360,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
 
   pushBox({
     position,
-    angleX,
-    angleY,
-    angleZ,
+    orientation,
     boxSize,
     color,
     reflectionFactor,
@@ -363,16 +375,9 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       throw new Error('invalid box reflection');
     }
 
-    const mat4 = glm.mat4.create();
-    glm.mat4.identity(mat4);
-    glm.mat4.translate(mat4, mat4, position);
-    glm.mat4.rotateY(mat4, mat4, angleY); // vertical axis first
-    glm.mat4.rotateZ(mat4, mat4, angleZ);
-    glm.mat4.rotateX(mat4, mat4, angleX);
-    // glm.mat4.scale(mat4, mat4, [0.5,0.5,0.5]);
-
     this._boxes.push({
-      matrix: mat4,
+      position: [position[0], position[1], position[2]],
+      orientation: [orientation[0], orientation[1], orientation[2], orientation[3]],
       boxSize: glm.vec3.clone(boxSize),
       color: glm.vec3.clone(color),
       reflectionFactor,
@@ -530,25 +535,35 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                 for (const sphere of this._spheres) {
                   // add sphere
 
+
+                  // for (let ii = 0; ii < 16; ++ii)
+                  //   sceneDataValues.push(sphere.matrix[ii]); // [0..15]
+
                   sceneDataValues.push(
                     sphere.position[0],
                     sphere.position[1],
                     sphere.position[2]
                   );
-                  sceneDataValues.push(sphere.radius);
+                  sceneDataValues.push(
+                    sphere.orientation[0],
+                    sphere.orientation[1],
+                    sphere.orientation[2],
+                    sphere.orientation[3]
+                  );
+                  sceneDataValues.push(sphere.radius); // [16]
 
                   sceneDataValues.push(
-                    sphere.color[0],
-                    sphere.color[1],
-                    sphere.color[2]
+                    sphere.color[0], // [17]
+                    sphere.color[1], // [18]
+                    sphere.color[2] // [19]
                   );
-                  sceneDataValues.push(sphere.reflectionFactor);
-                  sceneDataValues.push(sphere.refractionFactor); // 8
+                  sceneDataValues.push(sphere.reflectionFactor); // [20]
+                  sceneDataValues.push(sphere.refractionFactor); // [21]
 
-                  sceneDataValues.push(sphere.castShadowEnabled ? 1 : 0);
-                  sceneDataValues.push(sphere.receiveLightEnabled ? 1 : 0);
+                  sceneDataValues.push(sphere.castShadowEnabled ? 1 : 0); // [22]
+                  sceneDataValues.push(sphere.receiveLightEnabled ? 1 : 0); // [23]
 
-                  sceneDataValues.push(sphere.chessboardEnabled ? 1 : 0);
+                  sceneDataValues.push(sphere.chessboardEnabled ? 1 : 0); // [24]
                 }
 
                 boundShader.setInteger1Uniform(
@@ -568,26 +583,35 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                 for (const box of this._boxes) {
                   // add box
 
-                  for (let ii = 0; ii < 16; ++ii)
-                    sceneDataValues.push(box.matrix[ii]);
-
                   sceneDataValues.push(
+                    box.position[0],
+                    box.position[1],
+                    box.position[2]
+                  );
+                  sceneDataValues.push(
+                    box.orientation[0],
+                    box.orientation[1],
+                    box.orientation[2],
+                    box.orientation[3]
+                  );
+
+                  sceneDataValues.push( // [7..9]
                     box.boxSize[0],
                     box.boxSize[1],
                     box.boxSize[2]
                   );
 
-                  sceneDataValues.push(
+                  sceneDataValues.push( // [10..12]
                     box.color[0],
                     box.color[1],
                     box.color[2]
                   );
-                  sceneDataValues.push(box.reflectionFactor);
+                  sceneDataValues.push(box.reflectionFactor); // [13]
 
-                  sceneDataValues.push(box.castShadowEnabled ? 1 : 0);
-                  sceneDataValues.push(box.receiveLightEnabled ? 1 : 0);
+                  sceneDataValues.push(box.castShadowEnabled ? 1 : 0); // [14]
+                  sceneDataValues.push(box.receiveLightEnabled ? 1 : 0); // [15]
 
-                  sceneDataValues.push(box.chessboardEnabled ? 1 : 0);
+                  sceneDataValues.push(box.chessboardEnabled ? 1 : 0); // [16]
                 }
 
                 boundShader.setInteger1Uniform(
