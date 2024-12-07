@@ -1,0 +1,14 @@
+{
+  "name": "bulletjs",
+  "version": "0.0.1",
+  "description": "TODO",
+  "repository": "TODO",
+  "scripts": {
+    "generate": "npx webidl-dts-gen -ed -n bulletjs -i bulletjs.idl -o index.d.ts"
+  },
+  "author": "TODO",
+  "license": "BSD0",
+  "dependencies": {
+    "webidl-dts-gen": "^1.11.0"
+  }
+}

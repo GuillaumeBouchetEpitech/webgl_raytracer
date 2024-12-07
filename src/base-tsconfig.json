@@ -9,7 +9,9 @@
         "strict": true,
         "moduleResolution": "node",
         "paths": {
-            "@local-framework": ["./local-framework/index.ts"]
+            "@local-framework": ["./local-framework/index.ts"],
+            "@physic-engine-main": ["./physic-engine/ts-framework/bullet-js/index.ts"],
+            "@physic-engine-browser": ["./physic-engine/ts-framework/browser/index.ts"]
         }
     }
 }

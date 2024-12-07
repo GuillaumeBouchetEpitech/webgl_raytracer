@@ -1,0 +1,16 @@
+
+# Mac specific
+.DS_Store
+./**/*.DS_Store
+
+# build generated
+dist/js/
+build
+lib
+tools
+obj
+*.pkl
+*.out
+
+# third party
+src/thirdparty

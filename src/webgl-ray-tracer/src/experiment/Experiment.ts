@@ -9,6 +9,9 @@ const {
 const { WebGLContext } = graphics.webgl2;
 const { FreeFlyController } = system.controllers;
 
+import { BrowserBulletWasmModule, physics } from '@physic-engine-browser';
+// import * as physics from "@physic-engine-main";
+
 import { Logger } from './utilities/Logger';
 
 import { Renderer } from './graphics/Renderer';
@@ -40,6 +43,8 @@ export class Experiment {
   private _freeFlyController: system.controllers.FreeFlyController;
 
   private _renderer: Renderer;
+
+  private _physicWorld: physics.PhysicWorld | undefined;
 
   private _running: boolean;
   private _errorGraphicContext: boolean;
@@ -180,6 +185,59 @@ export class Experiment {
 
   async init() {
     await this._renderer.initialize();
+
+    //
+    //
+    // physic engine initialize
+
+    // load the wasm side
+    await BrowserBulletWasmModule.load({
+      jsUrl: "../src/physic-engine/build/bulletJs.0.0.1.js",
+      wasmUrl: "../src/physic-engine/build"
+    });
+
+    // set the wasm side
+    physics.WasmModuleHolder.set(BrowserBulletWasmModule.get());
+
+    // ready
+
+    this._physicWorld = new physics.PhysicWorld();
+    this._physicWorld.setGravity(0,0,-10);
+
+    // dynamic falling sphere
+    const fallingSphereBody = this._physicWorld.createRigidBody({
+      mass: 1, // dynamic
+      shape: { type: 'sphere', radius: 1 },
+    });
+    fallingSphereBody.setPosition(0, 0, 10);
+    fallingSphereBody.setFriction(1); // just to show it's available
+    fallingSphereBody.disableDeactivation(); // just to show it's available
+
+    // ground box body that the falling sphere will collide with
+    const groundBoxBody = this._physicWorld.createRigidBody({
+      mass: 0, // static
+      shape: { type: 'box', size: [2,2,2] },
+    });
+    groundBoxBody.setPosition(0, 0, -1);
+    groundBoxBody.setFriction(1); // just to show it's available
+
+    // run for 100 iterations
+    for (let ii = 0; ii < 100; ++ii) {
+
+      const frameRate = 1/60;
+      const subSteps = 0;
+      this._physicWorld.stepSimulation(frameRate, subSteps, frameRate);
+
+      // print current position of the falling sphere
+      const prettyPos = [...fallingSphereBody.getPosition()].map(val => val.toFixed(2));
+      // console.log(prettyPos, 'total collision:', allContactIds.size);
+      console.log(prettyPos);
+    }
+
+    // physic engine initialize
+    //
+    //
+
   }
 
   resize(inWidth: number, inHeight: number, inIsFullScreen: boolean) {
