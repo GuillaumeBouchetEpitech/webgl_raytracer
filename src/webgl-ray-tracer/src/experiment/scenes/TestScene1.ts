@@ -178,18 +178,63 @@ export class TestScene1 {
       //
       //
 
+
+      // const quat = glm.quat.identity(glm.quat.create());
+      // glm.quat.setAxisAngle(quat, [0,0,1], Math.PI * 0.25);
+
+      const quatA = glm.quat.identity(glm.quat.create());
+      glm.quat.setAxisAngle(quatA, [0,0,1], Math.PI * 0.25 * continuousTime);
+
+      const quatB = glm.quat.identity(glm.quat.create());
+      glm.quat.setAxisAngle(quatB, [1,0,0], Math.PI * 0.25 * continuousTime);
+
+      const quatC = glm.quat.identity(glm.quat.create());
+      glm.quat.multiply(quatC, quatA, quatB);
+
+
+      const mypos: glm.ReadonlyVec3 = [
+        Math.sin(continuousTime * +0.5 + Math.PI * 2 * (1/12)) * 8,
+        // Math.sin(continuousTime * +0.5 + Math.PI * 2 * (1/12)) * 1 + 1,
+        -0.5,
+        Math.cos(continuousTime * +0.5 + Math.PI * 2 * (1/12)) * 8
+      ];
+
+
+      // // graphical presentation of the spot lights
+      // renderer.rayTracerRenderer.pushSphere({
+      //   position: [15, 0, 15],
+      //   radius: 0.5,
+      //   color: [1, 1, 0],
+      //   reflectionFactor: 0,
+      //   refractionFactor: 0.0,
+      //   chessboardEnabled: false,
+      //   receiveLightEnabled: false,
+      //   castShadowEnabled: false
+      // });
+      // actual spot lights
+      renderer.rayTracerRenderer.pushSpotLight({
+        position: mypos,
+        intensity: 5,
+        radius: 10
+      });
       renderer.rayTracerRenderer.pushSphere({
-        position: [15, 0, 15],
-        radius: 1,
+        position: mypos,
+        orientation: quatC,
+        radius: 1.5,
         color: [1, 1, 1],
         reflectionFactor: 0.5,
         refractionFactor: 0.0,
         chessboardEnabled: true,
-        receiveLightEnabled: true,
+        receiveLightEnabled: false,
         castShadowEnabled: true
       });
+
+
+
+
       renderer.rayTracerRenderer.pushSphere({
         position: [5, 0, 5],
+        orientation: glm.quat.identity(glm.quat.create()),
         radius: 1,
         color: [1, 1, 1],
         reflectionFactor: 0.5,
@@ -238,6 +283,7 @@ export class TestScene1 {
             Math.sin(continuousTime * +0.5 + Math.PI * 2 * coef) * 1 + 1,
             Math.cos(continuousTime * +0.5 + Math.PI * 2 * coef) * 8
           ],
+          orientation: glm.quat.identity(glm.quat.create()),
           radius: 0.5,
           color: [coef, 1 - coef, 0],
           reflectionFactor: 0,
@@ -276,6 +322,7 @@ export class TestScene1 {
         // graphical presentation of the spot lights
         renderer.rayTracerRenderer.pushSphere({
           position: posA,
+          orientation: glm.quat.identity(glm.quat.create()),
           radius: 0.5,
           color: [1, 1, 0],
           reflectionFactor: 0,
@@ -286,6 +333,7 @@ export class TestScene1 {
         });
         renderer.rayTracerRenderer.pushSphere({
           position: posB,
+          orientation: glm.quat.identity(glm.quat.create()),
           radius: 0.5,
           color: [1, 1, 0],
           reflectionFactor: 0,
@@ -388,6 +436,7 @@ export class TestScene1 {
               // white sphere for grahic representation of the spot light
               renderer.rayTracerRenderer.pushSphere({
                 position: flashParticles[ii].pos,
+                orientation: glm.quat.identity(glm.quat.create()),
                 radius: size,
                 color: [1, 1, 1],
                 reflectionFactor: 0,
@@ -437,6 +486,7 @@ export class TestScene1 {
 
               renderer.rayTracerRenderer.pushSphere({
                 position: smokeParticles[ii].pos,
+                orientation: glm.quat.identity(glm.quat.create()),
                 radius: size,
                 color: color,
                 reflectionFactor: 0,

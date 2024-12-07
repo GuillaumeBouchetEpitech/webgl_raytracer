@@ -30,10 +30,11 @@ export interface IDefinition {
 
 export interface IPublicSphere {
   position: glm.ReadonlyVec3;
+  orientation: glm.ReadonlyQuat;
   radius: number;
   color: glm.ReadonlyVec3;
   reflectionFactor: number;
-  refractionFactor: number;
+  // refractionFactor: number;
   chessboardEnabled: boolean;
   castShadowEnabled: boolean;
   receiveLightEnabled: boolean;
@@ -45,7 +46,7 @@ export interface IInternalSphere {
   radius: number;
   color: glm.ReadonlyVec3;
   reflectionFactor: number;
-  refractionFactor: number;
+  // refractionFactor: number;
   castShadowEnabled: boolean;
   receiveLightEnabled: boolean;
   chessboardEnabled: boolean;
@@ -103,6 +104,7 @@ export interface ICamera {
 export interface IRayTracerRenderer {
   pushSphere({
     position,
+    orientation,
     radius,
     color,
     reflectionFactor,
@@ -315,10 +317,11 @@ export class RayTracerRenderer implements IRayTracerRenderer {
 
   pushSphere({
     position,
+    orientation,
     radius,
     color,
     reflectionFactor,
-    refractionFactor,
+    // refractionFactor,
     chessboardEnabled,
     castShadowEnabled,
     receiveLightEnabled
@@ -330,8 +333,18 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       throw new Error('invalid sphere reflection');
     }
 
-    const quat = glm.quat.identity(glm.quat.create());
-    glm.quat.setAxisAngle(quat, [0,1,0], Math.PI * 0.25);
+
+    // const quat = glm.quat.identity(glm.quat.create());
+    // glm.quat.setAxisAngle(quat, [0,0,1], Math.PI * 0.25);
+
+    // const quatA = glm.quat.identity(glm.quat.create());
+    // glm.quat.setAxisAngle(quatA, [0,0,1], Math.PI * 0.25);
+
+    // const quatB = glm.quat.identity(glm.quat.create());
+    // glm.quat.setAxisAngle(quatB, [1,0,0], Math.PI * 0.25);
+
+    // const quatC = glm.quat.identity(glm.quat.create());
+    // glm.quat.multiply(quatC, quatA, quatB);
 
     // const mat4 = glm.mat4.create();
     // glm.mat4.identity(mat4);
@@ -346,12 +359,13 @@ export class RayTracerRenderer implements IRayTracerRenderer {
 
     this._spheres.push({
       position: [position[0], position[1], position[2]],
-      orientation: [quat[0], quat[1], quat[2], quat[3]],
+      // orientation: [quatC[0], quatC[1], quatC[2], quatC[3]],
+      orientation: [orientation[0], orientation[1], orientation[2], orientation[3]],
       // matrix: mat4,
       radius,
       color: [color[0], color[1], color[2]],
       reflectionFactor,
-      refractionFactor,
+      // refractionFactor,
       chessboardEnabled,
       castShadowEnabled,
       receiveLightEnabled
@@ -558,12 +572,11 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                     sphere.color[2] // [19]
                   );
                   sceneDataValues.push(sphere.reflectionFactor); // [20]
-                  sceneDataValues.push(sphere.refractionFactor); // [21]
 
-                  sceneDataValues.push(sphere.castShadowEnabled ? 1 : 0); // [22]
-                  sceneDataValues.push(sphere.receiveLightEnabled ? 1 : 0); // [23]
+                  sceneDataValues.push(sphere.castShadowEnabled ? 1 : 0); // [21]
+                  sceneDataValues.push(sphere.receiveLightEnabled ? 1 : 0); // [22]
 
-                  sceneDataValues.push(sphere.chessboardEnabled ? 1 : 0); // [24]
+                  sceneDataValues.push(sphere.chessboardEnabled ? 1 : 0); // [23]
                 }
 
                 boundShader.setInteger1Uniform(
