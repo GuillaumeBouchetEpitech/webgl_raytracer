@@ -193,8 +193,8 @@ export class Experiment {
 
     // load the wasm side
     await BrowserBulletWasmModule.load({
-      jsUrl: "../src/physic-engine/build/bulletJs.0.0.1.js",
-      wasmUrl: "../src/physic-engine/build"
+      jsUrl: `./src/physic-engine/build/bulletJs.0.0.1.js`,
+      wasmUrl: `./src/physic-engine/build`
     });
 
     // set the wasm side
