@@ -52,13 +52,14 @@ export class Experiment {
   private _currFrameMsecTime: number = Date.now();
   private _frameProfiler = new system.metrics.FrameProfiler();
 
-  private _continuousSecTime = 0;
+  // private _continuousSecTime = 0;
 
   private _perfAutoScalingEnabled = true;
   private _framesUntilNextCheck = k_maxFramesUntilNextCheck;
 
-  private _scene = new scenes.TestScene1();
+  // private _scene = new scenes.TestScene1();
   // private _scene = new scenes.TestScene2();
+  private _scene = new scenes.TestScene3();
 
   constructor(inDef: ExperimentDef) {
     this._canvasElement = inDef.canvasElement;
@@ -66,9 +67,9 @@ export class Experiment {
 
     this._freeFlyController = new FreeFlyController({
       coordinates: ['Z', 'X', 'Y'],
-      position: [-10, 13, 15],
-      theta: Math.PI * 0.85,
-      phi: -Math.PI * 0.15,
+      position: [-5, 13, 15],
+      theta: Math.PI * 1.05,
+      phi: -Math.PI * 0.25,
       mouseSensibility: 6,
       keyboardSensibility: Math.PI * 0.55,
       touchSensibility: 8,
@@ -202,37 +203,37 @@ export class Experiment {
     // ready
 
     this._physicWorld = new physics.PhysicWorld();
-    this._physicWorld.setGravity(0,0,-10);
+    this._physicWorld.setGravity(0,-10,0);
 
-    // dynamic falling sphere
-    const fallingSphereBody = this._physicWorld.createRigidBody({
-      mass: 1, // dynamic
-      shape: { type: 'sphere', radius: 1 },
-    });
-    fallingSphereBody.setPosition(0, 0, 10);
-    fallingSphereBody.setFriction(1); // just to show it's available
-    fallingSphereBody.disableDeactivation(); // just to show it's available
+    // // dynamic falling sphere
+    // const fallingSphereBody = this._physicWorld.createRigidBody({
+    //   mass: 1, // dynamic
+    //   shape: { type: 'sphere', radius: 1 },
+    // });
+    // fallingSphereBody.setPosition(0, 0, 10);
+    // fallingSphereBody.setFriction(1); // just to show it's available
+    // fallingSphereBody.disableDeactivation(); // just to show it's available
 
-    // ground box body that the falling sphere will collide with
-    const groundBoxBody = this._physicWorld.createRigidBody({
-      mass: 0, // static
-      shape: { type: 'box', size: [2,2,2] },
-    });
-    groundBoxBody.setPosition(0, 0, -1);
-    groundBoxBody.setFriction(1); // just to show it's available
+    // // ground box body that the falling sphere will collide with
+    // const groundBoxBody = this._physicWorld.createRigidBody({
+    //   mass: 0, // static
+    //   shape: { type: 'box', size: [2,2,2] },
+    // });
+    // groundBoxBody.setPosition(0, 0, -1);
+    // groundBoxBody.setFriction(1); // just to show it's available
 
-    // run for 100 iterations
-    for (let ii = 0; ii < 100; ++ii) {
+    // // run for 100 iterations
+    // for (let ii = 0; ii < 100; ++ii) {
 
-      const frameRate = 1/60;
-      const subSteps = 0;
-      this._physicWorld.stepSimulation(frameRate, subSteps, frameRate);
+    //   const frameRate = 1/60;
+    //   const subSteps = 0;
+    //   this._physicWorld.stepSimulation(frameRate, subSteps, frameRate);
 
-      // print current position of the falling sphere
-      const prettyPos = [...fallingSphereBody.getPosition()].map(val => val.toFixed(2));
-      // console.log(prettyPos, 'total collision:', allContactIds.size);
-      console.log(prettyPos);
-    }
+    //   // print current position of the falling sphere
+    //   const prettyPos = [...fallingSphereBody.getPosition()].map(val => val.toFixed(2));
+    //   // console.log(prettyPos, 'total collision:', allContactIds.size);
+    //   console.log(prettyPos);
+    // }
 
     // physic engine initialize
     //
@@ -322,11 +323,11 @@ export class Experiment {
 
     this._handlePerformanceAutoScaling(deltaMsecTime);
 
-    const elapsedSecTime = deltaMsecTime / 1000;
+    const deltaSecTime = deltaMsecTime / 1000;
 
-    this._continuousSecTime += elapsedSecTime;
+    // this._continuousSecTime += deltaSecTime;
 
-    this._freeFlyController.update(elapsedSecTime);
+    this._freeFlyController.update(deltaSecTime);
 
     GlobalMouseManager.resetDeltas();
     GlobalTouchManager.resetDeltas();
@@ -334,9 +335,9 @@ export class Experiment {
     //
     //
 
-    this._continuousSecTime += elapsedSecTime;
+    // this._continuousSecTime += deltaSecTime;
 
-    this._scene.run(this._renderer, elapsedSecTime);
+    this._scene.run(deltaSecTime, this._renderer, this._physicWorld!);
 
     //
     //
