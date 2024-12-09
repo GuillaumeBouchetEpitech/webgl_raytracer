@@ -44,7 +44,8 @@ const _createBox = (
   });
   physicBody.setPosition(position[0], position[1], position[2]);
   physicBody.setRotation(orientation[0], orientation[1], orientation[2], orientation[3]);
-  physicBody.setFriction(1); // just to show it's available
+  physicBody.setRestitution(0.7); // bouncing
+  physicBody.setFriction(1); // so the sphere doesn't slide but roll on it
 
   allBoxes.push({ boxSize, color, reflectionFactor, physicBody });
 };
@@ -65,8 +66,9 @@ const _createSphere = (
   });
   physicBody.setPosition(position[0], position[1], position[2]);
   // physicBody.setRotation(orientation[0], orientation[1], orientation[2], orientation[3]);
-  physicBody.setFriction(1); // just to show it's available
-  physicBody.disableDeactivation(); // just to show it's available
+  physicBody.setFriction(1); // so the sphere doesn't slide but roll on it
+  physicBody.setRestitution(0.7); // bouncing
+  physicBody.disableDeactivation(); // so the sphere doesn't ever freeze if too slow
 
   allSpheres.push({ radius, physicBody });
 }
@@ -102,8 +104,8 @@ export class TestScene3 {
     // first ramp on Y
     _createBox(
       physicWorld,
-      [-10,-2,2],
-      glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
+      [-10,-3.5,2],
+      glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 1/32),
       [0.25,0.25,4],
       [0.5, 1, 0.5],
       0
