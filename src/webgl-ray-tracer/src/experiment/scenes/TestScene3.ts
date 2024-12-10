@@ -122,6 +122,55 @@ export class TestScene3 {
     );
 
 
+    // downhill on X (2)
+    _createBox(
+      physicWorld,
+      [-1,-6,+4],
+      glm.quat.setAxisAngle(glm.quat.create(), [0,0,1], Math.PI * -1/32),
+      [4,1,2],
+      [1, 1, 1],
+      0.5
+    );
+
+    // some pillar on X (1)
+    _createBox(
+      physicWorld,
+      [-6,-3.5,7],
+      glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
+      [0.25,4,0.25],
+      [0.5, 1, 0.5],
+      0
+    );
+    // some pillar on X (2)
+    _createBox(
+      physicWorld,
+      [-4,-3.5,7],
+      glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
+      [0.25,4,0.25],
+      [0.5, 1, 0.5],
+      0
+    );
+    // some pillar on X (2)
+    _createBox(
+      physicWorld,
+      [-2,-3.5,7],
+      glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
+      [0.25,4,0.25],
+      [0.5, 1, 0.5],
+      0
+    );
+
+    // white flat floor
+    _createBox(
+      physicWorld,
+      [-4,-5.5,8.5],
+      glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
+      [5.0,0.25,2],
+      [0.5, 1, 0.5],
+      0
+    );
+
+
     _createSphere(
       physicWorld,
       [0,10,0],
@@ -145,14 +194,14 @@ export class TestScene3 {
 
         const pos = sphere.physicBody.getPosition();
 
-        if (pos[1] < -10) {
+        if (pos[1] < -12) {
           sphere.physicBody.setLinearVelocity(0,0,0);
           sphere.physicBody.setAngularVelocity(0,0,0);
 
           sphere.physicBody.setPosition(0, 10, 0);
         }
 
-        const targetPos: glm.ReadonlyVec3 = [pos[0] + 10, pos[1] + 10, pos[2]];
+        const targetPos: glm.ReadonlyVec3 = [pos[0] + 2, pos[1] + 5, pos[2]];
 
         glm.vec3.lerp(g_lightPos, g_lightPos, targetPos, 0.03);
 
@@ -175,7 +224,7 @@ export class TestScene3 {
         renderer.rayTracerRenderer.pushSpotLight({
           position: g_lightPos,
           intensity: 1,
-          radius: 25
+          radius: 15
         });
 
       });
