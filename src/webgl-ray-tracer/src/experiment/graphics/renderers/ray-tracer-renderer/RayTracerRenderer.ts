@@ -34,7 +34,7 @@ export interface IPublicSphere {
   radius: number;
   color: glm.ReadonlyVec3;
   reflectionFactor: number;
-  // refractionFactor: number;
+  refractionFactor: number;
   chessboardEnabled: boolean;
   castShadowEnabled: boolean;
   receiveLightEnabled: boolean;
@@ -46,7 +46,7 @@ export interface IInternalSphere {
   radius: number;
   color: glm.ReadonlyVec3;
   reflectionFactor: number;
-  // refractionFactor: number;
+  refractionFactor: number;
   castShadowEnabled: boolean;
   receiveLightEnabled: boolean;
   chessboardEnabled: boolean;
@@ -321,7 +321,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     radius,
     color,
     reflectionFactor,
-    // refractionFactor,
+    refractionFactor,
     chessboardEnabled,
     castShadowEnabled,
     receiveLightEnabled
@@ -331,6 +331,9 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     }
     if (reflectionFactor < 0 || reflectionFactor > 1) {
       throw new Error('invalid sphere reflection');
+    }
+    if (refractionFactor < 0 || refractionFactor > 1) {
+      throw new Error('invalid sphere refractionFactor');
     }
 
 
@@ -365,7 +368,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       radius,
       color: [color[0], color[1], color[2]],
       reflectionFactor,
-      // refractionFactor,
+      refractionFactor,
       chessboardEnabled,
       castShadowEnabled,
       receiveLightEnabled
@@ -554,29 +557,30 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                   //   sceneDataValues.push(sphere.matrix[ii]); // [0..15]
 
                   sceneDataValues.push(
-                    sphere.position[0],
-                    sphere.position[1],
-                    sphere.position[2]
+                    sphere.position[0], // 0
+                    sphere.position[1], // 1
+                    sphere.position[2] // 2
                   );
                   sceneDataValues.push(
-                    sphere.orientation[0],
-                    sphere.orientation[1],
-                    sphere.orientation[2],
-                    sphere.orientation[3]
+                    sphere.orientation[0], // 3
+                    sphere.orientation[1], // 4
+                    sphere.orientation[2], // 5
+                    sphere.orientation[3] // 6
                   );
-                  sceneDataValues.push(sphere.radius); // [16]
+                  sceneDataValues.push(sphere.radius); // [7]
 
                   sceneDataValues.push(
-                    sphere.color[0], // [17]
-                    sphere.color[1], // [18]
-                    sphere.color[2] // [19]
+                    sphere.color[0], // [8]
+                    sphere.color[1], // [9]
+                    sphere.color[2] // [10]
                   );
-                  sceneDataValues.push(sphere.reflectionFactor); // [20]
+                  sceneDataValues.push(sphere.reflectionFactor); // [11]
+                  sceneDataValues.push(sphere.refractionFactor); // [12]
 
-                  sceneDataValues.push(sphere.castShadowEnabled ? 1 : 0); // [21]
-                  sceneDataValues.push(sphere.receiveLightEnabled ? 1 : 0); // [22]
+                  sceneDataValues.push(sphere.castShadowEnabled ? 1 : 0); // [13]
+                  sceneDataValues.push(sphere.receiveLightEnabled ? 1 : 0); // [14]
 
-                  sceneDataValues.push(sphere.chessboardEnabled ? 1 : 0); // [23]
+                  sceneDataValues.push(sphere.chessboardEnabled ? 1 : 0); // [15]
                 }
 
                 boundShader.setInteger1Uniform(

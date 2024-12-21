@@ -65,6 +65,7 @@ export class TestScene2 {
       // graphical presentation of the spot lights
       renderer.rayTracerRenderer.pushSphere({
         position: [0, 10, 10],
+        orientation: [0,0,1,0],
         radius: 0.25,
         color: [1, 1, 1],
         reflectionFactor: 0,
@@ -84,6 +85,7 @@ export class TestScene2 {
       // graphical presentation of the spot lights
       renderer.rayTracerRenderer.pushSphere({
         position: lightPos,
+        orientation: [0,0,1,0],
         radius: 0.25,
         color: [1, 1, 1],
         reflectionFactor: 0,
@@ -159,9 +161,10 @@ export class TestScene2 {
       allBoxes.forEach(({ pos, size, color, reflectionFactor }) => {
         renderer.rayTracerRenderer.pushBox({
           position: pos,
-          angleX: 0,
-          angleY: 0,
-          angleZ: 0,
+          orientation: [0,0,1,0],
+          // angleX: 0,
+          // angleY: 0,
+          // angleZ: 0,
           boxSize: size,
           color: color ?? [1, 1, 1],
           reflectionFactor: reflectionFactor ?? 0,
@@ -225,9 +228,10 @@ export class TestScene2 {
 
           renderer.rayTracerRenderer.pushBox({
             position: pos,
-            angleX: 0,
-            angleY: angleY,
-            angleZ: 0,
+            orientation: [0,0,1,0],
+            // angleX: 0,
+            // angleY: angleY,
+            // angleZ: 0,
             boxSize: size,
             color: [0, 1, 0],
             reflectionFactor: 0,

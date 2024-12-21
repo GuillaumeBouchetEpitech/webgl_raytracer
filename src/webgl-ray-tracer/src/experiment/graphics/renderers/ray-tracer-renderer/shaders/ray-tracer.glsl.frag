@@ -81,8 +81,19 @@ struct RayResult
   vec3 normal;
   vec4 color;
   float reflectionFactor;
-  // float refractionFactor;
+  float refractionFactor;
   bool lightEnabled;
+};
+
+
+struct StackData
+{
+  // int parentIndex;
+  bool used;
+  RayValues ray;
+  RayResult result;
+  int reflectionIndex;
+  int refractionIndex;
 };
 
 //
@@ -323,16 +334,66 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
   RayValues tmpRay;
   vec3 normal;
 
-  for (int index = u_spheresStart; index < u_spheresStop; index += 15)
+  for (int index = u_spheresStart; index < u_spheresStop; index += 16)
   {
-    bool castShadow = (getSceneDataByIndex(index + 12) != 0.0);
+    bool castShadow = (getSceneDataByIndex(index + 13) != 0.0);
 
     if (shadowMode && !castShadow) {
       continue;
     }
 
-    tmpRay.origin = ray.origin;
-    tmpRay.direction = ray.direction;
+    float refractionFactor = getSceneDataByIndex(index + 12);
+    if (refractionFactor > 0.0) {
+
+      // refraction logic
+
+      vec3 center = getSceneVec3ByIndex(index + 0);
+
+      float radius = getSceneDataByIndex(index + 7);
+
+      tmpRay.origin = ray.origin - center;
+      tmpRay.direction = ray.direction;
+
+      float currDistance1 = 0.0;
+      if (
+        !intersectSphere(tmpRay, radius, currDistance1, normal) ||
+        (outBestResult.distance > 0.0 && currDistance1 > outBestResult.distance)
+      ) {
+        continue;
+      }
+
+      // now collide with the inside of the sphere
+
+      vec3 newOrigin = ray.origin + (currDistance1 * 1.01) * ray.direction;
+
+      tmpRay.origin = (newOrigin - center);
+      tmpRay.direction = ray.direction;
+
+      tmpRay.direction = refract(tmpRay.direction, -normal, Eta);
+
+      float currDistance2 = 0.0;
+      if (
+        !intersectSphere(tmpRay, radius, currDistance2, normal) ||
+        (outBestResult.distance > 0.0 && currDistance2 > outBestResult.distance)
+      ) {
+        continue;
+      }
+
+      float reflectionFactor = getSceneDataByIndex(index + 11);
+
+      outBestResult.hasHit = true;
+      outBestResult.distance = currDistance1 + currDistance2;
+      outBestResult.position = newOrigin + (currDistance2 * 1.01) * ray.direction;
+      outBestResult.normal = normal;
+      outBestResult.reflectionFactor = reflectionFactor;
+      outBestResult.refractionFactor = refractionFactor;
+
+      bool lightEnabled = (getSceneDataByIndex(index + 14) != 0.0);
+      outBestResult.lightEnabled = lightEnabled;
+
+      continue; // bypass non refractive logic
+    }
+
 
     vec3 center = getSceneVec3ByIndex(index + 0);
     vec4 orientation = vec4(
@@ -341,15 +402,14 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
       getSceneDataByIndex(index + 5),
       getSceneDataByIndex(index + 6)
     );
+    mat3 normalMatrix = quat_to_mat3(orientation);
+    mat3 inverseNormalMatrix = inverse(normalMatrix);
 
     float radius = getSceneDataByIndex(index + 7);
 
     // convert ray from world space to box space
-    tmpRay.origin -= center;
-    mat3 normalMatrix = quat_to_mat3(orientation);
-    mat3 inverseNormalMatrix = inverse(normalMatrix);
-    tmpRay.origin = (inverseNormalMatrix * tmpRay.origin);
-    tmpRay.direction = (inverseNormalMatrix * tmpRay.direction);
+    tmpRay.origin = (inverseNormalMatrix * (ray.origin - center));
+    tmpRay.direction = (inverseNormalMatrix * ray.direction);
 
     float currDistance = 0.0;
     if (
@@ -366,9 +426,9 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     outBestResult.distance = currDistance;
     outBestResult.position = ray.origin + currDistance * ray.direction;
     outBestResult.normal = normal;
-    // outBestResult.refractionFactor = 0.0;
+    outBestResult.refractionFactor = 0.0;
 
-    bool chessboardMaterialEnabled = (getSceneDataByIndex(index + 14) != 0.0);
+    bool chessboardMaterialEnabled = (getSceneDataByIndex(index + 15) != 0.0);
 
     if (chessboardMaterialEnabled)
     {
@@ -387,6 +447,7 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
         {
           outBestResult.color = vec4(1.0);
           outBestResult.reflectionFactor = 0.0; // override reflection -> plain color
+          outBestResult.refractionFactor = 0.0;
         }
 
         continue;
@@ -403,6 +464,7 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
         // blue/green, mat
         outBestResult.color = vec4(0.0, 0.4, 0.45, 1.0);
         outBestResult.reflectionFactor = 0.0;
+        outBestResult.refractionFactor = 0.0;
       }
     }
     else
@@ -417,14 +479,13 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
       vec3 color = getSceneVec3ByIndex(index + 8);
 
       float reflectionFactor = getSceneDataByIndex(index + 11);
-      // float refractionFactor = getSceneDataByIndex(index + 12);
 
       outBestResult.color = vec4(color, 0.5);
       outBestResult.reflectionFactor = reflectionFactor;
-      // outBestResult.refractionFactor = refractionFactor;
+      outBestResult.refractionFactor = refractionFactor;
     }
 
-    bool lightEnabled = (getSceneDataByIndex(index + 13) != 0.0);
+    bool lightEnabled = (getSceneDataByIndex(index + 14) != 0.0);
     outBestResult.lightEnabled = lightEnabled;
   }
 
@@ -471,7 +532,8 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     outBestResult.distance = currDistance;
     outBestResult.position = ray.origin + currDistance * ray.direction;
     outBestResult.normal = normal;
-    // outBestResult.refractionFactor = 0.0; // TODO
+
+    outBestResult.refractionFactor = 0.0; // TODO
 
     bool chessboardMaterialEnabled = (getSceneDataByIndex(index + 16) != 0.0);
 
@@ -533,7 +595,8 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     outBestResult.distance = currDistance;
     outBestResult.position = ray.origin + currDistance * ray.direction;
     outBestResult.normal = normal;
-    // outBestResult.refractionFactor = 0.0; // TODO
+
+    outBestResult.refractionFactor = 0.0; // TODO
 
     vec3 color = getSceneVec3ByIndex(index + 9);
 
@@ -685,87 +748,130 @@ void main()
   vec3 rayDir = normalize(v_position - u_cameraEye); // camera direction
   vec3 finalPixelColor = g_backgroundColor;
 
-  RayValues currRay = RayValues(u_cameraEye, rayDir);
-  RayResult result;
+  const int maxStack = 10;
+  StackData _stack[maxStack];
 
-  result.position = u_cameraEye;
-  result.reflectionFactor = 1.0;
-  result.lightEnabled = true;
-
-  float lastReflectionFactor = 1.0;
-  // float lastRefractionFactor = 1.0;
-
-  const int maxIteration = g_maxTotalReflection;
-  for (int iterationLeft = maxIteration; iterationLeft >= 0; --iterationLeft)
+  // initialize stack
+  for (int ii = 0; ii < maxStack; ++ii)
   {
-    if (
-      result.reflectionFactor <= 0.05 // &&
-      // result.refractionFactor <= 0.05
-    ) {
+    _stack[ii].used = false;
+    _stack[ii].result.reflectionFactor = 0.0;
+    _stack[ii].result.refractionFactor = 0.0;
+    _stack[ii].result.lightEnabled = false;
+    _stack[ii].reflectionIndex = -1;
+    _stack[ii].refractionIndex = -1;
+  }
+
+  // initialize first stack element
+  _stack[0].used = true;
+  _stack[0].ray = RayValues(u_cameraEye, rayDir);
+  _stack[0].result.position = u_cameraEye;
+  _stack[0].result.reflectionFactor = 1.0;
+  _stack[0].result.refractionFactor = 1.0;
+  _stack[0].result.lightEnabled = true;
+  _stack[0].reflectionIndex = -1;
+  _stack[0].refractionIndex = -1;
+
+  int stackIndex = 0;
+
+  for (int ii = 0; ii < maxStack; ++ii)
+  {
+    // intersect object
+    // if reflection/refraction push to stack and set index
+    // repeat
+
+    if (!_stack[ii].used) {
       break;
     }
 
-    bool mustStop = false;
+    _stack[ii].result.hasHit = intersectScene(
+      _stack[ii].ray,
+      _stack[ii].result,
+      false
+    );
 
-    currRay = RayValues(result.position, rayDir);
-
-    result.hasHit = intersectScene(currRay, result, false);
-
-    vec3 tmpColor = g_backgroundColor;
-
-    if (result.hasHit)
+    if (_stack[ii].result.hasHit)
     {
       float lightIntensity = 1.0;
 
-      if (result.lightEnabled)
+      if (_stack[ii].result.lightEnabled)
       {
-        lightIntensity = lightAt(result.position, result.normal, -currRay.direction);
-
-        if (lightIntensity <= 0.0)
-        {
-          // not lit
-          mustStop = true;
-        }
+        lightIntensity = lightAt(
+          _stack[ii].result.position,
+          _stack[ii].result.normal,
+          -_stack[ii].ray.direction
+        );
       }
 
-      tmpColor = result.color.xyz * lightIntensity;
+      _stack[ii].result.color.xyz *= lightIntensity;
+
+      if (_stack[ii].result.lightEnabled && lightIntensity <= 0.0)
+      {
+        // not lit
+        continue;
+      }
+
+      // reflection/refraction here
+
+      if (stackIndex + 1 >= maxStack)
+      {
+        // no more stack space left
+        continue;
+      }
+
+      if (_stack[ii].result.refractionFactor > 0.0)
+      {
+        stackIndex += 1;
+
+        _stack[stackIndex].used = true;
+        _stack[stackIndex].ray.origin = _stack[ii].result.position;
+        _stack[stackIndex].ray.direction = refract(_stack[ii].ray.direction, _stack[ii].result.normal, Eta);
+
+        _stack[ii].refractionIndex = stackIndex;
+      }
+
+      if (_stack[ii].result.reflectionFactor > 0.0)
+      {
+        stackIndex += 1;
+
+        _stack[stackIndex].used = true;
+        _stack[stackIndex].ray.origin = _stack[ii].result.position;
+        _stack[stackIndex].ray.direction = reflect(_stack[ii].ray.direction, _stack[ii].result.normal);
+
+        _stack[ii].reflectionIndex = stackIndex;
+      }
+
+    }
+  }
+
+  // combine all colors, from last to first
+  for (int ii = maxStack - 1; ii >= 0; --ii)
+  {
+
+
+    if (!_stack[ii].used || !_stack[ii].result.hasHit) {
+      continue;
     }
 
-    // vec3 incident = normalize( vec3( vertex - camera ) );
-
-    // if (result.refractionFactor > 0.05) {
-
-    //   finalPixelColor = finalPixelColor * (1.0 - lastReflectionFactor) + tmpColor * lastReflectionFactor;
-
-    //   if (mustStop || !result.hasHit)
-    //   {
-    //     break;
-    //   }
-
-    //   // lastReflectionFactor *= result.reflectionFactor;
-    //   lastRefractionFactor *= result.refractionFactor;
-
-    //   // rayDir = refract(rayDir, result.normal);
-    //   rayDir = refract(rayDir, result.normal, Eta);
-
-    //   continue;
-    // }
-
-    finalPixelColor = finalPixelColor * (1.0 - lastReflectionFactor) + tmpColor * lastReflectionFactor;
-
-    if (mustStop || !result.hasHit)
+    if (_stack[ii].reflectionIndex != -1)
     {
-      break;
+      _stack[ii].result.color.xyz =
+        _stack[ii].result.color.xyz * (1.0 - _stack[ii].result.reflectionFactor) +
+        _stack[_stack[ii].reflectionIndex].result.color.xyz * _stack[ii].result.reflectionFactor;
     }
 
-    lastReflectionFactor *= result.reflectionFactor;
+    if (_stack[ii].refractionIndex != -1)
+    {
+      _stack[ii].result.color.xyz =
+        _stack[ii].result.color.xyz * (1.0 - _stack[ii].result.refractionFactor) +
+        _stack[_stack[ii].refractionIndex].result.color.xyz * _stack[ii].result.refractionFactor;
+    }
+  }
 
-    rayDir = reflect(rayDir, result.normal);
-
-    // result.refractionFactor
-    // rayDir = refract(rayDir, result.normal, Eta);
-
+  if (_stack[0].result.hasHit) {
+    finalPixelColor = _stack[0].result.color.xyz;
   }
 
   o_color = vec4(finalPixelColor, 1.0);
+
 }

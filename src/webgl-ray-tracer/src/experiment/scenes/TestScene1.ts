@@ -223,7 +223,7 @@ export class TestScene1 {
         radius: 1.5,
         color: [1, 1, 1],
         reflectionFactor: 0.5,
-//         refractionFactor: 0.0,
+        refractionFactor: 0.0,
         chessboardEnabled: true,
         receiveLightEnabled: false,
         castShadowEnabled: true
@@ -238,7 +238,7 @@ export class TestScene1 {
         radius: 1,
         color: [1, 1, 1],
         reflectionFactor: 0.5,
-//         refractionFactor: 0.0,
+        refractionFactor: 0.0,
         chessboardEnabled: false,
         receiveLightEnabled: true,
         castShadowEnabled: true
@@ -287,7 +287,7 @@ export class TestScene1 {
           radius: 0.5,
           color: [coef, 1 - coef, 0],
           reflectionFactor: 0,
-//           refractionFactor: 0.0,
+          refractionFactor: 0.0,
           chessboardEnabled: false,
           receiveLightEnabled: true,
           castShadowEnabled: true
@@ -326,7 +326,7 @@ export class TestScene1 {
           radius: 0.5,
           color: [1, 1, 0],
           reflectionFactor: 0,
-//           refractionFactor: 0.0,
+          refractionFactor: 0.0,
           chessboardEnabled: false,
           receiveLightEnabled: false,
           castShadowEnabled: false
@@ -337,7 +337,7 @@ export class TestScene1 {
           radius: 0.5,
           color: [1, 1, 0],
           reflectionFactor: 0,
-//           refractionFactor: 0.0,
+          refractionFactor: 0.0,
           chessboardEnabled: false,
           receiveLightEnabled: false,
           castShadowEnabled: false
@@ -440,7 +440,7 @@ export class TestScene1 {
                 radius: size,
                 color: [1, 1, 1],
                 reflectionFactor: 0,
-//                 refractionFactor: 0.0,
+                refractionFactor: 0.0,
                 chessboardEnabled: false,
                 receiveLightEnabled: false,
                 castShadowEnabled: false
@@ -490,7 +490,7 @@ export class TestScene1 {
                 radius: size,
                 color: color,
                 reflectionFactor: 0,
-//                 refractionFactor: 0.0,
+                refractionFactor: 0.0,
                 chessboardEnabled: false,
                 receiveLightEnabled: true,
                 castShadowEnabled: true

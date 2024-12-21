@@ -90,6 +90,7 @@ export class TestScene3 {
       [4,1,2],
       [1, 1, 1],
       0.5
+      // 0.0
     );
 
     // downhill on Z
@@ -100,6 +101,7 @@ export class TestScene3 {
       [2,1,4],
       [1, 1, 1],
       0.5
+      // 0.0
     );
     // first ramp on Y
     _createBox(
@@ -130,6 +132,7 @@ export class TestScene3 {
       [4,1,2],
       [1, 1, 1],
       0.5
+      // 0.0
     );
 
     // some pillar on X (1)
@@ -215,6 +218,7 @@ export class TestScene3 {
           radius: 0.5,
           color: [1, 1, 0],
           reflectionFactor: 0,
+          refractionFactor: 0,
           chessboardEnabled: false,
           receiveLightEnabled: false,
           castShadowEnabled: false
@@ -265,22 +269,41 @@ export class TestScene3 {
         const position = currSphere.physicBody.getPosition();
         const rotation = currSphere.physicBody.getRotation();
 
-        // actual spot lights
-        renderer.rayTracerRenderer.pushSpotLight({
-          position: position,
-          intensity: 0.1 + 4.9 * system.math.easing.easePinPong(system.math.easing.easeClamp(continuousTime * 0.5)),
-          radius: 10
-        });
-        renderer.rayTracerRenderer.pushSphere({
-          position: position,
-          orientation: rotation,
-          radius: 1.5,
-          color: [1, 1, 1],
-          reflectionFactor: 0.5,
-          chessboardEnabled: true,
-          receiveLightEnabled: false,
-          castShadowEnabled: true
-        });
+        if (true) {
+
+          // actual spot lights
+          renderer.rayTracerRenderer.pushSpotLight({
+            position: position,
+            intensity: 0.1 + 4.9 * system.math.easing.easePinPong(system.math.easing.easeClamp(continuousTime * 0.5)),
+            radius: 10
+          });
+          renderer.rayTracerRenderer.pushSphere({
+            position: position,
+            orientation: rotation,
+            radius: 1.5,
+            color: [1, 1, 1],
+            reflectionFactor: 0.0,
+            refractionFactor: 0.0,
+            chessboardEnabled: true,
+            receiveLightEnabled: false,
+            castShadowEnabled: true
+          });
+
+        } else {
+
+          renderer.rayTracerRenderer.pushSphere({
+            position: position,
+            orientation: rotation,
+            radius: 1.5,
+            color: [1, 0.5, 0.2],
+            reflectionFactor: 0.0,
+            refractionFactor: 0.8,
+            chessboardEnabled: true,
+            receiveLightEnabled: false,
+            castShadowEnabled: true
+          });
+
+        }
 
       });
 
@@ -292,10 +315,26 @@ export class TestScene3 {
         radius: 5,
         color: [0, 0, 1],
         reflectionFactor: 0.8,
+        refractionFactor: 0.0,
         chessboardEnabled: false,
         receiveLightEnabled: true,
         castShadowEnabled: true
       });
+
+
+      // refracting sphere
+      renderer.rayTracerRenderer.pushSphere({
+        position: [+0, 4, +9],
+        orientation: glm.quat.identity(glm.quat.create()),
+        radius: 2,
+        color: [1, 1, 1],
+        reflectionFactor: 0,
+        refractionFactor: 0.8,
+        chessboardEnabled: false,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
+      });
+      // /refracting sphere
 
 
 
