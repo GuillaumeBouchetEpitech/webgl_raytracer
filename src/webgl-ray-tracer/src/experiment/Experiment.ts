@@ -324,7 +324,9 @@ export class Experiment {
 
     this._handlePerformanceAutoScaling(deltaMsecTime);
 
-    const deltaSecTime = deltaMsecTime / 1000;
+    const safeDelta = Math.min(deltaMsecTime, 100);
+
+    const deltaSecTime = safeDelta / 1000;
 
     // this._continuousSecTime += deltaSecTime;
 
@@ -338,7 +340,9 @@ export class Experiment {
 
     // this._continuousSecTime += deltaSecTime;
 
-    this._scene.run(deltaSecTime, this._renderer, this._physicWorld!);
+    if (this._physicWorld) {
+      this._scene.run(deltaSecTime, this._renderer, this._physicWorld);
+    }
 
     //
     //

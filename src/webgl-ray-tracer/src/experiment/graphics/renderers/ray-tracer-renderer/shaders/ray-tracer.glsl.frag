@@ -781,7 +781,7 @@ void main()
   for (int ii = 0; ii < maxStack; ++ii)
   {
     // intersect object
-    // if reflection/refraction push to stack and set index
+    // if reflection/refraction push to stack & set index
     // repeat
 
     if (!_stack[ii].used) {
@@ -794,58 +794,62 @@ void main()
       false
     );
 
-    if (_stack[ii].result.hasHit)
+    if (!_stack[ii].result.hasHit)
     {
-      float lightIntensity = 1.0;
-
-      if (_stack[ii].result.lightEnabled)
-      {
-        lightIntensity = lightAt(
-          _stack[ii].result.position,
-          _stack[ii].result.normal,
-          -_stack[ii].ray.direction
-        );
-      }
-
-      _stack[ii].result.color.xyz *= lightIntensity;
-
-      if (_stack[ii].result.lightEnabled && lightIntensity <= 0.0)
-      {
-        // not lit
-        continue;
-      }
-
-      // reflection/refraction here
-
-      if (stackIndex + 1 >= maxStack)
-      {
-        // no more stack space left
-        continue;
-      }
-
-      if (_stack[ii].result.refractionFactor > 0.0)
-      {
-        stackIndex += 1;
-
-        _stack[stackIndex].used = true;
-        _stack[stackIndex].ray.origin = _stack[ii].result.position;
-        _stack[stackIndex].ray.direction = refract(_stack[ii].ray.direction, _stack[ii].result.normal, Eta);
-
-        _stack[ii].refractionIndex = stackIndex;
-      }
-
-      if (_stack[ii].result.reflectionFactor > 0.0)
-      {
-        stackIndex += 1;
-
-        _stack[stackIndex].used = true;
-        _stack[stackIndex].ray.origin = _stack[ii].result.position;
-        _stack[stackIndex].ray.direction = reflect(_stack[ii].ray.direction, _stack[ii].result.normal);
-
-        _stack[ii].reflectionIndex = stackIndex;
-      }
-
+      continue;
     }
+
+    float lightIntensity = 1.0;
+
+    if (_stack[ii].result.lightEnabled)
+    {
+      lightIntensity = lightAt(
+        _stack[ii].result.position,
+        _stack[ii].result.normal,
+        -_stack[ii].ray.direction
+      );
+    }
+
+    _stack[ii].result.color.xyz *= lightIntensity;
+
+    if (_stack[ii].result.lightEnabled && lightIntensity <= 0.0)
+    {
+      // not lit
+      continue;
+    }
+
+    // reflection/refraction here
+
+    if (stackIndex + 1 >= maxStack)
+    {
+      // no more stack space left
+      continue;
+    }
+
+    if (_stack[ii].result.refractionFactor > 0.0)
+    {
+      // push refraction to the stack
+      stackIndex += 1;
+
+      _stack[stackIndex].used = true;
+      _stack[stackIndex].ray.origin = _stack[ii].result.position;
+      _stack[stackIndex].ray.direction = refract(_stack[ii].ray.direction, _stack[ii].result.normal, Eta);
+
+      _stack[ii].refractionIndex = stackIndex;
+    }
+
+    if (_stack[ii].result.reflectionFactor > 0.0)
+    {
+      // push reflection to the stack
+      stackIndex += 1;
+
+      _stack[stackIndex].used = true;
+      _stack[stackIndex].ray.origin = _stack[ii].result.position;
+      _stack[stackIndex].ray.direction = reflect(_stack[ii].ray.direction, _stack[ii].result.normal);
+
+      _stack[ii].reflectionIndex = stackIndex;
+    }
+
   }
 
   // combine all colors, from last to first
