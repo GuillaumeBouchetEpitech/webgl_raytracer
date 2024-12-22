@@ -19,6 +19,7 @@ import * as scenes from './scenes/intex';
 
 import * as glm from 'gl-matrix';
 
+// const framerate = -1; // if negative -> use vsync (gpu expensive)
 const framerate = 60; // if negative -> use vsync (gpu expensive)
 
 const _clamp = (inValue: number, inMin: number, inMax: number) =>

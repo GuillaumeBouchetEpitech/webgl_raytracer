@@ -339,7 +339,7 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     bool castShadow = (getSceneDataByIndex(index + 13) != 0.0);
 
     if (shadowMode && !castShadow) {
-      continue;
+      continue; // this sphere does not cast a shadow
     }
 
     float refractionFactor = getSceneDataByIndex(index + 12);
@@ -390,6 +390,10 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
 
       bool lightEnabled = (getSceneDataByIndex(index + 14) != 0.0);
       outBestResult.lightEnabled = lightEnabled;
+
+      vec3 color = getSceneVec3ByIndex(index + 8);
+
+      outBestResult.color = vec4(color, 0.5);
 
       continue; // bypass non refractive logic
     }
@@ -748,7 +752,7 @@ void main()
   vec3 rayDir = normalize(v_position - u_cameraEye); // camera direction
   vec3 finalPixelColor = g_backgroundColor;
 
-  const int maxStack = 10;
+  const int maxStack = 4;
   StackData _stack[maxStack];
 
   // initialize stack

@@ -135,6 +135,16 @@ export class TestScene3 {
       // 0.0
     );
 
+    // some pillar on X (0?)
+    _createBox(
+      physicWorld,
+      [-7.8,-3.5,6],
+      glm.quat.setAxisAngle(glm.quat.create(), [0,1,0], Math.PI * -0.125),
+      [1,0.25,0.25],
+      [0.5, 1, 0.5],
+      0
+    );
+
     // some pillar on X (1)
     _createBox(
       physicWorld,
@@ -180,6 +190,12 @@ export class TestScene3 {
       1.5
     );
 
+    _createSphere(
+      physicWorld,
+      [-2,10,0],
+      1.5
+    );
+
 
 
   }
@@ -193,7 +209,7 @@ export class TestScene3 {
     continuousTime += deltaTime;
 
     {
-      allSpheres.forEach((sphere) => {
+      allSpheres.forEach((sphere, index) => {
 
         const pos = sphere.physicBody.getPosition();
 
@@ -224,12 +240,15 @@ export class TestScene3 {
           castShadowEnabled: false
         });
 
-        // actual spot lights
-        renderer.rayTracerRenderer.pushSpotLight({
-          position: g_lightPos,
-          intensity: 1,
-          radius: 15
-        });
+        if ((index % 2) == 0) {
+
+          // actual spot lights
+          renderer.rayTracerRenderer.pushSpotLight({
+            position: g_lightPos,
+            intensity: 1,
+            radius: 15
+          });
+        }
 
       });
     }
@@ -264,12 +283,12 @@ export class TestScene3 {
 
       });
 
-      allSpheres.forEach((currSphere) => {
+      allSpheres.forEach((currSphere, index) => {
 
         const position = currSphere.physicBody.getPosition();
         const rotation = currSphere.physicBody.getRotation();
 
-        if (true) {
+        if ((index % 2) === 0) {
 
           // actual spot lights
           renderer.rayTracerRenderer.pushSpotLight({
@@ -295,9 +314,9 @@ export class TestScene3 {
             position: position,
             orientation: rotation,
             radius: 1.5,
-            color: [1, 0.5, 0.2],
-            reflectionFactor: 0.0,
-            refractionFactor: 0.8,
+            color: [1, 1.0, 1.0],
+            reflectionFactor: 0.3,
+            refractionFactor: 0.6,
             chessboardEnabled: true,
             receiveLightEnabled: false,
             castShadowEnabled: true
@@ -320,24 +339,6 @@ export class TestScene3 {
         receiveLightEnabled: true,
         castShadowEnabled: true
       });
-
-
-      // refracting sphere
-      renderer.rayTracerRenderer.pushSphere({
-        position: [+0, 4, +9],
-        orientation: glm.quat.identity(glm.quat.create()),
-        radius: 2,
-        color: [1, 1, 1],
-        reflectionFactor: 0,
-        refractionFactor: 0.8,
-        chessboardEnabled: false,
-        receiveLightEnabled: true,
-        castShadowEnabled: true
-      });
-      // /refracting sphere
-
-
-
 
     } // push scene
   }
