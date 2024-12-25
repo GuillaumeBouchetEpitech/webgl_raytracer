@@ -58,6 +58,7 @@ export interface IPublicBox {
   boxSize: glm.ReadonlyVec3;
   color: glm.ReadonlyVec3;
   reflectionFactor: number;
+  refractionFactor: number;
   chessboardEnabled: boolean;
   castShadowEnabled: boolean;
   receiveLightEnabled: boolean;
@@ -69,6 +70,7 @@ export interface InternalBox {
   boxSize: glm.ReadonlyVec3;
   color: glm.ReadonlyVec3;
   reflectionFactor: number;
+  refractionFactor: number;
   castShadowEnabled: boolean;
   receiveLightEnabled: boolean;
   chessboardEnabled: boolean;
@@ -381,6 +383,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     boxSize,
     color,
     reflectionFactor,
+    refractionFactor,
     chessboardEnabled,
     castShadowEnabled,
     receiveLightEnabled
@@ -398,6 +401,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       boxSize: glm.vec3.clone(boxSize),
       color: glm.vec3.clone(color),
       reflectionFactor,
+      refractionFactor,
       chessboardEnabled,
       castShadowEnabled,
       receiveLightEnabled
@@ -624,11 +628,12 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                     box.color[2]
                   );
                   sceneDataValues.push(box.reflectionFactor); // [13]
+                  sceneDataValues.push(box.refractionFactor); // [14]
 
-                  sceneDataValues.push(box.castShadowEnabled ? 1 : 0); // [14]
-                  sceneDataValues.push(box.receiveLightEnabled ? 1 : 0); // [15]
+                  sceneDataValues.push(box.castShadowEnabled ? 1 : 0); // [15]
+                  sceneDataValues.push(box.receiveLightEnabled ? 1 : 0); // [16]
 
-                  sceneDataValues.push(box.chessboardEnabled ? 1 : 0); // [16]
+                  sceneDataValues.push(box.chessboardEnabled ? 1 : 0); // [17]
                 }
 
                 boundShader.setInteger1Uniform(

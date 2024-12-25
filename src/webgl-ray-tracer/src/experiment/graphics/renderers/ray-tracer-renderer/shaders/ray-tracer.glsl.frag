@@ -343,7 +343,8 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     }
 
     float refractionFactor = getSceneDataByIndex(index + 12);
-    if (refractionFactor > 0.0) {
+    if (refractionFactor > 0.0)
+    {
 
       // refraction logic
 
@@ -493,9 +494,9 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     outBestResult.lightEnabled = lightEnabled;
   }
 
-  for (int index = u_boxesStart; index < u_boxesStop; index += 17)
+  for (int index = u_boxesStart; index < u_boxesStop; index += 18)
   {
-    bool castShadow = (getSceneDataByIndex(index + 14) != 0.0);
+    bool castShadow = (getSceneDataByIndex(index + 15) != 0.0);
 
     if (shadowMode && !castShadow) {
       continue;
@@ -513,6 +514,65 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     );
 
     vec3 boxSize = getSceneVec3ByIndex(index + 7);
+
+    float refractionFactor = getSceneDataByIndex(index + 14);
+    if (refractionFactor > 0.0)
+    {
+
+      // refraction logic
+
+      // convert ray from world space to sphere space
+      mat3 normalMatrix = quat_to_mat3(orientation);
+      mat3 inverseNormalMatrix = inverse(normalMatrix);
+      tmpRay.origin = (inverseNormalMatrix * (ray.origin - center));
+      tmpRay.direction = (inverseNormalMatrix * ray.direction);
+
+      float currDistance1 = 0.0;
+      if (
+        !intersectBox(tmpRay, boxSize, currDistance1, normal) ||
+        (outBestResult.distance > 0.0 && currDistance1 > outBestResult.distance)
+      ) {
+        continue;
+      }
+
+      // now collide with the inside of the box
+
+      vec3 newOrigin = ray.origin + (currDistance1 * 1.000) * ray.direction;
+
+      tmpRay.origin = inverseNormalMatrix * (newOrigin - center);
+      tmpRay.direction = inverseNormalMatrix * ray.direction;
+
+      tmpRay.direction = refract(tmpRay.direction, normal, Eta);
+
+      float currDistance2 = 0.0;
+      if (
+        !intersectBox(tmpRay, boxSize, currDistance2, normal) ||
+        (outBestResult.distance > 0.0 && currDistance2 > outBestResult.distance)
+      ) {
+        continue;
+      }
+
+      // convert normal from box space to world space
+      normal = normalMatrix * normal;
+
+      float reflectionFactor = getSceneDataByIndex(index + 13);
+
+      outBestResult.hasHit = true;
+      outBestResult.distance = currDistance1 + currDistance2;
+      outBestResult.position = newOrigin + (currDistance2 * 1.000) * ray.direction;
+      outBestResult.normal = normal;
+      outBestResult.reflectionFactor = reflectionFactor;
+      outBestResult.refractionFactor = refractionFactor;
+
+      bool lightEnabled = (getSceneDataByIndex(index + 16) != 0.0);
+      outBestResult.lightEnabled = lightEnabled;
+
+      vec3 color = getSceneVec3ByIndex(index + 10);
+
+      outBestResult.color = vec4(color, 0.5);
+
+      continue; // bypass non refractive logic
+    }
 
     // convert ray from world space to sphere space
     tmpRay.origin -= center;
@@ -539,7 +599,7 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
 
     outBestResult.refractionFactor = 0.0; // TODO
 
-    bool chessboardMaterialEnabled = (getSceneDataByIndex(index + 16) != 0.0);
+    bool chessboardMaterialEnabled = (getSceneDataByIndex(index + 17) != 0.0);
 
     if (chessboardMaterialEnabled)
     {
@@ -568,7 +628,7 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
       outBestResult.reflectionFactor = reflectionFactor;
     }
 
-    bool lightEnabled = (getSceneDataByIndex(index + 15) != 0.0);
+    bool lightEnabled = (getSceneDataByIndex(index + 16) != 0.0);
     outBestResult.lightEnabled = lightEnabled;
   }
 

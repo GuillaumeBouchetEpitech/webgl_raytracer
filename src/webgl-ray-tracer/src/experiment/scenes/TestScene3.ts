@@ -14,6 +14,7 @@ interface BoxObject {
   boxSize: glm.ReadonlyVec3;
   color: glm.ReadonlyVec3;
   reflectionFactor: number;
+  refractionFactor: number;
   physicBody: physics.IPhysicBody;
 };
 
@@ -36,6 +37,7 @@ const _createBox = (
   boxSize: glm.ReadonlyVec3,
   color: glm.ReadonlyVec3,
   reflectionFactor: number,
+  refractionFactor: number = 0,
 ) => {
 
   const physicBody = physicWorld.createRigidBody({
@@ -47,7 +49,7 @@ const _createBox = (
   physicBody.setRestitution(0.7); // bouncing
   physicBody.setFriction(1); // so the sphere doesn't slide but roll on it
 
-  allBoxes.push({ boxSize, color, reflectionFactor, physicBody });
+  allBoxes.push({ boxSize, color, reflectionFactor, physicBody, refractionFactor });
 };
 
 const _createBox2 = (
@@ -57,6 +59,7 @@ const _createBox2 = (
   boxSize: glm.ReadonlyVec3,
   color: glm.ReadonlyVec3,
   reflectionFactor: number,
+  refractionFactor: number,
 ) => {
 
   const physicBody = physicWorld.createRigidBody({
@@ -68,7 +71,7 @@ const _createBox2 = (
   physicBody.setRestitution(0.5); // bouncing
   physicBody.setFriction(0); // so the sphere doesn't slide but roll on it
 
-  allBoxes.push({ boxSize, color, reflectionFactor, physicBody });
+  allBoxes.push({ boxSize, color, reflectionFactor, physicBody, refractionFactor });
 };
 
 
@@ -235,7 +238,8 @@ export class TestScene3 {
       glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
       [1,1,1],
       [1, 0, 0],
-      0.5
+      0.3,
+      0.6
     );
 
 
@@ -263,6 +267,41 @@ export class TestScene3 {
         }
       });
 
+      {
+
+        const allPos: glm.vec3[] = [];
+        allSpheres.forEach((sphere) => {
+          const pos = sphere.physicBody.getPosition();
+          allPos.push(pos);
+        });
+        allBoxes.forEach((box) => {
+          const pos = box.physicBody.getPosition();
+          allPos.push(pos);
+        });
+
+        if (allPos.length > 0) {
+
+          const targetPos = glm.vec3.create();
+          targetPos[0] = 0;
+          targetPos[1] = 0;
+          targetPos[2] = 0;
+
+          allPos.forEach((pos) => {
+            glm.vec3.add(targetPos, targetPos, pos);
+          });
+          targetPos[0] /= allPos.length;
+          targetPos[1] /= allPos.length;
+          targetPos[2] /= allPos.length;
+
+          targetPos[0] += 2;
+          targetPos[1] += 5;
+
+          glm.vec3.lerp(g_lightPos, g_lightPos, targetPos, 0.03);
+        }
+
+
+      }
+
       allSpheres.forEach((sphere, index) => {
 
         const pos = sphere.physicBody.getPosition();
@@ -274,9 +313,9 @@ export class TestScene3 {
           sphere.physicBody.setPosition(0, 10, 0);
         }
 
-        const targetPos: glm.ReadonlyVec3 = [pos[0] + 2, pos[1] + 5, pos[2]];
+        // const targetPos: glm.ReadonlyVec3 = [pos[0] + 2, pos[1] + 5, pos[2]];
 
-        glm.vec3.lerp(g_lightPos, g_lightPos, targetPos, 0.03);
+        // glm.vec3.lerp(g_lightPos, g_lightPos, targetPos, 0.03);
 
         // g_lightPos
 
@@ -329,6 +368,7 @@ export class TestScene3 {
           orientation: rotation,
           boxSize: currBox.boxSize,
           color: currBox.color,
+          refractionFactor: currBox.refractionFactor,
           reflectionFactor: currBox.reflectionFactor,
           chessboardEnabled: false,
           receiveLightEnabled: true,
@@ -344,12 +384,7 @@ export class TestScene3 {
 
         if ((index % 2) === 0) {
 
-          // actual spot lights
-          renderer.rayTracerRenderer.pushSpotLight({
-            position: position,
-            intensity: 0.1 + 4.9 * system.math.easing.easePinPong(system.math.easing.easeClamp(continuousTime * 0.5)),
-            radius: 10
-          });
+          // sphere with transparent chessboard material
           renderer.rayTracerRenderer.pushSphere({
             position: position,
             orientation: rotation,
@@ -362,13 +397,21 @@ export class TestScene3 {
             castShadowEnabled: true
           });
 
+          // actual spot light inside the sphere
+          renderer.rayTracerRenderer.pushSpotLight({
+            position: position,
+            intensity: 0.1 + 4.9 * system.math.easing.easePinPong(system.math.easing.easeClamp(continuousTime * 0.5)),
+            radius: 10
+          });
+
         } else {
 
+          // refractive (and reflective) sphere
           renderer.rayTracerRenderer.pushSphere({
             position: position,
             orientation: rotation,
             radius: 1.5,
-            color: [1, 1.0, 1.0],
+            color: [1, 1, 1],
             reflectionFactor: 0.3,
             refractionFactor: 0.6,
             chessboardEnabled: true,
@@ -382,6 +425,7 @@ export class TestScene3 {
 
 
 
+      // reflective blue sphere
       renderer.rayTracerRenderer.pushSphere({
         position: [-5, 0, -7],
         orientation: glm.quat.identity(glm.quat.create()),
@@ -393,6 +437,20 @@ export class TestScene3 {
         receiveLightEnabled: true,
         castShadowEnabled: true
       });
+
+      // // refractive blue box
+      // renderer.rayTracerRenderer.pushBox({
+      //   position: [-5, 2, +7],
+      //   // orientation: glm.quat.identity(glm.quat.create()),
+      //   orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),
+      //   boxSize: [1,1,1],
+      //   color: [1,1,1],
+      //   reflectionFactor: 0.3,
+      //   refractionFactor: 0.6,
+      //   chessboardEnabled: false,
+      //   receiveLightEnabled: true,
+      //   castShadowEnabled: true
+      // });
 
     } // push scene
   }

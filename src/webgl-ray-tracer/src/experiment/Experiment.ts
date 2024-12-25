@@ -34,7 +34,7 @@ interface ExperimentDef {
   debug_mode_enabled: HTMLInputElement;
 }
 
-const k_maxFramesUntilNextCheck = 60;
+const k_maxFramesUntilNextCheck = 3;
 
 export class Experiment {
   private _canvasElement: HTMLCanvasElement;
@@ -50,6 +50,7 @@ export class Experiment {
   private _running: boolean;
   private _errorGraphicContext: boolean;
 
+  private _lastFrameTime: number = Date.now();
   private _currFrameMsecTime: number = Date.now();
   private _frameProfiler = new system.metrics.FrameProfiler();
 
@@ -68,7 +69,7 @@ export class Experiment {
 
     this._freeFlyController = new FreeFlyController({
       coordinates: ['Z', 'X', 'Y'],
-      position: [-5, 13, 15],
+      position: [-5, 5, 10],
       theta: Math.PI * 1.05,
       phi: -Math.PI * 0.25,
       mouseSensibility: 6,
@@ -318,12 +319,17 @@ export class Experiment {
   // #region main loop
   private _mainLoop() {
     const currentMsecTime = Date.now();
+
+    const deltaFrameMsecTime = currentMsecTime - this._lastFrameTime;
+    this._lastFrameTime = currentMsecTime;
+
+    this._handlePerformanceAutoScaling(deltaFrameMsecTime);
+    this._frameProfiler.pushDelta(deltaFrameMsecTime);
+
     const deltaMsecTime = currentMsecTime - this._currFrameMsecTime;
     this._currFrameMsecTime = currentMsecTime;
-    this._frameProfiler.pushDelta(deltaMsecTime);
 
-    this._handlePerformanceAutoScaling(deltaMsecTime);
-
+    // this make sure the time sensitive logic isn't "jumping" in case of slow down
     const safeDelta = Math.min(deltaMsecTime, 100);
 
     const deltaSecTime = safeDelta / 1000;
