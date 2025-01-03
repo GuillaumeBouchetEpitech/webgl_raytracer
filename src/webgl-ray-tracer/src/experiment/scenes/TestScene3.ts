@@ -16,6 +16,7 @@ interface BoxObject {
   reflectionFactor: number;
   refractionFactor: number;
   physicBody: physics.IPhysicBody;
+  chessboardMaterial: boolean
 };
 
 interface SphereObject {
@@ -38,18 +39,19 @@ const _createBox = (
   color: glm.ReadonlyVec3,
   reflectionFactor: number,
   refractionFactor: number = 0,
+  chessboardMaterial: boolean = false,
 ) => {
 
   const physicBody = physicWorld.createRigidBody({
     mass: 0, // static
-    shape: { type: 'box', size: [boxSize[0] * 2, boxSize[1] * 2, boxSize[2] * 2] },
+    shape: { type: 'box', size: [boxSize[0] * 1.95, boxSize[1] * 1.95, boxSize[2] * 1.95] },
   });
   physicBody.setPosition(position[0], position[1], position[2]);
   physicBody.setRotation(orientation[0], orientation[1], orientation[2], orientation[3]);
   physicBody.setRestitution(0.7); // bouncing
   physicBody.setFriction(1); // so the sphere doesn't slide but roll on it
 
-  allBoxes.push({ boxSize, color, reflectionFactor, physicBody, refractionFactor });
+  allBoxes.push({ boxSize, color, reflectionFactor, physicBody, refractionFactor, chessboardMaterial });
 };
 
 const _createBox2 = (
@@ -60,6 +62,7 @@ const _createBox2 = (
   color: glm.ReadonlyVec3,
   reflectionFactor: number,
   refractionFactor: number,
+  chessboardMaterial: boolean = false,
 ) => {
 
   const physicBody = physicWorld.createRigidBody({
@@ -71,7 +74,7 @@ const _createBox2 = (
   physicBody.setRestitution(0.5); // bouncing
   physicBody.setFriction(0); // so the sphere doesn't slide but roll on it
 
-  allBoxes.push({ boxSize, color, reflectionFactor, physicBody, refractionFactor });
+  allBoxes.push({ boxSize, color, reflectionFactor, physicBody, refractionFactor, chessboardMaterial });
 };
 
 
@@ -114,8 +117,9 @@ export class TestScene3 {
       glm.quat.setAxisAngle(glm.quat.create(), [0,0,1], Math.PI * 1/32),
       [4,1,2],
       [1, 1, 1],
-      0.5
-      // 0.0
+      0.5,
+      0.0,
+      true
     );
 
     // downhill on Z
@@ -125,8 +129,9 @@ export class TestScene3 {
       glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 1/32),
       [2,1,2],
       [1, 1, 1],
-      0.5
-      // 0.0
+      0.5,
+      0.0,
+      true
     );
     // first ramp on Y
     _createBox(
@@ -156,8 +161,9 @@ export class TestScene3 {
       glm.quat.setAxisAngle(glm.quat.create(), [0,0,1], Math.PI * -1/32),
       [6,1,2],
       [1, 1, 1],
-      0.5
-      // 0.0
+      0.5,
+      0.0,
+      true
     );
 
     // some pillar on X (0?)
@@ -235,11 +241,11 @@ export class TestScene3 {
     _createBox2(
       physicWorld,
       [-4,10,0],
-      glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
+      glm.quat.setAxisAngle(glm.quat.create(), [1,1,1], Math.PI * 0.25),
       [1,1,1],
       [1, 0, 0],
       0.3,
-      0.6
+      0.5
     );
 
 
@@ -255,10 +261,55 @@ export class TestScene3 {
     continuousTime += deltaTime;
 
     {
+
+      { // center the light
+
+        // const allPos: glm.vec3[] = [];
+        // allSpheres.forEach((sphere) => {
+        //   allPos.push(sphere.physicBody.getPosition());
+        // });
+        // allBoxes.forEach((box) => {
+        //   allPos.push(box.physicBody.getPosition());
+        // });
+
+        // if (allPos.length > 0) {
+
+        //   const targetPos = glm.vec3.create();
+        //   targetPos[0] = 0;
+        //   targetPos[1] = 0;
+        //   targetPos[2] = 0;
+
+        //   allPos.forEach((pos) => {
+        //     glm.vec3.add(targetPos, targetPos, pos);
+        //   });
+        //   targetPos[0] /= allPos.length;
+        //   targetPos[1] /= allPos.length;
+        //   targetPos[2] /= allPos.length;
+
+        //   // offset the light
+        //   targetPos[0] += 2;
+        //   targetPos[1] += 5;
+
+        //   glm.vec3.lerp(g_lightPos, g_lightPos, targetPos, 0.03);
+        // }
+
+
+        // const angle = system.math.easing.easePinPong(system.math.easing.easeClamp(continuousTime * 0.5)) * Math.PI * 2;
+        const angle = system.math.easing.easeClamp(continuousTime * 0.25) * Math.PI * 2;
+
+        g_lightPos[0] = -4 + Math.cos(angle) * 2;
+        g_lightPos[1] = 2 - Math.sin(angle) * 1;
+        g_lightPos[2] = +2 + Math.sin(angle) * 2;
+
+
+
+      } // center the light
+
       allBoxes.forEach((box, index) => {
 
         const pos = box.physicBody.getPosition();
 
+        // reset the boxes
         if (pos[1] < -12) {
           box.physicBody.setLinearVelocity(0,0,0);
           box.physicBody.setAngularVelocity(0,0,0);
@@ -267,45 +318,11 @@ export class TestScene3 {
         }
       });
 
-      {
-
-        const allPos: glm.vec3[] = [];
-        allSpheres.forEach((sphere) => {
-          const pos = sphere.physicBody.getPosition();
-          allPos.push(pos);
-        });
-        allBoxes.forEach((box) => {
-          const pos = box.physicBody.getPosition();
-          allPos.push(pos);
-        });
-
-        if (allPos.length > 0) {
-
-          const targetPos = glm.vec3.create();
-          targetPos[0] = 0;
-          targetPos[1] = 0;
-          targetPos[2] = 0;
-
-          allPos.forEach((pos) => {
-            glm.vec3.add(targetPos, targetPos, pos);
-          });
-          targetPos[0] /= allPos.length;
-          targetPos[1] /= allPos.length;
-          targetPos[2] /= allPos.length;
-
-          targetPos[0] += 2;
-          targetPos[1] += 5;
-
-          glm.vec3.lerp(g_lightPos, g_lightPos, targetPos, 0.03);
-        }
-
-
-      }
-
       allSpheres.forEach((sphere, index) => {
 
         const pos = sphere.physicBody.getPosition();
 
+        // reset the spheres
         if (pos[1] < -12) {
           sphere.physicBody.setLinearVelocity(0,0,0);
           sphere.physicBody.setAngularVelocity(0,0,0);
@@ -326,7 +343,7 @@ export class TestScene3 {
           renderer.rayTracerRenderer.pushSphere({
             position: g_lightPos,
             orientation: glm.quat.identity(glm.quat.create()),
-            radius: 0.5,
+            radius: 0.125,
             color: [1, 1, 0],
             reflectionFactor: 0,
             refractionFactor: 0,
@@ -370,7 +387,7 @@ export class TestScene3 {
           color: currBox.color,
           refractionFactor: currBox.refractionFactor,
           reflectionFactor: currBox.reflectionFactor,
-          chessboardEnabled: false,
+          chessboardEnabled: currBox.chessboardMaterial,
           receiveLightEnabled: true,
           castShadowEnabled: true
         });
@@ -413,7 +430,7 @@ export class TestScene3 {
             radius: 1.5,
             color: [1, 1, 1],
             reflectionFactor: 0.3,
-            refractionFactor: 0.6,
+            refractionFactor: 0.5,
             chessboardEnabled: true,
             receiveLightEnabled: false,
             castShadowEnabled: true

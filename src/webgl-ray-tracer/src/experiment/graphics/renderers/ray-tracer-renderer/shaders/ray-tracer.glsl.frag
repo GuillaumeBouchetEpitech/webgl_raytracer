@@ -524,6 +524,7 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
       // convert ray from world space to sphere space
       mat3 normalMatrix = quat_to_mat3(orientation);
       mat3 inverseNormalMatrix = inverse(normalMatrix);
+
       tmpRay.origin = (inverseNormalMatrix * (ray.origin - center));
       tmpRay.direction = (inverseNormalMatrix * ray.direction);
 
@@ -540,8 +541,6 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
       vec3 newOrigin = ray.origin + (currDistance1 * 1.000) * ray.direction;
 
       tmpRay.origin = inverseNormalMatrix * (newOrigin - center);
-      tmpRay.direction = inverseNormalMatrix * ray.direction;
-
       tmpRay.direction = refract(tmpRay.direction, normal, Eta);
 
       float currDistance2 = 0.0;
@@ -575,10 +574,9 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     }
 
     // convert ray from world space to sphere space
-    tmpRay.origin -= center;
     mat3 normalMatrix = quat_to_mat3(orientation);
     mat3 inverseNormalMatrix = inverse(normalMatrix);
-    tmpRay.origin = (inverseNormalMatrix * tmpRay.origin);
+    tmpRay.origin = (inverseNormalMatrix * (ray.origin - center));
     tmpRay.direction = (inverseNormalMatrix * tmpRay.direction);
 
     float currDistance = 0.0;
@@ -597,25 +595,25 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
     outBestResult.position = ray.origin + currDistance * ray.direction;
     outBestResult.normal = normal;
 
-    outBestResult.refractionFactor = 0.0; // TODO
-
     bool chessboardMaterialEnabled = (getSceneDataByIndex(index + 17) != 0.0);
 
     if (chessboardMaterialEnabled)
     {
+      outBestResult.reflectionFactor = 0.5;
+      outBestResult.refractionFactor = 0.0; // TODO
+
       // the multiplication by 0.999 will remove graphic artifact
       vec3 txPos = (inverseNormalMatrix * 0.999) * (center - outBestResult.position);
 
       // chessboard color effect
-      if (fract(txPos.x * 0.2) > 0.5 == fract(txPos.z * 0.2) > 0.5 == fract(txPos.y * 0.2) > 0.5)
+      // if (fract(txPos.x * 0.2) > 0.5 == fract(txPos.z * 0.2) > 0.5 == fract(txPos.y * 0.2) > 0.5)
+      if (fract(txPos.x * 0.9) > 0.5 == fract(txPos.y * 0.9) > 0.5 == fract(txPos.z * 0.9) > 0.5)
       {
         outBestResult.color = vec4(1.0);
-        outBestResult.reflectionFactor = 0.3;
       }
       else
       {
         outBestResult.color = vec4(0.0, 0.4, 0.45, 1.0);
-        outBestResult.reflectionFactor = 0.0;
       }
     }
     else
@@ -626,6 +624,7 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
 
       outBestResult.color = vec4(color, 1.0);
       outBestResult.reflectionFactor = reflectionFactor;
+      outBestResult.refractionFactor = refractionFactor;
     }
 
     bool lightEnabled = (getSceneDataByIndex(index + 16) != 0.0);
