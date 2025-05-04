@@ -58,10 +58,7 @@ out vec4 o_color;
 
 //
 
-const float     g_ambiantLight = 0.05;
-
-const int       g_maxTotalReflection = 2;
-const bool      g_shadowsEnabled = true;
+const float     g_ambiantLight = 0.15;
 
 const vec3      g_backgroundColor = vec3(0.1);
 
@@ -173,12 +170,8 @@ mat3 quat_to_mat3(vec4 q)
 //
 //
 
-bool intersectSphere(
-  RayValues ray,
-  float radius,
-  out float outDistance,
-  out vec3 normal
-) {
+bool intersectSphere(RayValues ray, float radius, out float outDistance, out vec3 normal)
+{
   float nearValue = 0.001; // TODO: hardcoded
   float farValue = 100.0; // TODO: hardcoded
 
@@ -708,10 +701,6 @@ float lightAt(vec3 impactPosition, vec3 impactNormal, vec3 viewer)
 
   for (int index = u_sunLightsStart; index < u_sunLightsStop; index += 4)
   {
-    if (!g_shadowsEnabled) {
-      continue;
-    }
-
     vec3 lightDir = getLightsVec3ByIndex(index + 0);
     float localIntensity = getLightsDataByIndex(index + 3);
 
@@ -767,10 +756,6 @@ float lightAt(vec3 impactPosition, vec3 impactNormal, vec3 viewer)
     float localIntensity = getLightsDataByIndex(index + 4);
 
     coef = localIntensity * (1.0 - lightToImpactDistance / lightRadius);
-
-    if (!g_shadowsEnabled) {
-      continue;
-    }
 
     RayResult result;
     if (
@@ -917,6 +902,7 @@ void main()
 
 
     if (!_stack[ii].used || !_stack[ii].result.hasHit) {
+      _stack[ii].result.color.xyz = g_backgroundColor;
       continue;
     }
 

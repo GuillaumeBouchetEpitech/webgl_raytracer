@@ -16,7 +16,9 @@ interface BoxObject {
   reflectionFactor: number;
   refractionFactor: number;
   physicBody: physics.IPhysicBody;
-  chessboardMaterial: boolean
+  chessboardMaterial: boolean;
+  receiveLightEnabled: boolean;
+  castShadowEnabled: boolean;
 };
 
 interface SphereObject {
@@ -29,6 +31,7 @@ const allSpheres: SphereObject[] = [];
 
 
 const g_lightPos: glm.vec3 = [0,0,20]
+const g_refractivePos: glm.vec3 = [0,0,20]
 
 
 const _createBox = (
@@ -40,6 +43,8 @@ const _createBox = (
   reflectionFactor: number,
   refractionFactor: number = 0,
   chessboardMaterial: boolean = false,
+  receiveLightEnabled: boolean = true,
+  castShadowEnabled: boolean = true
 ) => {
 
   const physicBody = physicWorld.createRigidBody({
@@ -51,7 +56,7 @@ const _createBox = (
   physicBody.setRestitution(0.7); // bouncing
   physicBody.setFriction(1); // so the sphere doesn't slide but roll on it
 
-  allBoxes.push({ boxSize, color, reflectionFactor, physicBody, refractionFactor, chessboardMaterial });
+  allBoxes.push({ boxSize, color, reflectionFactor, physicBody, refractionFactor, chessboardMaterial, receiveLightEnabled, castShadowEnabled });
 };
 
 const _createBox2 = (
@@ -63,18 +68,21 @@ const _createBox2 = (
   reflectionFactor: number,
   refractionFactor: number,
   chessboardMaterial: boolean = false,
+  receiveLightEnabled: boolean = true,
+  castShadowEnabled: boolean = true,
+  mass: number = 1
 ) => {
 
   const physicBody = physicWorld.createRigidBody({
-    mass: 1, // static
-    shape: { type: 'box', size: [boxSize[0] * 2, boxSize[1] * 2, boxSize[2] * 2] },
+    mass,
+    shape: { type: 'box', size: [boxSize[0] * 2.0, boxSize[1] * 2.0, boxSize[2] * 2.0] },
   });
   physicBody.setPosition(position[0], position[1], position[2]);
   physicBody.setRotation(orientation[0], orientation[1], orientation[2], orientation[3]);
   physicBody.setRestitution(0.5); // bouncing
   physicBody.setFriction(0); // so the sphere doesn't slide but roll on it
 
-  allBoxes.push({ boxSize, color, reflectionFactor, physicBody, refractionFactor, chessboardMaterial });
+  allBoxes.push({ boxSize, color, reflectionFactor, physicBody, refractionFactor, chessboardMaterial, receiveLightEnabled, castShadowEnabled });
 };
 
 
@@ -166,7 +174,7 @@ export class TestScene3 {
       true
     );
 
-    // some pillar on X (0?)
+    // some ramp (angled)
     _createBox(
       physicWorld,
       [-7.8,-3.0,5.5],
@@ -175,7 +183,7 @@ export class TestScene3 {
       [0.5, 1, 0.5],
       0
     );
-    // some pillar on X (02?)
+    // some ramp (downhill)
     _createBox(
       physicWorld,
       [-3.8,-3.5,6.5],
@@ -185,35 +193,77 @@ export class TestScene3 {
       0
     );
 
-    // some pillar on X (1)
-    _createBox(
+
+    // some green pillar on X (1)
+    // _createBox(
+    //   physicWorld,
+    //   [-6,-3.5,7],
+    //   glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
+    //   [0.25,4,0.25],
+    //   [0.5, 1, 0.5],
+    //   0,
+    // );
+    _createBox2(
       physicWorld,
       [-6,-3.5,7],
       glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
       [0.25,4,0.25],
       [0.5, 1, 0.5],
+      0.0,
+      0.0,
+      false,
+      true,
+      true,
       0
     );
-    // some pillar on X (2)
-    _createBox(
+
+    // some green pillar on X (2)
+    // _createBox(
+    //   physicWorld,
+    //   [-4.5,-3.5,7],
+    //   glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
+    //   [0.25,4,0.25],
+    //   [0.5, 1, 0.5],
+    //   0
+    // );
+    _createBox2(
       physicWorld,
       [-4.5,-3.5,7],
       glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
       [0.25,4,0.25],
       [0.5, 1, 0.5],
+      0.0,
+      0.0,
+      false,
+      true,
+      true,
       0
     );
-    // some pillar on X (2)
-    _createBox(
+
+    // some green pillar on X (2)
+    // _createBox(
+    //   physicWorld,
+    //   [-3,-3.5,7],
+    //   glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
+    //   [0.25,4,0.25],
+    //   [0.5, 1, 0.5],
+    //   0
+    // );
+    _createBox2(
       physicWorld,
       [-3,-3.5,7],
       glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
       [0.25,4,0.25],
       [0.5, 1, 0.5],
+      0.0,
+      0.0,
+      false,
+      true,
+      true,
       0
     );
 
-    // white flat floor
+    // some flat floor for the 3 pillars shadows
     _createBox(
       physicWorld,
       [-4,-6.5,9.5],
@@ -238,14 +288,29 @@ export class TestScene3 {
       0.0
     );
 
+    // _createBox2(
+    //   physicWorld,
+    //   [-4,10,0],
+    //   glm.quat.setAxisAngle(glm.quat.create(), [1,1,1], Math.PI * 0.25),
+    //   [1,1,1],
+    //   [1, 0, 0],
+    //   0.0,
+    //   0.5,
+    //   false,
+    //   true,
+    //   false
+    // );
     _createBox2(
       physicWorld,
       [-4,10,0],
       glm.quat.setAxisAngle(glm.quat.create(), [1,1,1], Math.PI * 0.25),
       [1,1,1],
       [1, 0, 0],
-      0.3,
-      0.5
+      0.5,
+      0.0,
+      false,
+      true,
+      true
     );
 
 
@@ -301,6 +366,10 @@ export class TestScene3 {
         g_lightPos[1] = 2 - Math.sin(angle) * 1;
         g_lightPos[2] = +2 + Math.sin(angle) * 2;
 
+        g_refractivePos[0] = -4 + Math.cos(angle + Math.PI) * 2;
+        g_refractivePos[1] = 2 - Math.sin(angle + Math.PI) * 1;
+        g_refractivePos[2] = +2 + Math.sin(angle + Math.PI) * 2;
+
 
 
       } // center the light
@@ -330,37 +399,48 @@ export class TestScene3 {
           sphere.physicBody.setPosition(0, 10, 0);
         }
 
-        // const targetPos: glm.ReadonlyVec3 = [pos[0] + 2, pos[1] + 5, pos[2]];
-
-        // glm.vec3.lerp(g_lightPos, g_lightPos, targetPos, 0.03);
-
-        // g_lightPos
-
-
-        if ((index % 2) == 0) {
-
-          // graphical presentation of the spot lights
-          renderer.rayTracerRenderer.pushSphere({
-            position: g_lightPos,
-            orientation: glm.quat.identity(glm.quat.create()),
-            radius: 0.125,
-            color: [1, 1, 0],
-            reflectionFactor: 0,
-            refractionFactor: 0,
-            chessboardEnabled: false,
-            receiveLightEnabled: false,
-            castShadowEnabled: false
-          });
-
-          // actual spot lights
-          renderer.rayTracerRenderer.pushSpotLight({
-            position: g_lightPos,
-            intensity: 1,
-            radius: 15
-          });
-        }
-
       });
+
+      {
+
+        // graphical presentation of the spot lights
+        renderer.rayTracerRenderer.pushSphere({
+          position: g_lightPos,
+          orientation: glm.quat.identity(glm.quat.create()),
+          radius: 0.125,
+          color: [1, 1, 0],
+          reflectionFactor: 0,
+          refractionFactor: 0,
+          chessboardEnabled: false,
+          receiveLightEnabled: false,
+          castShadowEnabled: false
+        });
+
+        // actual spot lights
+        renderer.rayTracerRenderer.pushSpotLight({
+          position: g_lightPos,
+          intensity: 1,
+          radius: 15
+        });
+      }
+
+      {
+
+        // // graphical presentation of the spot lights
+        // renderer.rayTracerRenderer.pushSphere({
+        //   position: g_refractivePos,
+        //   orientation: glm.quat.identity(glm.quat.create()),
+        //   radius: 1.0,
+        //   color: [1, 1, 1],
+        //   reflectionFactor: 0.0,
+        //   refractionFactor: 1.0,
+        //   chessboardEnabled: false,
+        //   receiveLightEnabled: false,
+        //   castShadowEnabled: false
+        // });
+
+      }
+
     }
 
     {
@@ -388,8 +468,8 @@ export class TestScene3 {
           refractionFactor: currBox.refractionFactor,
           reflectionFactor: currBox.reflectionFactor,
           chessboardEnabled: currBox.chessboardMaterial,
-          receiveLightEnabled: true,
-          castShadowEnabled: true
+          receiveLightEnabled: currBox.receiveLightEnabled,
+          castShadowEnabled: currBox.castShadowEnabled
         });
 
       });
@@ -442,7 +522,7 @@ export class TestScene3 {
 
 
 
-      // reflective blue sphere
+      // background reflective blue sphere
       renderer.rayTracerRenderer.pushSphere({
         position: [-5, 0, -7],
         orientation: glm.quat.identity(glm.quat.create()),
