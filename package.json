@@ -23,6 +23,7 @@
     "@types/node": "^15.6.1",
     "bun": "^1.0.18",
     "gl-matrix": "^3.3.0",
+    "FrankenPhys": "https://github.com/GuillaumeBouchetEpitech/FrankenPhys",
     "nodemon": "^3.0.1",
     "prettier": "^2.8.4",
     "rollup": "^3.2.3",

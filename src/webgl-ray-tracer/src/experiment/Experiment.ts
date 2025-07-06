@@ -9,8 +9,7 @@ const {
 const { WebGLContext } = graphics.webgl2;
 const { FreeFlyController } = system.controllers;
 
-import { BrowserBulletWasmModule, physics } from '@physic-engine-browser';
-// import * as physics from "@physic-engine-main";
+import { BrowserFrankenPhysWasmModule, physics } from 'FrankenPhys';
 
 import { Logger } from './utilities/Logger';
 
@@ -194,13 +193,13 @@ export class Experiment {
     // physic engine initialize
 
     // load the wasm side
-    await BrowserBulletWasmModule.load({
-      jsUrl: `./src/physic-engine/build/bulletJs.0.0.1.js`,
-      wasmUrl: `./src/physic-engine/build`
+    await BrowserFrankenPhysWasmModule.load({
+      jsUrl: "./dist/wasm/FrankenPhys.0.0.1.js",
+      wasmUrl: "./dist/wasm",
     });
 
     // set the wasm side
-    physics.WasmModuleHolder.set(BrowserBulletWasmModule.get());
+    physics.WasmModuleHolder.set(BrowserFrankenPhysWasmModule.get());
 
     // ready
 

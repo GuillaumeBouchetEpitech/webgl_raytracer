@@ -3,7 +3,7 @@ import { system } from '@local-framework';
 
 import { Renderer } from '../graphics/Renderer';
 
-import { physics } from '@physic-engine-browser';
+import { physics } from 'FrankenPhys';
 
 import * as glm from 'gl-matrix';
 
@@ -50,9 +50,9 @@ const _createBox = (
   const physicBody = physicWorld.createRigidBody({
     mass: 0, // static
     shape: { type: 'box', size: [boxSize[0] * 1.95, boxSize[1] * 1.95, boxSize[2] * 1.95] },
+    position,
+    orientation,
   });
-  physicBody.setPosition(position[0], position[1], position[2]);
-  physicBody.setRotation(orientation[0], orientation[1], orientation[2], orientation[3]);
   physicBody.setRestitution(0.7); // bouncing
   physicBody.setFriction(1); // so the sphere doesn't slide but roll on it
 
@@ -76,9 +76,9 @@ const _createBox2 = (
   const physicBody = physicWorld.createRigidBody({
     mass,
     shape: { type: 'box', size: [boxSize[0] * 2.0, boxSize[1] * 2.0, boxSize[2] * 2.0] },
+    position,
+    orientation,
   });
-  physicBody.setPosition(position[0], position[1], position[2]);
-  physicBody.setRotation(orientation[0], orientation[1], orientation[2], orientation[3]);
   physicBody.setRestitution(0.5); // bouncing
   physicBody.setFriction(0); // so the sphere doesn't slide but roll on it
 
@@ -99,9 +99,9 @@ const _createSphere = (
   const physicBody = physicWorld.createRigidBody({
     mass: 1, // dynamic
     shape: { type: 'sphere', radius },
+    position,
+    orientation: glm.quat.identity(glm.quat.create()),
   });
-  physicBody.setPosition(position[0], position[1], position[2]);
-  // physicBody.setRotation(orientation[0], orientation[1], orientation[2], orientation[3]);
   physicBody.setFriction(1); // so the sphere doesn't slide but roll on it
   physicBody.setRestitution(bouncing); // bouncing
   physicBody.disableDeactivation(); // so the sphere doesn't ever freeze if too slow
