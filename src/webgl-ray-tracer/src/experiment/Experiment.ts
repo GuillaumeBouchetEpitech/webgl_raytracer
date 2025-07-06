@@ -206,6 +206,32 @@ export class Experiment {
     this._physicWorld = new physics.PhysicWorld();
     this._physicWorld.setGravity(0,-10,0);
 
+    // all (?) the debug rendering feature flag
+    let debugDrawerFlag: number = 0;
+    debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawWireframe;
+    debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawAabb;
+    debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawContactPoints;
+    debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawConstraints;
+    debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawConstraintLimits;
+    debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawNormals;
+    debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawFrames;
+
+    this._physicWorld.setDebugWireframeFeaturesFlag(debugDrawerFlag);
+
+    this._physicWorld.setDebugWireframeCallback((
+      x1,y1,z1,
+      x2,y2,z2,
+      r,g,b,
+    ) => {
+
+      this._renderer.stackRenderers.pushLine(
+        [x1,y1,z1],
+        [x2,y2,z2],
+        [r,g,b],
+      );
+
+    });
+
     // // dynamic falling sphere
     // const fallingSphereBody = this._physicWorld.createRigidBody({
     //   mass: 1, // dynamic
@@ -437,7 +463,11 @@ export class Experiment {
       if (showDebug) {
         this._renderer.stackRenderers.clear();
         this._renderer.safeSceneWireFrame(() => {
-          this._renderer.setupDebugRenderer();
+
+
+          // this._renderer.setupDebugRenderer();
+          this._physicWorld!.debugDrawWorld();
+
 
           const axisOrigin: glm.ReadonlyVec3 = [0, 0, 0];
           const axisX: glm.ReadonlyVec3 = [100, 0, 0];
