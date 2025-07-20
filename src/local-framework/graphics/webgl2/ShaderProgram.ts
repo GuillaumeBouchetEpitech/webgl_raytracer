@@ -2,7 +2,8 @@ import { IUnboundTextureArray } from './TextureArray';
 import { IUnboundCubeMap } from './CubeMap';
 import { IUnboundTexture } from './Texture';
 import { IUnboundDataTexture } from './DataTexture';
-import { IUnboundDataTextureVec4 } from './DataTextureVec4';
+import { IUnboundDataTextureVec4f32 } from './DataTextureVec4f32';
+import { IUnboundDataTextureVec4u8 } from './DataTextureVec4u8';
 import { WebGLContext } from './WebGLContext';
 
 import * as glm from 'gl-matrix';
@@ -30,7 +31,8 @@ export interface IBoundShader {
       | IUnboundTextureArray
       | IUnboundCubeMap
       | IUnboundDataTexture
-      | IUnboundDataTextureVec4,
+      | IUnboundDataTextureVec4f32
+      | IUnboundDataTextureVec4u8,
     inIndex: number
   ): void;
   setInteger1Uniform(inName: string, inValue: number): void;
@@ -173,7 +175,8 @@ export class ShaderProgram {
       | IUnboundTextureArray
       | IUnboundCubeMap
       | IUnboundDataTexture
-      | IUnboundDataTextureVec4,
+      | IUnboundDataTextureVec4f32
+      | IUnboundDataTextureVec4u8,
     inIndex: number
   ) {
     const gl = WebGLContext.getContext();

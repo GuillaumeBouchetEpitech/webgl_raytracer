@@ -1,23 +1,22 @@
 import { WebGLContext } from './WebGLContext';
 
-export interface IUnboundDataTextureVec4 {
+export interface IUnboundDataTextureVec4u8 {
   initialize(data: [number, number, number, number][]): void;
   rawBind(): void;
-  preBind(inCallback: (bound: IBoundDataTextureVec4) => void): void;
-  bind(inCallback: (bound: IBoundDataTextureVec4) => void): void;
+  preBind(inCallback: (bound: IBoundDataTextureVec4u8) => void): void;
+  bind(inCallback: (bound: IBoundDataTextureVec4u8) => void): void;
 }
 
-export interface IBoundDataTextureVec4 extends IUnboundDataTextureVec4 {
+export interface IBoundDataTextureVec4u8 extends IUnboundDataTextureVec4u8 {
   allocate(data: [number, number, number, number][]): void;
   update(start: number, data: [number, number, number, number][]): void;
 }
 
-export class DataTextureVec4 implements IBoundDataTextureVec4 {
+export class DataTextureVec4u8 implements IBoundDataTextureVec4u8 {
   private _texture: WebGLTexture | null = null;
 
   private _buffer: Uint8Array | undefined;
 
-  // initialize(data: number[] = [], numComponents: number = 1) {
   initialize(data: [number, number, number, number][] = []) {
     if (this._texture) {
       throw new Error('data texture already initialized');
@@ -38,7 +37,6 @@ export class DataTextureVec4 implements IBoundDataTextureVec4 {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-    // this.update(data, numComponents);
     this.allocate(data);
   }
 
@@ -47,7 +45,6 @@ export class DataTextureVec4 implements IBoundDataTextureVec4 {
     gl.deleteTexture(this._texture);
   }
 
-  // update(data: number[], numComponents: number = 1) {
   allocate(data: [number, number, number, number][]) {
     if (!this._texture) {
       throw new Error('data texture not initialized');
@@ -61,16 +58,6 @@ export class DataTextureVec4 implements IBoundDataTextureVec4 {
     gl.bindTexture(gl.TEXTURE_2D, this._texture);
 
     this._buffer = new Uint8Array(data.flat());
-
-    // // expand the data to 4 values per pixel.
-    // const numElements = data.length / numComponents;
-    // const expandedData = new Float32Array(numElements * 4);
-    // for (let ii = 0; ii < numElements; ++ii) {
-    //   const srcOffset = ii * numComponents;
-    //   const dstOffset = ii * 4;
-    //   for (let jj = 0; jj < numComponents; ++jj)
-    //     expandedData[dstOffset + jj] = data[srcOffset + jj];
-    // }
 
     const level = 0;
     const internalFormat = gl.RGBA;
@@ -152,14 +139,14 @@ export class DataTextureVec4 implements IBoundDataTextureVec4 {
     gl.bindTexture(gl.TEXTURE_2D, this._texture);
   }
 
-  preBind(inCallback: (bound: IBoundDataTextureVec4) => void): void {
+  preBind(inCallback: (bound: IBoundDataTextureVec4u8) => void): void {
     this.rawBind();
     inCallback(this);
   }
 
-  bind(inCallback: (bound: IBoundDataTextureVec4) => void): void {
+  bind(inCallback: (bound: IBoundDataTextureVec4u8) => void): void {
     this.preBind(inCallback);
-    DataTextureVec4.unbind();
+    DataTextureVec4u8.unbind();
   }
 
   static unbind(): void {

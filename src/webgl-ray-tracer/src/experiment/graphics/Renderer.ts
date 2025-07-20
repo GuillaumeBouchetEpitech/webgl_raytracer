@@ -5,10 +5,10 @@ const { TextRenderer, StackRenderers } = graphics.renderers;
 
 import {
   RayTracerRenderer,
-  ITriangle,
+  IPublicTriangle,
   IPublicSphere,
   IRayTracerRenderer,
-  InternalBox
+  IPublicBox
 } from './renderers';
 
 import * as glm from 'gl-matrix';
@@ -58,10 +58,10 @@ export class Renderer {
   initialize() {
     const gl = WebGLContext.getContext();
 
-    // fot the data texture to got from "float to float"
-    // => instead of "vec4 to vec4"
-    const alignment = 1;
-    gl.pixelStorei(gl.UNPACK_ALIGNMENT, alignment);
+    // // for the data texture to got from "float to float"
+    // // => instead of "vec4 to vec4"
+    // const alignment = 1;
+    // gl.pixelStorei(gl.UNPACK_ALIGNMENT, alignment);
 
     //
     //
@@ -163,7 +163,7 @@ export class Renderer {
     }
   }
 
-  private _pushWireFrameBox(box: InternalBox) {
+  private _pushWireFrameBox(box: IPublicBox) {
     const vertices: ReadonlyArray<glm.ReadonlyVec3> = [
       glm.vec3.fromValues(-box.boxSize[0], -box.boxSize[1], -box.boxSize[2]),
       glm.vec3.fromValues(+box.boxSize[0], -box.boxSize[1], -box.boxSize[2]),
@@ -213,7 +213,7 @@ export class Renderer {
     });
   }
 
-  private _pushWireFrameTriangle(triangle: ITriangle) {
+  private _pushWireFrameTriangle(triangle: IPublicTriangle) {
     this._stackRenderers.pushLine(triangle.v0, triangle.v1, triangle.color);
     this._stackRenderers.pushLine(triangle.v1, triangle.v2, triangle.color);
     this._stackRenderers.pushLine(triangle.v2, triangle.v0, triangle.color);
@@ -240,13 +240,20 @@ export class Renderer {
   }
 
   setupDebugRenderer() {
-    this._rayTracerRenderer.spheres.forEach((sphere) =>
-      this._pushWireFrameSphere(sphere)
-    );
-    this._rayTracerRenderer.boxes.forEach((box) => this._pushWireFrameBox(box));
-    this._rayTracerRenderer.triangles.forEach((triangle) =>
-      this._pushWireFrameTriangle(triangle)
-    );
+
+    this._rayTracerRenderer.bvhRender(this._stackRenderers);
+
+
+    this._rayTracerRenderer.spheres.forEach((sphere) => {
+      this._pushWireFrameSphere(sphere);
+    });
+    this._rayTracerRenderer.boxes.forEach((box) => {
+      this._pushWireFrameBox(box);
+    });
+    this._rayTracerRenderer.triangles.forEach((triangle) => {
+      this._pushWireFrameTriangle(triangle);
+    });
+
   }
 
   get rayTracerRenderer(): IRayTracerRenderer {

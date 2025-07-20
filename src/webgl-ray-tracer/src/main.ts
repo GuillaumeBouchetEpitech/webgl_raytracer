@@ -46,8 +46,11 @@ const onPageLoad = async () => {
   const anti_aliasing_enabled = _queryDomElement<HTMLInputElement>(
     '#anti-aliasing-enabled'
   );
-  const debug_mode_enabled = _queryDomElement<HTMLInputElement>(
+  const physic_debug_mode_enabled = _queryDomElement<HTMLInputElement>(
     '#debug-mode-enabled'
+  );
+  const bvh_debug_mode_enabled = _queryDomElement<HTMLInputElement>(
+    '#bvh-debug-mode-enabled'
   );
   const errorText = _queryDomElement<HTMLParagraphElement>('#error-text')!;
 
@@ -90,7 +93,8 @@ const onPageLoad = async () => {
     perfAutoScaling.disabled = true;
     resolution.min = resolution.max = resolution.value = 0 as unknown as string;
     anti_aliasing_enabled.disabled = true;
-    debug_mode_enabled.disabled = true;
+    physic_debug_mode_enabled.disabled = true;
+    bvh_debug_mode_enabled.disabled = true;
 
     document.title += ' (ERR)';
   };
@@ -114,7 +118,8 @@ const onPageLoad = async () => {
     perfAutoScaling,
     resolution,
     anti_aliasing_enabled,
-    debug_mode_enabled
+    physic_debug_mode_enabled,
+    bvh_debug_mode_enabled,
   });
 
   logger.log('[SETUP] Demo: initializing');

@@ -18,19 +18,18 @@ import * as scenes from './scenes/intex';
 
 import * as glm from 'gl-matrix';
 
-// const framerate = -1; // if negative -> use vsync (gpu expensive)
-const framerate = 60; // if negative -> use vsync (gpu expensive)
+let g_frames_left = 3;
 
-const _clamp = (inValue: number, inMin: number, inMax: number) =>
-  Math.min(Math.max(inValue, inMin), inMax);
-
+const framerate = -1; // if negative -> use vsync (gpu expensive)
+// const framerate = 60; // if negative -> use vsync (gpu expensive)
 interface ExperimentDef {
   canvasElement: HTMLCanvasElement;
   logger: Logger;
   perfAutoScaling: HTMLInputElement;
   resolution: HTMLInputElement;
   anti_aliasing_enabled: HTMLInputElement;
-  debug_mode_enabled: HTMLInputElement;
+  physic_debug_mode_enabled: HTMLInputElement;
+  bvh_debug_mode_enabled: HTMLInputElement;
 }
 
 const k_maxFramesUntilNextCheck = 3;
@@ -329,6 +328,10 @@ export class Experiment {
 
       // plan the next frame
 
+      if (g_frames_left-- <= 0) {
+        // return;
+      }
+
       if (framerate < 0) {
         this._animationFrameHandle = window.requestAnimationFrame(tick);
       } else {
@@ -459,15 +462,10 @@ export class Experiment {
 
       this._renderer.rayTracerRenderer.render();
 
-      const showDebug = this._def.debug_mode_enabled.checked === true;
+      const showDebug = this._def.physic_debug_mode_enabled.checked === true;
       if (showDebug) {
         this._renderer.stackRenderers.clear();
         this._renderer.safeSceneWireFrame(() => {
-
-
-          // this._renderer.setupDebugRenderer();
-          this._physicWorld!.debugDrawWorld();
-
 
           const axisOrigin: glm.ReadonlyVec3 = [0, 0, 0];
           const axisX: glm.ReadonlyVec3 = [100, 0, 0];
@@ -477,14 +475,37 @@ export class Experiment {
           this._renderer.stackRenderers.pushLine(axisOrigin, axisX, [1, 0, 0]);
           this._renderer.stackRenderers.pushLine(axisOrigin, axisY, [0, 1, 0]);
           this._renderer.stackRenderers.pushLine(axisOrigin, axisZ, [0, 0, 1]);
+
+          this._physicWorld!.debugDrawWorld();
         });
       }
+
+      const showBvhDebug = this._def.bvh_debug_mode_enabled.checked === true;
+      if (showBvhDebug) {
+        this._renderer.stackRenderers.clear();
+        this._renderer.safeSceneWireFrame(() => {
+
+          const axisOrigin: glm.ReadonlyVec3 = [0, 0, 0];
+          const axisX: glm.ReadonlyVec3 = [100, 0, 0];
+          const axisY: glm.ReadonlyVec3 = [0, 100, 0];
+          const axisZ: glm.ReadonlyVec3 = [0, 0, 100];
+
+          this._renderer.stackRenderers.pushLine(axisOrigin, axisX, [1, 0, 0]);
+          this._renderer.stackRenderers.pushLine(axisOrigin, axisY, [0, 1, 0]);
+          this._renderer.stackRenderers.pushLine(axisOrigin, axisZ, [0, 0, 1]);
+
+          this._renderer.setupDebugRenderer();
+        });
+      }
+
+
+
     // });
   }
   // #endregion scene
 
   private _setResolution(inValue: number) {
-    const safeValue = _clamp(inValue, 0, 9); // [0..9]
+    const safeValue = system.math.clamp(inValue, 0, 9); // [0..9]
     const newValue = 10 - safeValue; // [1..10]
     const newCoef = 1 / newValue; // [0..1]
     this._renderer.rayTracerRenderer.setResolutionCoef(newCoef);
