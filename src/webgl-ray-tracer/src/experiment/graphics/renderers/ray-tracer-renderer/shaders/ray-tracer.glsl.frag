@@ -289,11 +289,8 @@ void intersectSceneOneShape(int index, RayValues ray, inout RayResult outBestRes
   vec3 normal;
 
   vec4 shTexel0 = texelFetch(u_sceneTextureData, ivec2(index + 0, 0), 0);
-  vec4 shTexel1 = texelFetch(u_sceneTextureData, ivec2(index + 1, 0), 0);
-  vec4 shTexel2 = texelFetch(u_sceneTextureData, ivec2(index + 2, 0), 0);
 
   int materialIndex = int(shTexel0.g);
-  vec4 matTexel0 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 0, 0), 0);
   vec4 matTexel1 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 1, 0), 0);
 
   bool castShadow = (matTexel1.g != 0.0);
@@ -301,6 +298,9 @@ void intersectSceneOneShape(int index, RayValues ray, inout RayResult outBestRes
   if (shadowMode && !castShadow) {
     return; // this sphere does not cast a shadow
   }
+
+  vec4 shTexel1 = texelFetch(u_sceneTextureData, ivec2(index + 1, 0), 0);
+  vec4 shTexel2 = texelFetch(u_sceneTextureData, ivec2(index + 2, 0), 0);
 
   int shapeType = int(shTexel0.r);
 
@@ -344,6 +344,8 @@ void intersectSceneOneShape(int index, RayValues ray, inout RayResult outBestRes
         ) {
           return;
         }
+
+        vec4 matTexel0 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 0, 0), 0);
 
         float reflectionFactor = matTexel0.a;
 
@@ -396,6 +398,8 @@ void intersectSceneOneShape(int index, RayValues ray, inout RayResult outBestRes
       outBestResult.refractionFactor = 0.0;
 
       bool chessboardMaterialEnabled = (matTexel1.a != 0.0);
+
+      vec4 matTexel0 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 0, 0), 0);
 
       if (chessboardMaterialEnabled)
       {
@@ -520,6 +524,8 @@ void intersectSceneOneShape(int index, RayValues ray, inout RayResult outBestRes
         // convert normal from box space to world space
         normal = normalMatrix * normal;
 
+        vec4 matTexel0 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 0, 0), 0);
+
         float reflectionFactor = matTexel0.a;
 
         outBestResult.hasHit = true;
@@ -562,6 +568,8 @@ void intersectSceneOneShape(int index, RayValues ray, inout RayResult outBestRes
       outBestResult.refractionFactor = 0.0;
 
       bool chessboardMaterialEnabled = (matTexel1.a != 0.0);
+
+      vec4 matTexel0 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 0, 0), 0);
 
       if (chessboardMaterialEnabled)
       {
@@ -618,6 +626,8 @@ void intersectSceneOneShape(int index, RayValues ray, inout RayResult outBestRes
         return;
       }
 
+      vec4 matTexel0 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 0, 0), 0);
+
       outBestResult.hasHit = true;
       outBestResult.distance = currDistance;
       outBestResult.position = ray.origin + currDistance * ray.direction;
@@ -660,8 +670,6 @@ bool rayIntersectBvhAABB(RayValues ray, vec3 bvhMin, vec3 bvhMax)
 
 bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
 {
-  float bestDistance = -1.0;
-
   outBestResult.hasHit = false;
   outBestResult.distance = -1.0;
 
@@ -673,13 +681,11 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
   //   intersectSceneOneShape(index, ray, outBestResult, shadowMode);
   // }
 
-  if (u_totalShapes == 0) {
-    return outBestResult.hasHit;
-  }
 
   /**/
-  {
-    const int maxBvhStack = 32;
+  if (u_totalShapes > 0) {
+
+    const int maxBvhStack = 16;
     int bvhStack[maxBvhStack];
 
     bvhStack[0] = 0; // BVH root node index
@@ -693,74 +699,51 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
 
       vec4 rootNodeTexel0 = texelFetch(u_bvhDataTexture, ivec2(bv_idx * 3 + 0, 0), 0);
       vec4 rootNodeTexel1 = texelFetch(u_bvhDataTexture, ivec2(bv_idx * 3 + 1, 0), 0);
-      vec4 rootNodeTexel2 = texelFetch(u_bvhDataTexture, ivec2(bv_idx * 3 + 2, 0), 0);
 
       vec3 aabbMin = rootNodeTexel0.rgb;
       vec3 aabbMax = vec3(rootNodeTexel0.a, rootNodeTexel1.r, rootNodeTexel1.g);
 
-      if (rayIntersectBvhAABB(ray, aabbMin, aabbMax)) {
-
-        //
-
-        int leftNodeIndex = int(rootNodeTexel1.b);
-        if (leftNodeIndex >= 0 && leftNodeIndex * 3 < 2048) {
-          // push left bvh node index on to stack
-          top += 1;
-          bvhStack[top] = leftNodeIndex;
-        }
-
-        int rightNodeIndex = int(rootNodeTexel1.a);
-        if (rightNodeIndex >= 0 && rightNodeIndex * 3 < 2048) {
-          // push right bvh node index on to stack
-          top += 1;
-          bvhStack[top] = rightNodeIndex;
-        }
-
-        //
-
-        int leftLEafIndex = int(rootNodeTexel2.r);
-        if (leftLEafIndex * 3 >= 0 && leftLEafIndex * 3 < u_totalShapes) {
-          intersectSceneOneShape(leftLEafIndex * 3, ray, outBestResult, shadowMode);
-        }
-
-        int rightLeafIndex = int(rootNodeTexel2.g);
-        if (rightLeafIndex * 3 >= 0 && rightLeafIndex * 3 < u_totalShapes) {
-          intersectSceneOneShape(rightLeafIndex * 3, ray, outBestResult, shadowMode);
-        }
-
-        //
+      if (!rayIntersectBvhAABB(ray, aabbMin, aabbMax)) {
+        continue;
       }
+
+      //
+
+      int leftNodeIndex = int(rootNodeTexel1.b);
+      if (leftNodeIndex >= 0) {
+        // push left bvh node index on to the stack
+        top += 1;
+        bvhStack[top] = leftNodeIndex;
+      }
+
+      int rightNodeIndex = int(rootNodeTexel1.a);
+      if (rightNodeIndex >= 0) {
+        // push right bvh node index on to the stack
+        top += 1;
+        bvhStack[top] = rightNodeIndex;
+      }
+
+      //
+
+      vec4 rootNodeTexel2 = texelFetch(u_bvhDataTexture, ivec2(bv_idx * 3 + 2, 0), 0);
+
+      int leftLEafIndex = int(rootNodeTexel2.r);
+      if (leftLEafIndex >= 0) {
+        intersectSceneOneShape(leftLEafIndex * 3, ray, outBestResult, shadowMode);
+      }
+
+      int rightLeafIndex = int(rootNodeTexel2.g);
+      if (rightLeafIndex >= 0) {
+        intersectSceneOneShape(rightLeafIndex * 3, ray, outBestResult, shadowMode);
+      }
+
+      //
 
     }
 
   }
   //*/
 
-
-
-  { // plane test
-
-    // vec3 planeNormal = normalize(vec3(0.0, 0.0, 1.0));
-    // float val = intersectPlane(tmpRay, planeNormal, 35.0/4.0*3.0);
-
-    // vec3 planeNormal = normalize(vec3(0.0, 0.0, 1.0));
-    // float val = intersectPlane(tmpRay, planeNormal, 0.0);
-
-    // vec3 planeNormal = normalize(vec3(0.0, 0.0, 1.0));
-    // float val = intersectPlane(tmpRay, planeNormal, 10.0);
-
-    // if (val > 0.0 && (bestDistance <= 0.0 || val < bestDistance))
-    // {
-    //     outBestResult.hasHit = true;
-    //     outBestResult.distance = val;
-    //     outBestResult.position = ray.origin + val * ray.direction;
-    //     outBestResult.normal = vec3(planeNormal);
-    //     outBestResult.color = vec4(1.0, 1.0, 1.0, 1.0);
-    //     outBestResult.reflectionFactor = 0.0;
-    //     outBestResult.lightEnabled = true;
-    // }
-
-  } // plane test
 
   return outBestResult.hasHit;
 }

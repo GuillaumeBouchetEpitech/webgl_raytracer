@@ -30,6 +30,7 @@ const k_reflection = true;
 
 const allBoxes: BoxObject[] = [];
 const allSpheres: SphereObject[] = [];
+const allMeshes: [glm.ReadonlyVec3, glm.ReadonlyVec3, glm.ReadonlyVec3][][] = [];
 
 
 const g_lightPos: glm.vec3 = [0,0,20]
@@ -123,6 +124,25 @@ const _createSphere = (
   allSpheres.push({ radius, physicBody });
 }
 
+const _createStaticMesh = (
+  physicWorld: physics.PhysicWorld,
+  triangles: [glm.ReadonlyVec3, glm.ReadonlyVec3, glm.ReadonlyVec3][],
+) => {
+
+  const physicBody = physicWorld.createRigidBody({
+    mass: 0, // static
+    shape: {
+      type: 'mesh',
+      triangles
+    },
+    position: [0,0,0],
+    orientation: glm.quat.identity(glm.quat.create()),
+  });
+  physicBody.setRestitution(0.7); // bouncing
+  physicBody.setFriction(1); // so the sphere doesn't slide but roll on it
+
+  allMeshes.push(triangles);
+};
 
 export class TestScene3 {
   ensureSceneData(physicWorld: physics.PhysicWorld) {
@@ -327,6 +347,22 @@ export class TestScene3 {
       true
     );
 
+    // {
+    //   const vertices: glm.ReadonlyVec3[] = [];
+    //   const indices: [number,number,number][] = [];
+
+    //   vertices.push([-5, -2, 2]);
+    //   vertices.push([+0, -2, 2]);
+    //   vertices.push([-5, -2, 7]);
+    //   indices.push([0,1,2]);
+
+    //   const finalVertices: [glm.ReadonlyVec3, glm.ReadonlyVec3, glm.ReadonlyVec3][] = [];
+    //   indices.forEach(([idx0, idx1, idx2]) => {
+    //     finalVertices.push([vertices[idx0], vertices[idx1], vertices[idx2]]);
+    //   });
+
+    //   _createStaticMesh(physicWorld, finalVertices);
+    // }
 
 
   }
@@ -568,6 +604,25 @@ export class TestScene3 {
       //*/
 
       {
+        allMeshes.forEach((meshTriangles) => {
+
+          meshTriangles.forEach((vertices) => {
+
+            renderer.rayTracerRenderer.pushTriangle({
+              v0: vertices[0],
+              v1: vertices[1],
+              v2: vertices[2],
+              color: [1.0, 0.5, 0.5],
+              reflectionFactor: 0.0,
+              receiveLightEnabled: true,
+              castShadowEnabled: true
+            });
+          })
+
+        });
+      }
+
+      {
         const vertices: glm.ReadonlyVec3[] = [
           [ -10, -1+  0.0, +2+ 1.0], // 0
           [ -10, -1+  0.5, +2+ 0.5], // 1
@@ -629,6 +684,7 @@ export class TestScene3 {
         }
 
       }
+
 
       /**
       {
