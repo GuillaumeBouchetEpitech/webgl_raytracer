@@ -1,7 +1,6 @@
 import { graphics } from '@local-framework';
 const {
   WebGLContext,
-  DataTexture,
   DataTextureVec4f32,
   Texture,
   FrameBuffer,
@@ -18,6 +17,11 @@ import rayTracerFragment from './shaders/ray-tracer.glsl.frag';
 import textureVertex from './shaders/texture.glsl.vert';
 // @ts-ignore
 import textureFragment from './shaders/texture.glsl.frag';
+
+// @ts-ignore
+import asciiArtVertex from './shaders/ascii-art.glsl.vert';
+// @ts-ignore
+import asciiArtFragment from './shaders/ascii-art.glsl.frag';
 
 import * as glm from 'gl-matrix';
 
@@ -161,6 +165,7 @@ export interface IRayTracerRenderer {
   ): void;
 
   render(): void;
+  renderAsciiArt(): void;
 
   reset(): void;
 
@@ -185,9 +190,11 @@ export class RayTracerRenderer implements IRayTracerRenderer {
 
   private _rayTracerShaderProgram: graphics.webgl2.IUnboundShader;
   private _textureShaderProgram: graphics.webgl2.IUnboundShader;
+  private _asciiArtShaderProgram: graphics.webgl2.IUnboundShader;
 
   private _rayTracerGeometry: graphics.webgl2.GeometryWrapper.Geometry;
   private _screenGeometry: graphics.webgl2.GeometryWrapper.Geometry;
+  private _asciiArtScreenGeometry: graphics.webgl2.GeometryWrapper.Geometry;
 
   private _finalTexture: graphics.webgl2.IUnboundTexture;
   private _frameBuffer: graphics.webgl2.IUnboundFrameBuffer;
@@ -244,6 +251,13 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       uniforms: ['u_texture', 'u_step']
     });
 
+    this._asciiArtShaderProgram = new ShaderProgram('RayTracerRenderer-ascii-art', {
+      vertexSrc: asciiArtVertex,
+      fragmentSrc: asciiArtFragment,
+      attributes: ['a_vertexPosition', 'a_vertexTextureCoord'],
+      uniforms: ['u_texture']
+    });
+
     this._finalTexture = new Texture();
     this._frameBuffer = new FrameBuffer();
 
@@ -291,6 +305,14 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     //
     //
 
+    const screenVertices: number[] = [];
+    screenVertices.push(+1.0, +1.0, 1, 1); // top right
+    screenVertices.push(-1.0, +1.0, 0, 1); // top left
+    screenVertices.push(+1.0, -1.0, 1, 0); // bottom right
+    screenVertices.push(-1.0, -1.0, 0, 0); // bottom left
+
+    //
+
     geoBuilder
       .reset()
       .setPrimitiveType('triangleStrip')
@@ -298,16 +320,12 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       .addVboAttribute('a_vertexPosition', 'vec2f')
       .addVboAttribute('a_vertexTextureCoord', 'vec2f');
 
+    //
+
     this._screenGeometry = new GeometryWrapper.Geometry(
-      this._textureShaderProgram,
+      this._asciiArtShaderProgram,
       geoBuilder.getDef()
     );
-
-    const screenVertices: number[] = [];
-    screenVertices.push(+1.0, +1.0, 1, 1); // top right
-    screenVertices.push(-1.0, +1.0, 0, 1); // top left
-    screenVertices.push(+1.0, -1.0, 1, 0); // bottom right
-    screenVertices.push(-1.0, -1.0, 0, 0); // bottom left
 
     this._screenGeometry.allocateBuffer(
       0,
@@ -316,6 +334,21 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     );
     this._screenGeometry.setPrimitiveStart(0);
     this._screenGeometry.setPrimitiveCount(4);
+
+    //
+
+    this._asciiArtScreenGeometry = new GeometryWrapper.Geometry(
+      this._asciiArtShaderProgram,
+      geoBuilder.getDef()
+    );
+
+    this._asciiArtScreenGeometry.allocateBuffer(
+      0,
+      screenVertices,
+      screenVertices.length
+    );
+    this._asciiArtScreenGeometry.setPrimitiveStart(0);
+    this._asciiArtScreenGeometry.setPrimitiveCount(4);
 
     //
     //
@@ -508,6 +541,13 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     this._renderRayTracingPass();
   }
 
+  renderAsciiArt() {
+    // texture pass first
+    // -> we render the previous frame to avoid potential webgl queue blocking
+    this._renderAsciiArtTexturePass();
+    this._renderRayTracingPass();
+  }
+
   private _renderTexturePass() {
     const gl = WebGLContext.getContext();
 
@@ -531,6 +571,21 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       }
 
       this._screenGeometry.render();
+    });
+  }
+
+  private _renderAsciiArtTexturePass() {
+    const gl = WebGLContext.getContext();
+
+    gl.viewport(0, 0, this._canvasWidth, this._canvasHeight);
+    gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
+
+    const shader = this._asciiArtShaderProgram;
+
+    shader.bind((boundShader) => {
+      boundShader.setTextureUniform('u_texture', this._finalTexture, 0);
+
+      this._asciiArtScreenGeometry.render();
     });
   }
 

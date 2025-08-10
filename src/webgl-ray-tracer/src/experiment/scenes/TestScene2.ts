@@ -1,5 +1,7 @@
 import { Renderer } from '../graphics/Renderer';
 
+import { physics } from 'FrankenPhys';
+
 import * as glm from 'gl-matrix';
 
 let continuousTime: number = 0;
@@ -22,7 +24,7 @@ export class TestScene2 {
     nextStep = 1;
   }
 
-  run(renderer: Renderer, elapsedTime: number) {
+  run(elapsedTime: number, renderer: Renderer, physicWorld: physics.PhysicWorld) {
     continuousAngle += elapsedTime * 2.0;
     if (continuousAngle >= Math.PI * 2) {
       continuousAngle -= Math.PI * 2;
@@ -168,6 +170,7 @@ export class TestScene2 {
           boxSize: size,
           color: color ?? [1, 1, 1],
           reflectionFactor: reflectionFactor ?? 0,
+          refractionFactor: 0,
           chessboardEnabled: false,
           receiveLightEnabled: true,
           castShadowEnabled: true
@@ -228,13 +231,15 @@ export class TestScene2 {
 
           renderer.rayTracerRenderer.pushBox({
             position: pos,
-            orientation: [0,0,1,0],
+            // orientation: [0,0,1,0],
+            orientation: glm.quat.setAxisAngle(glm.quat.create(), [0,1,0], angleY),
             // angleX: 0,
             // angleY: angleY,
             // angleZ: 0,
             boxSize: size,
             color: [0, 1, 0],
             reflectionFactor: 0,
+            refractionFactor: 0,
             chessboardEnabled: false,
             receiveLightEnabled: true,
             castShadowEnabled: true

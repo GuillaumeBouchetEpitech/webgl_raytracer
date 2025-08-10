@@ -8,6 +8,7 @@ precision highp float;
 //
 //
 
+// #define D_SIMPLIFIED
 
 // Indices of refractionFactor
 const float Air = 1.0;
@@ -311,6 +312,9 @@ void intersectSceneOneShape(int index, RayValues ray, inout RayResult outBestRes
 
       float radius = shTexel2.g;
 
+#ifdef D_SIMPLIFIED
+      float refractionFactor = 0.0;
+#else
       float refractionFactor = matTexel1.r;
       if (refractionFactor > 0.0)
       {
@@ -365,7 +369,7 @@ void intersectSceneOneShape(int index, RayValues ray, inout RayResult outBestRes
 
         return; // bypass non refractive logic
       }
-
+#endif
 
       vec4 orientation = vec4(
         shTexel1.g,
@@ -412,7 +416,13 @@ void intersectSceneOneShape(int index, RayValues ray, inout RayResult outBestRes
 
           if (shadowMode)
           {
+
+// #ifdef D_SIMPLIFIED
+//             outBestResult.hasHit = true;
+// #else
             outBestResult.hasHit = false; // no shadow -> allow light to go through
+// #endif
+
             // outBestResult.color = vec4(1.0, 1.0, 0.0, 1.0);
             outBestResult.reflectionFactor = 0.0; // override reflection -> plain color
             outBestResult.refractionFactor = 0.0;
@@ -744,6 +754,10 @@ bool intersectScene(RayValues ray, out RayResult outBestResult, bool shadowMode)
   }
   //*/
 
+#ifdef D_SIMPLIFIED
+  outBestResult.reflectionFactor = 0.0;
+  outBestResult.refractionFactor = 0.0;
+#endif
 
   return outBestResult.hasHit;
 }
@@ -851,7 +865,11 @@ void main()
   vec3 rayDir = normalize(v_position - u_cameraEye); // camera direction
   vec3 finalPixelColor = g_backgroundColor;
 
+#ifdef D_SIMPLIFIED
+  const int maxStack = 1;
+#else
   const int maxStack = 4;
+#endif
   StackData _stack[maxStack];
 
   // initialize stack
@@ -869,8 +887,13 @@ void main()
   _stack[0].used = true;
   _stack[0].ray = RayValues(u_cameraEye, rayDir);
   _stack[0].result.position = u_cameraEye;
+#ifdef D_SIMPLIFIED
+  _stack[0].result.reflectionFactor = 0.0;
+  _stack[0].result.refractionFactor = 0.0;
+#else
   _stack[0].result.reflectionFactor = 1.0;
   _stack[0].result.refractionFactor = 1.0;
+#endif
   _stack[0].result.lightEnabled = true;
   _stack[0].reflectionIndex = -1;
   _stack[0].refractionIndex = -1;

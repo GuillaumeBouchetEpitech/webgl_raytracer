@@ -461,6 +461,8 @@ export class Experiment {
       );
 
       this._renderer.rayTracerRenderer.render();
+      // this._renderer.rayTracerRenderer.renderAsciiArt();
+
 
       const showDebug = this._def.physic_debug_mode_enabled.checked === true;
       if (showDebug) {

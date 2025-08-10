@@ -1,23 +1,3 @@
-import { graphics } from '@local-framework';
-const {
-  WebGLContext,
-  DataTexture,
-  DataTextureVec4f32,
-  Texture,
-  FrameBuffer,
-  ShaderProgram,
-  GeometryWrapper
-} = graphics.webgl2;
-
-// @ts-ignore
-import rayTracerVertex from './shaders/ray-tracer.glsl.vert';
-// @ts-ignore
-import rayTracerFragment from './shaders/ray-tracer.glsl.frag';
-
-// @ts-ignore
-import textureVertex from './shaders/texture.glsl.vert';
-// @ts-ignore
-import textureFragment from './shaders/texture.glsl.frag';
 
 import * as glm from 'gl-matrix';
 import { IInternalBox, IInternalSphere, IInternalTriangle, IStackRenderer } from './RayTracerRenderer';
@@ -403,9 +383,7 @@ export class BVH {
     };
     _recFunc(this._rootNode);
 
-    allNodes.sort((a, b) => {
-      return a._index - b._index;
-    });
+    allNodes.sort((a, b) => a._index - b._index);
 
     for (const currNode of allNodes) {
 
