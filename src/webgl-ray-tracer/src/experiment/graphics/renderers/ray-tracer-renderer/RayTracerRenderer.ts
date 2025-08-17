@@ -44,7 +44,7 @@ export interface IPublicSphere {
   refractionFactor: number;
   castShadowEnabled: boolean;
   receiveLightEnabled: boolean;
-  chessboardEnabled: boolean;
+  chessboardEnabled: 0 | 1 | 2;
 }
 
 export type IInternalSphere = IPublicSphere;
@@ -69,6 +69,7 @@ export interface IPublicTriangle {
   v2: glm.ReadonlyVec3;
   color: glm.ReadonlyVec3;
   reflectionFactor: number;
+  refractionFactor: number;
   castShadowEnabled: boolean;
   receiveLightEnabled: boolean;
 }
@@ -468,6 +469,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     v1,
     v2,
     color,
+    refractionFactor,
     reflectionFactor,
     castShadowEnabled,
     receiveLightEnabled
@@ -481,6 +483,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
       v1: glm.vec3.clone(v1),
       v2: glm.vec3.clone(v2),
       color: glm.vec3.clone(color),
+      refractionFactor,
       reflectionFactor,
       castShadowEnabled,
       receiveLightEnabled
@@ -672,7 +675,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                     sphere.refractionFactor, // [4]
                     sphere.castShadowEnabled ? 1 : 0, // [5]
                     sphere.receiveLightEnabled ? 1 : 0, // [6]
-                    sphere.chessboardEnabled ? 1 : 0, // [7]
+                    sphere.chessboardEnabled, // [7]
                   ]);
                   materialIndex += 1;
 
@@ -756,8 +759,8 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                     triangle.reflectionFactor, // [3]
                   ]);
                   materialsDataValues.push([
-                    // triangle.refractionFactor, // [4]
-                    0,
+                    triangle.refractionFactor, // [4]
+                    // 0,
                     triangle.castShadowEnabled ? 1 : 0, // [5]
                     triangle.receiveLightEnabled ? 1 : 0, // [6]
                     // triangle.chessboardEnabled ? 1 : 0, // [7]

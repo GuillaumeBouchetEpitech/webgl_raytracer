@@ -13,12 +13,17 @@ uniform sampler2D u_texture;
 // #define t 0
 
 #define zoom 1.
-#define P(id,a,b,c,d,e,f,g,h) if( id == int(pos.y) ){ int pa = a+2*(b+2*(c+2*(d+2*(e+2*(f+2*(g+2*(h))))))); cha = floor(mod(float(pa)/pow(2.,float(pos.x)-1.),2.)); }
+#define P(id, a, b, c, d, e, f, g, h) \
+  if ( id == int(pos.y) ) { \
+    int pa = a + 2 * (b + 2 * (c + 2 * (d + 2 * (e + 2 * (f + 2 * (g + 2 * (h))))))); \
+    cha = floor(mod(float(pa)/pow(2.0,float(pos.x)-1.0),2.0)); \
+  }
 
 float gray(vec3 _i)
 {
   return _i.x*0.299+_i.y*0.587+_i.z*0.114;
 }
+
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
   vec2 uv = vec2(floor(fragCoord.x/8./zoom)*8.*zoom,floor(fragCoord.y/12./zoom)*12.*zoom)/r;
@@ -27,7 +32,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
   float cha = 0.;
 
   float g = gray(tex.xyz);
-  if( g < .125 )
+  if( g < .125 ) // nothing
   {
     P(11,0,0,0,0,0,0,0,0);
     P(10,0,0,0,0,0,0,0,0);
@@ -151,7 +156,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
   vec3 col = tex.xyz/max(tex.x,max(tex.y,tex.z));
   fragColor = vec4(cha*col,1.);
 }
-
 
 in vec2 v_textureCoord;
 

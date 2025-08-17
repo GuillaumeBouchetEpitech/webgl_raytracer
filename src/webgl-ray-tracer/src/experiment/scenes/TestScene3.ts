@@ -30,7 +30,7 @@ const k_reflection = true;
 
 const allBoxes: BoxObject[] = [];
 const allSpheres: SphereObject[] = [];
-const allMeshes: [glm.ReadonlyVec3, glm.ReadonlyVec3, glm.ReadonlyVec3][][] = [];
+// const allMeshes: [glm.ReadonlyVec3, glm.ReadonlyVec3, glm.ReadonlyVec3][][] = [];
 
 
 const g_lightPos: glm.vec3 = [0,0,20]
@@ -58,6 +58,7 @@ const _createBox = (
   });
   physicBody.setRestitution(0.7); // bouncing
   physicBody.setFriction(1); // so the sphere doesn't slide but roll on it
+  physicBody.disableDeactivation(); // do not fall asleep when too slow
 
   allBoxes.push({
     boxSize, color,
@@ -90,6 +91,7 @@ const _createBox2 = (
   });
   physicBody.setRestitution(0.5); // bouncing
   physicBody.setFriction(0); // so the sphere doesn't slide but roll on it
+  physicBody.disableDeactivation(); // do not fall asleep when too slow
 
   allBoxes.push({
     boxSize, color,
@@ -124,25 +126,25 @@ const _createSphere = (
   allSpheres.push({ radius, physicBody });
 }
 
-const _createStaticMesh = (
-  physicWorld: physics.PhysicWorld,
-  triangles: [glm.ReadonlyVec3, glm.ReadonlyVec3, glm.ReadonlyVec3][],
-) => {
+// const _createStaticMesh = (
+//   physicWorld: physics.PhysicWorld,
+//   triangles: [glm.ReadonlyVec3, glm.ReadonlyVec3, glm.ReadonlyVec3][],
+// ) => {
 
-  const physicBody = physicWorld.createRigidBody({
-    mass: 0, // static
-    shape: {
-      type: 'mesh',
-      triangles
-    },
-    position: [0,0,0],
-    orientation: glm.quat.identity(glm.quat.create()),
-  });
-  physicBody.setRestitution(0.7); // bouncing
-  physicBody.setFriction(1); // so the sphere doesn't slide but roll on it
+//   const physicBody = physicWorld.createRigidBody({
+//     mass: 0, // static
+//     shape: {
+//       type: 'mesh',
+//       triangles
+//     },
+//     position: [0,0,0],
+//     orientation: glm.quat.identity(glm.quat.create()),
+//   });
+//   physicBody.setRestitution(0.7); // bouncing
+//   physicBody.setFriction(1); // so the sphere doesn't slide but roll on it
 
-  allMeshes.push(triangles);
-};
+//   allMeshes.push(triangles);
+// };
 
 export class TestScene3 {
   ensureSceneData(physicWorld: physics.PhysicWorld) {
@@ -191,7 +193,8 @@ export class TestScene3 {
       [-12,-1,2],
       glm.quat.setAxisAngle(glm.quat.create(), [0,1,0], Math.PI * -1/16),
       [0.5,5,4],
-      [0.5, 1, 0.5],
+      // [0.5, 1, 0.5],
+      [1, 1, 1],
       0
     );
 
@@ -334,14 +337,16 @@ export class TestScene3 {
     //   true,
     //   false
     // );
+
+    // RED BOX HERE
     _createBox2(
       physicWorld,
       [-4,10,0],
       glm.quat.setAxisAngle(glm.quat.create(), [1,1,1], Math.PI * 0.25),
-      [1,1,1],
-      [1, 0, 0],
-      0.5,
-      0.0,
+      [1,1,1], // box size
+      [1, 0.0, 0.0],
+      0.2,
+      0.8,
       false,
       true,
       true
@@ -461,7 +466,7 @@ export class TestScene3 {
           color: [1, 1, 0],
           reflectionFactor: 0,
           refractionFactor: 0,
-          chessboardEnabled: false,
+          chessboardEnabled: 0,
           receiveLightEnabled: false,
           castShadowEnabled: false
         });
@@ -473,49 +478,110 @@ export class TestScene3 {
           radius: 15
         });
 
-        const rotationCoef = system.math.easing.easeClamp(continuousTime * 0.125)
-        const elevationCoef = system.math.easing.easePinPong(rotationCoef);
+        { // light mask (made of triangles)
 
-        const elevation = 0.3 + 1 * elevationCoef;
+          const rotationCoef = system.math.easing.easeClamp(continuousTime * 0.125)
+          const elevationCoef = system.math.easing.easePinPong(rotationCoef);
 
-        const coverVertices: glm.vec3[] = [];
-        coverVertices.push([+0.0, elevation + 0.0, +0.0]);
-        coverVertices.push([+0.3, elevation - 0.6, +0.0]);
-        coverVertices.push([+0.0, elevation - 0.6, +0.3]);
-        coverVertices.push([-0.3, elevation - 0.6, -0.0]);
-        coverVertices.push([-0.0, elevation - 0.6, -0.3]);
+          const elevation = 0.3 + 1 * elevationCoef;
 
-        // translate
-        // rotate
+          const coverVertices: glm.vec3[] = [];
+          coverVertices.push([+0.0, elevation + 0.0, +0.0]);
+          coverVertices.push([+0.3, elevation - 0.6, +0.0]);
+          coverVertices.push([+0.0, elevation - 0.6, +0.3]);
+          coverVertices.push([-0.3, elevation - 0.6, -0.0]);
+          coverVertices.push([-0.0, elevation - 0.6, -0.3]);
 
-        const tmpMat4 = glm.mat4.identity(glm.mat4.create());
-        glm.mat4.translate(tmpMat4, tmpMat4, g_lightPos);
-        glm.mat4.rotateY(tmpMat4, tmpMat4, Math.PI * rotationCoef * 8);
+          // translate
+          // rotate
 
-        coverVertices.forEach(currVertex => {
-          glm.vec3.transformMat4(currVertex, currVertex, tmpMat4);
-        })
+          const tmpMat4 = glm.mat4.identity(glm.mat4.create());
+          glm.mat4.translate(tmpMat4, tmpMat4, g_lightPos);
+          glm.mat4.rotateY(tmpMat4, tmpMat4, Math.PI * rotationCoef * 8);
+
+          coverVertices.forEach(currVertex => {
+            glm.vec3.transformMat4(currVertex, currVertex, tmpMat4);
+          })
 
 
-        const indices: glm.ReadonlyVec3[] = [];
-        indices.push([0,1,2]);
-        indices.push([0,2,3]);
-        indices.push([0,3,4]);
-        indices.push([0,4,1]);
+          const indices: glm.ReadonlyVec3[] = [];
+          indices.push([0,1,2]);
+          indices.push([0,2,3]);
+          indices.push([0,3,4]);
+          indices.push([0,4,1]);
 
-        indices.forEach(([idx0, idx1, idx2]) => {
+          indices.forEach(([idx0, idx1, idx2]) => {
 
-          renderer.rayTracerRenderer.pushTriangle({
-            v0: coverVertices[idx0],
-            v1: coverVertices[idx1],
-            v2: coverVertices[idx2],
-            color: [0.5, 0.0, 0.5],
-            reflectionFactor: 0.0,
-            receiveLightEnabled: false,
-            castShadowEnabled: true
+            renderer.rayTracerRenderer.pushTriangle({
+              v0: coverVertices[idx0],
+              v1: coverVertices[idx1],
+              v2: coverVertices[idx2],
+              color: [0.5, 0.0, 0.5],
+              reflectionFactor: 0.0,
+              refractionFactor: 0.0,
+              receiveLightEnabled: false,
+              castShadowEnabled: true
+            });
           });
-        });
 
+        } // light mask (made of triangles)
+
+        { // debug refractive sphere
+
+          // // yellow refractive sphere
+          // renderer.rayTracerRenderer.pushSphere({
+          //   position: [g_lightPos[0] - 1, g_lightPos[1], g_lightPos[2]],
+          //   orientation: glm.quat.identity(glm.quat.create()),
+          //   radius: 0.5,
+          //   color: [1, 1, 0],
+          //   reflectionFactor: 0,
+          //   refractionFactor: 1.0,
+          //   chessboardEnabled: 0,
+          //   receiveLightEnabled: true,
+          //   castShadowEnabled: true
+          // });
+
+          // // white refractive sphere
+          // // -> here we test that it does not hide the yellow shadow of the first sphere
+          // renderer.rayTracerRenderer.pushSphere({
+          //   position: [g_lightPos[0] - 2.1, g_lightPos[1], g_lightPos[2]],
+          //   orientation: glm.quat.identity(glm.quat.create()),
+          //   radius: 0.5,
+          //   color: [1, 1, 1],
+          //   reflectionFactor: 0,
+          //   refractionFactor: 1.0,
+          //   chessboardEnabled: 0,
+          //   receiveLightEnabled: true,
+          //   castShadowEnabled: true
+          // });
+
+          renderer.rayTracerRenderer.pushBox({
+            position: [-9,2,2],
+            orientation: glm.quat.identity(glm.quat.create()),
+            // orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),
+            boxSize: [0.05, 0.5, 1.5],
+            color: [1.0,1.0,0.0],
+            reflectionFactor: 0.0,
+            refractionFactor: 0.8,
+            castShadowEnabled: true,
+            receiveLightEnabled: true,
+            chessboardEnabled: false,
+          });
+
+          renderer.rayTracerRenderer.pushBox({
+            position: [-9.2,2,2],
+            orientation: glm.quat.identity(glm.quat.create()),
+            // orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),
+            boxSize: [0.05, 1.5, 0.5],
+            color: [0.0,1.0,0.0],
+            reflectionFactor: 0.0,
+            refractionFactor: 0.8,
+            castShadowEnabled: true,
+            receiveLightEnabled: true,
+            chessboardEnabled: false,
+          });
+
+        } // debug refractive sphere
 
       }
 
@@ -580,15 +646,16 @@ export class TestScene3 {
 
           const blinkColor = 0.1 + lightCoef * 0.9;
 
-          // sphere with transparent chessboard material
+          // PURPLE SPHERE HERE
+          // -> sphere with transparent chessboard material
           renderer.rayTracerRenderer.pushSphere({
             position: position,
             orientation: rotation,
             radius: 1.0,
-            color: [1, 1, 1],
+            color: [1, 0, 1],
             reflectionFactor: 0.0,
-            refractionFactor: 0.0,
-            chessboardEnabled: true,
+            refractionFactor: 0.9,
+            chessboardEnabled: 2,
             receiveLightEnabled: true,
             castShadowEnabled: true
           });
@@ -598,10 +665,10 @@ export class TestScene3 {
             position: position,
             orientation: rotation,
             radius: 0.899,
-            color: [blinkColor, blinkColor, blinkColor],
+            color: [blinkColor, 0, blinkColor],
             reflectionFactor: 0,
             refractionFactor: 0,
-            chessboardEnabled: false,
+            chessboardEnabled: 0,
             receiveLightEnabled: false,
             castShadowEnabled: false
           });
@@ -609,21 +676,21 @@ export class TestScene3 {
           // actual spot light inside the sphere
           renderer.rayTracerRenderer.pushSpotLight({
             position: position,
-            intensity: 0.1 + 4.9 * lightCoef,
+            intensity: 0.5 + 3.5 * lightCoef,
             radius: 10
           });
 
         } else {
 
-          // refractive (and reflective) sphere
+          // refractive/reflective) sphere
           renderer.rayTracerRenderer.pushSphere({
             position: position,
             orientation: rotation,
             radius: 1.5,
             color: [1, 1, 1],
-            reflectionFactor: 0.3,
-            refractionFactor: 0.5,
-            chessboardEnabled: false,
+            reflectionFactor: 0.75,
+            refractionFactor: 0.75,
+            chessboardEnabled: 0,
             receiveLightEnabled: true,
             castShadowEnabled: true
           });
@@ -642,30 +709,31 @@ export class TestScene3 {
         color: [0, 0, 1],
         reflectionFactor: 0.8,
         refractionFactor: 0.0,
-        chessboardEnabled: false,
+        chessboardEnabled: 0,
         receiveLightEnabled: true,
         castShadowEnabled: true
       });
       //*/
 
-      {
-        allMeshes.forEach((meshTriangles) => {
+      // {
+      //   allMeshes.forEach((meshTriangles) => {
 
-          meshTriangles.forEach((vertices) => {
+      //     meshTriangles.forEach((vertices) => {
 
-            renderer.rayTracerRenderer.pushTriangle({
-              v0: vertices[0],
-              v1: vertices[1],
-              v2: vertices[2],
-              color: [1.0, 0.5, 0.5],
-              reflectionFactor: 0.0,
-              receiveLightEnabled: true,
-              castShadowEnabled: true
-            });
-          })
+      //       renderer.rayTracerRenderer.pushTriangle({
+      //         v0: vertices[0],
+      //         v1: vertices[1],
+      //         v2: vertices[2],
+      //         color: [1.0, 0.5, 0.5],
+      //         reflectionFactor: 0.0,
+      //         refractionFactor: 0.0,
+      //         receiveLightEnabled: true,
+      //         castShadowEnabled: true
+      //       });
+      //     })
 
-        });
-      }
+      //   });
+      // }
 
       {
         const vertices: glm.ReadonlyVec3[] = [
@@ -684,6 +752,7 @@ export class TestScene3 {
           v2: vertices[2],
           color: [1.0, 0.5, 0.5],
           reflectionFactor: 0.0,
+          refractionFactor: 0.0,
           receiveLightEnabled: true,
           castShadowEnabled: true
         });
@@ -693,6 +762,7 @@ export class TestScene3 {
           v2: vertices[3],
           color: [1.0, 0.5, 0.5],
           reflectionFactor: 0.0,
+          refractionFactor: 0.0,
           receiveLightEnabled: true,
           castShadowEnabled: true
         });
@@ -702,6 +772,7 @@ export class TestScene3 {
           v2: vertices[4],
           color: [1.0, 0.5, 0.5],
           reflectionFactor: 0.0,
+          refractionFactor: 0.0,
           receiveLightEnabled: true,
           castShadowEnabled: true
         });

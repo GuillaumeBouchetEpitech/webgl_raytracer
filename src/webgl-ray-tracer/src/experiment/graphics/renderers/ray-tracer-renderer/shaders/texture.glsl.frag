@@ -71,8 +71,9 @@ void main(void)
 
   //
 
-  if (total > 0.0)
+  if (total > 0.0) {
     o_color = accumulated / total;
-  else
+  } else {
     o_color = vec4(1.0, 0.0, 0.0, 1.0); // warning
+  }
 }

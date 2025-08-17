@@ -109,6 +109,9 @@ export class TextureArray implements IUnboundTextureArray, IBoundTextureArray {
     if (inHeight <= 0) {
       throw new Error('texture: height must be positive');
     }
+    if (inTotalLayers <= 0) {
+      throw new Error('texture: total layers must be positive');
+    }
 
     const gl = WebGLContext.getContext();
 

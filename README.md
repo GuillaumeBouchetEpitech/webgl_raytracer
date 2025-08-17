@@ -13,6 +13,9 @@
 ### Demo
 Beyond that: [follow that link to see for yourself](http://guillaumebouchetepitech.github.io/webgl_raytracer/index.html).
 
+### Demo2
+Some failed experiment: [link to failed demo](http://guillaumebouchetepitech.github.io/webgl_raytracer/dist-failed-experiment/index.html).
+
 ## How To Build
 
 Tested with: node@18 + npm@8
@@ -34,12 +37,12 @@ npm run watch
 # build release version
 # ---> rollup.js build with minification passes and comments removal (~4.5s)
 # ---> type safety is applied
-npm run build-release
+npm run release
 ```
 
 ```bash
 # build debug version
 # ---> rollup.js build with inlined sourcemap (~3.5s)
 # ---> type safety is applied
-npm run build debug
+npm run debug
 ```
