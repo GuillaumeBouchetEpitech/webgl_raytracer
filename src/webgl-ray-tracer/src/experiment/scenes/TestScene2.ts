@@ -72,7 +72,7 @@ export class TestScene2 {
         color: [1, 1, 1],
         reflectionFactor: 0,
         refractionFactor: 0.0,
-        chessboardEnabled: false,
+        chessboardEnabled: 0,
         receiveLightEnabled: false,
         castShadowEnabled: false
       });
@@ -92,7 +92,7 @@ export class TestScene2 {
         color: [1, 1, 1],
         reflectionFactor: 0,
         refractionFactor: 0.0,
-        chessboardEnabled: false,
+        chessboardEnabled: 0,
         receiveLightEnabled: false,
         castShadowEnabled: false
       });
@@ -104,7 +104,7 @@ export class TestScene2 {
       //   color: [1, 1, 1],
       //   reflectionFactor: 0.0,
       //   refractionFactor: 0.5,
-      //   chessboardEnabled: false,
+      //   chessboardEnabled: 0,
       //   receiveLightEnabled: false,
       //   castShadowEnabled: true
       // });
@@ -119,7 +119,7 @@ export class TestScene2 {
 
       //   color: [1, 1, 1],
       //   reflectionFactor: 1.0,
-      //   chessboardEnabled: false,
+      //   chessboardEnabled: 0,
       //   receiveLightEnabled: false,
       //   castShadowEnabled: true
       // });

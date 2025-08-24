@@ -195,7 +195,7 @@ export const addArrowStrokesWidgets = (
 };
 
 export const addKeysTouchesWidgets = (
-  inCanvasElement: HTMLCanvasElement,
+  inCanvasElement: HTMLElement,
   inPos: glm.ReadonlyVec2,
   stackRenderers: renderers.IStackRenderers,
   textRenderer: renderers.ITextRenderer

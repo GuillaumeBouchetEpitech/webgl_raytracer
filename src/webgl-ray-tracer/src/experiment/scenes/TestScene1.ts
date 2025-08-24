@@ -1,5 +1,7 @@
 import { Renderer } from '../graphics/Renderer';
 
+import { physics } from 'FrankenPhys';
+
 import * as glm from 'gl-matrix';
 
 interface IParticles {
@@ -26,7 +28,11 @@ export class TestScene1 {
     continuousTime = 0;
   }
 
-  run(renderer: Renderer, elapsedTime: number) {
+  run(
+    elapsedTime: number,
+    renderer: Renderer,
+    physicWorld: physics.PhysicWorld,
+  ) {
     continuousTime += elapsedTime;
 
     {
@@ -42,6 +48,7 @@ export class TestScene1 {
         boxSize: [30, 1, 30],
         color: [0.5, 1, 0.5],
         reflectionFactor: 0.2,
+        refractionFactor: 0,
         chessboardEnabled: false,
         receiveLightEnabled: true,
         castShadowEnabled: true
@@ -54,6 +61,7 @@ export class TestScene1 {
         v2: [10, 5, 1],
         color: [1, 1, 1],
         reflectionFactor: 0.1,
+        refractionFactor: 0,
         castShadowEnabled: true,
         receiveLightEnabled: true
       });
@@ -71,6 +79,7 @@ export class TestScene1 {
             boxSize: [2, 5, 2],
             color: [1, 1, 1],
             reflectionFactor: 0,
+        refractionFactor: 0,
             chessboardEnabled: true,
             receiveLightEnabled: true,
             castShadowEnabled: true
@@ -84,6 +93,7 @@ export class TestScene1 {
         boxSize: [4.0, 2.0, 0.1],
         color: [1.0, 1.0, 1.0],
         reflectionFactor: 0.0,
+        refractionFactor: 0,
         chessboardEnabled: false,
         receiveLightEnabled: true,
         castShadowEnabled: true
@@ -96,6 +106,7 @@ export class TestScene1 {
         boxSize: [1.0, 0.1, 1.0],
         color: [0.0, 0.0, 1.0],
         reflectionFactor: 0,
+        refractionFactor: 0,
         chessboardEnabled: false,
         receiveLightEnabled: true,
         castShadowEnabled: true
@@ -108,6 +119,7 @@ export class TestScene1 {
         boxSize: [1.0, 0.1, 1.0],
         color: [0.0, 0.0, 1.0],
         reflectionFactor: 0,
+        refractionFactor: 0,
         chessboardEnabled: false,
         receiveLightEnabled: true,
         castShadowEnabled: true
@@ -224,7 +236,7 @@ export class TestScene1 {
         color: [1, 1, 1],
         reflectionFactor: 0.5,
         refractionFactor: 0.0,
-        chessboardEnabled: true,
+        chessboardEnabled: 1,
         receiveLightEnabled: false,
         castShadowEnabled: true
       });
@@ -239,7 +251,7 @@ export class TestScene1 {
         color: [1, 1, 1],
         reflectionFactor: 0.5,
         refractionFactor: 0.0,
-        chessboardEnabled: false,
+        chessboardEnabled: 0,
         receiveLightEnabled: true,
         castShadowEnabled: true
       });
@@ -256,6 +268,7 @@ export class TestScene1 {
         boxSize: [2, 1, 0.5],
         color: [1, 0.5, 0.5],
         reflectionFactor: 0.8,
+        refractionFactor: 0,
         chessboardEnabled: true,
         receiveLightEnabled: true,
         castShadowEnabled: true
@@ -266,6 +279,7 @@ export class TestScene1 {
         boxSize: [2, 1, 0.5],
         color: [1, 0.5, 0.5],
         reflectionFactor: 0.8,
+        refractionFactor: 0,
         chessboardEnabled: true,
         receiveLightEnabled: true,
         castShadowEnabled: true
@@ -288,7 +302,7 @@ export class TestScene1 {
           color: [coef, 1 - coef, 0],
           reflectionFactor: 0,
           refractionFactor: 0.0,
-          chessboardEnabled: false,
+          chessboardEnabled: 0,
           receiveLightEnabled: true,
           castShadowEnabled: true
         });
@@ -297,10 +311,10 @@ export class TestScene1 {
       //
       //
 
-      renderer.rayTracerRenderer.pushSunLight({
-        direction: [1.0, 1.0, 1.0],
-        intensity: 1.0
-      });
+      // renderer.rayTracerRenderer.pushSunLight({
+      //   direction: [1.0, 1.0, 1.0],
+      //   intensity: 1.0
+      // });
 
       {
         // moving spot lights
@@ -327,7 +341,7 @@ export class TestScene1 {
           color: [1, 1, 0],
           reflectionFactor: 0,
           refractionFactor: 0.0,
-          chessboardEnabled: false,
+          chessboardEnabled: 0,
           receiveLightEnabled: false,
           castShadowEnabled: false
         });
@@ -338,7 +352,7 @@ export class TestScene1 {
           color: [1, 1, 0],
           reflectionFactor: 0,
           refractionFactor: 0.0,
-          chessboardEnabled: false,
+          chessboardEnabled: 0,
           receiveLightEnabled: false,
           castShadowEnabled: false
         });
@@ -441,7 +455,7 @@ export class TestScene1 {
                 color: [1, 1, 1],
                 reflectionFactor: 0,
                 refractionFactor: 0.0,
-                chessboardEnabled: false,
+                chessboardEnabled: 0,
                 receiveLightEnabled: false,
                 castShadowEnabled: false
               });
@@ -491,7 +505,7 @@ export class TestScene1 {
                 color: color,
                 reflectionFactor: 0,
                 refractionFactor: 0.0,
-                chessboardEnabled: false,
+                chessboardEnabled: 0,
                 receiveLightEnabled: true,
                 castShadowEnabled: true
               });

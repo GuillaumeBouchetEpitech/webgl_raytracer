@@ -38,7 +38,7 @@ export class TrianglesStackRenderer {
       }
     }
 
-    const alphaValue = inColor[3] ?? 1;
+    const alphaValue = inColor.length == 4 ? inColor[3] : 1;
 
     // 0
     this._buffer[this._currentSize + 0] = inPointA[0];

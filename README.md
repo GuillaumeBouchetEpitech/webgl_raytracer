@@ -16,6 +16,16 @@ Beyond that: [follow that link to see for yourself](http://guillaumebouchetepite
 ### Demo2
 Some failed experiment: [link to failed demo](http://guillaumebouchetepitech.github.io/webgl_raytracer/dist-failed-experiment/index.html).
 
+## How To Run
+
+First start the file server
+
+```bash
+node dumbFileServer.js 16000 0.0.0.0
+```
+
+Then open that link: http://localhost:16000/index.html
+
 ## How To Build
 
 Tested with: node@18 + npm@8

@@ -37,7 +37,7 @@ export class WireFramesStackRenderer {
       }
     }
 
-    const alphaValue = inColor[3] ?? 1;
+    const alphaValue = inColor.length == 4 ? inColor[3] : 1;
 
     this._buffer[this._currentSize + 0] = inPointA[0];
     this._buffer[this._currentSize + 1] = inPointA[1];

@@ -9,7 +9,7 @@ const {
 const { WebGLContext } = graphics.webgl2;
 const { FreeFlyController } = system.controllers;
 
-import { BrowserFrankenPhysWasmModule, physics } from 'FrankenPhys';
+import { physics } from 'FrankenPhys';
 
 import { Logger } from './utilities/Logger';
 
@@ -23,27 +23,29 @@ let g_frames_left = 3;
 const framerate = -1; // if negative -> use vsync (gpu expensive)
 // const framerate = 60; // if negative -> use vsync (gpu expensive)
 interface ExperimentDef {
-  canvasElement: HTMLCanvasElement;
+  domElement: HTMLElement;
+  width: number;
+  height: number;
   logger: Logger;
-  perfAutoScaling: HTMLInputElement;
-  resolution: HTMLInputElement;
-  anti_aliasing_enabled: HTMLInputElement;
-  physic_debug_mode_enabled: HTMLInputElement;
-  bvh_debug_mode_enabled: HTMLInputElement;
 }
 
 const k_maxFramesUntilNextCheck = 3;
 
 export class Experiment {
-  private _canvasElement: HTMLCanvasElement;
   private _animationFrameHandle: number = 0;
   private _def: Omit<ExperimentDef, 'canvasElement'>;
+
+  private _resolution: number = 9;
+  private _onResolutionChange?: (() => void);
+
+  private _physicDebugModeEnabled: boolean = false;
+  private _showBvhDebugModeEnabled: boolean = false;
 
   private _freeFlyController: system.controllers.FreeFlyController;
 
   private _renderer: Renderer;
 
-  private _physicWorld: physics.PhysicWorld | undefined;
+  private _physicWorld?: physics.PhysicWorld;
 
   private _running: boolean;
   private _errorGraphicContext: boolean;
@@ -62,7 +64,7 @@ export class Experiment {
   private _scene = new scenes.TestScene3();
 
   constructor(inDef: ExperimentDef) {
-    this._canvasElement = inDef.canvasElement;
+    // this._canvasElement = inDef.canvasElement;
     this._def = inDef;
 
     this._freeFlyController = new FreeFlyController({
@@ -81,7 +83,7 @@ export class Experiment {
 
     {
       GlobalKeyboardManager.activate();
-      GlobalTouchManager.activate(this._canvasElement);
+      GlobalTouchManager.activate(this._def.domElement);
 
       GlobalVisibilityManager.activate();
       GlobalVisibilityManager.addVisibilityChange((isVisible) => {
@@ -95,24 +97,24 @@ export class Experiment {
       });
 
       GlobalPointerLockManager.allowPointerLockedOnClickEvent(
-        this._canvasElement
+        this._def.domElement
       );
       GlobalPointerLockManager.addOnLockChange(() => {
         const isLocked = GlobalPointerLockManager.isPointerLocked(
-          this._canvasElement
+          this._def.domElement
         );
 
         if (isLocked) {
           this._def.logger.log('The pointer lock status is now locked');
 
-          GlobalMouseManager.activate(this._canvasElement);
+          GlobalMouseManager.activate(this._def.domElement);
         } else {
           this._def.logger.log('The pointer lock status is now unlocked');
 
-          GlobalMouseManager.deactivate(this._canvasElement);
+          GlobalMouseManager.deactivate(this._def.domElement);
 
           GlobalPointerLockManager.allowPointerLockedOnClickEvent(
-            this._canvasElement
+            this._def.domElement
           );
         }
       });
@@ -123,7 +125,12 @@ export class Experiment {
         );
       });
 
-      this._renderer = new Renderer({ canvasDomElement: this._canvasElement });
+      // WebGLContext.initialize(this._def.domElement);
+
+      this._renderer = new Renderer({
+        width: this._def.width,
+        height: this._def.height,
+      });
       this._renderer.initialize();
     }
 
@@ -152,55 +159,10 @@ export class Experiment {
     //
     //
 
-    this._def.resolution.addEventListener('input', (event) => {
-      const newValue = this._def.resolution.value as unknown as number;
-      this._setResolution(newValue);
-      this._logResolution();
-    });
-
-    this._def.anti_aliasing_enabled.addEventListener('click', () => {
-      const newValue = this._def.anti_aliasing_enabled.checked === true;
-
-      this._renderer.rayTracerRenderer.setAntiAliasing(newValue);
-
-      this._def.logger.log(
-        `Anti aliasing change: ${newValue === true ? 'enabled' : 'disabled'}`
-      );
-    });
-
-    this._setResolution(this._def.resolution.value as unknown as number);
-
-    // performance auto-scaling
-    this._def.perfAutoScaling.addEventListener('input', () => {
-      this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
-
-      this._perfAutoScalingEnabled = this._def.perfAutoScaling.checked === true;
-
-      this._def.logger.log(
-        `Performance auto scaler change: ${
-          this._perfAutoScalingEnabled === true ? 'enabled' : 'disabled'
-        }`
-      );
-    });
   }
 
   async init() {
     await this._renderer.initialize();
-
-    //
-    //
-    // physic engine initialize
-
-    // load the wasm side
-    await BrowserFrankenPhysWasmModule.load({
-      jsUrl: "./dist/wasm/FrankenPhys.0.0.1.js",
-      wasmUrl: "./dist/wasm",
-    });
-
-    // set the wasm side
-    physics.WasmModuleHolder.set(BrowserFrankenPhysWasmModule.get());
-
-    // ready
 
     this._physicWorld = new physics.PhysicWorld();
     this._physicWorld.setGravity(0,-10,0);
@@ -209,11 +171,11 @@ export class Experiment {
     let debugDrawerFlag: number = 0;
     debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawWireframe;
     debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawAabb;
-    debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawContactPoints;
-    debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawConstraints;
-    debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawConstraintLimits;
-    debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawNormals;
-    debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawFrames;
+    // debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawContactPoints;
+    // debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawConstraints;
+    // debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawConstraintLimits;
+    // debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawNormals;
+    // debugDrawerFlag |= physics.DebugDrawFlags.DBG_DrawFrames;
 
     this._physicWorld.setDebugWireframeFeaturesFlag(debugDrawerFlag);
 
@@ -267,27 +229,27 @@ export class Experiment {
 
   }
 
-  resize(inWidth: number, inHeight: number, inIsFullScreen: boolean) {
-    let currentWidth = inWidth;
-    let currentHeight = inHeight;
+  // resize(inWidth: number, inHeight: number, inIsFullScreen: boolean) {
+  //   let currentWidth = inWidth;
+  //   let currentHeight = inHeight;
 
-    if (inIsFullScreen) {
-      this._canvasElement.style.position = 'absolute';
-      currentWidth = window.innerWidth;
-      currentHeight = window.innerHeight;
-    } else {
-      this._canvasElement.style.position = 'relative';
-    }
+  //   if (inIsFullScreen) {
+  //     this._canvasElement.style.position = 'absolute';
+  //     currentWidth = window.innerWidth;
+  //     currentHeight = window.innerHeight;
+  //   } else {
+  //     this._canvasElement.style.position = 'relative';
+  //   }
 
-    this._canvasElement.style.left = '0px';
-    this._canvasElement.style.top = '0px';
-    this._canvasElement.style.width = `${currentWidth}px`;
-    this._canvasElement.style.height = `${currentHeight}px`;
-    this._canvasElement.width = currentWidth;
-    this._canvasElement.height = currentHeight;
+  //   this._canvasElement.style.left = '0px';
+  //   this._canvasElement.style.top = '0px';
+  //   this._canvasElement.style.width = `${currentWidth}px`;
+  //   this._canvasElement.style.height = `${currentHeight}px`;
+  //   this._canvasElement.width = currentWidth;
+  //   this._canvasElement.height = currentHeight;
 
-    this._renderer.resize(currentWidth, currentHeight);
-  }
+  //   this._renderer.resize(currentWidth, currentHeight);
+  // }
 
   start() {
     if (this.isRunning()) {
@@ -389,7 +351,7 @@ export class Experiment {
   // #region hud
   private _renderHud() {
     const gl = WebGLContext.getContext();
-    gl.viewport(0, 0, this._canvasElement.width, this._canvasElement.height);
+    gl.viewport(0, 0, this._def.width, this._def.height);
     gl.clear(gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LESS);
@@ -417,7 +379,7 @@ export class Experiment {
         this._renderer.textRenderer
       );
       graphics.renderers.widgets.addKeysTouchesWidgets(
-        this._canvasElement,
+        this._def.domElement,
         boardPos,
         this._renderer.stackRenderers,
         this._renderer.textRenderer
@@ -425,7 +387,7 @@ export class Experiment {
     }
 
     graphics.renderers.widgets.renderFpsMeter(
-      [10, this._canvasElement.height - 60, 0],
+      [10, this._def.height - 60, 0],
       [100, 50],
       this._frameProfiler,
       this._renderer.stackRenderers,
@@ -464,8 +426,7 @@ export class Experiment {
       // this._renderer.rayTracerRenderer.renderAsciiArt();
 
 
-      const showDebug = this._def.physic_debug_mode_enabled.checked === true;
-      if (showDebug) {
+      if (this._physicDebugModeEnabled) {
         this._renderer.stackRenderers.clear();
         this._renderer.safeSceneWireFrame(() => {
 
@@ -482,8 +443,7 @@ export class Experiment {
         });
       }
 
-      const showBvhDebug = this._def.bvh_debug_mode_enabled.checked === true;
-      if (showBvhDebug) {
+      if (this._showBvhDebugModeEnabled) {
         this._renderer.stackRenderers.clear();
         this._renderer.safeSceneWireFrame(() => {
 
@@ -506,14 +466,36 @@ export class Experiment {
   }
   // #endregion scene
 
-  private _setResolution(inValue: number) {
+  setResolution(inValue: number) {
     const safeValue = system.math.clamp(inValue, 0, 9); // [0..9]
+    this._resolution = safeValue;
     const newValue = 10 - safeValue; // [1..10]
     const newCoef = 1 / newValue; // [0..1]
     this._renderer.rayTracerRenderer.setResolutionCoef(newCoef);
   }
+  getResolution(): number {
+    return this._resolution;
+  }
+  setOnResolutionChange(inCallback: () => void) {
+    this._onResolutionChange = inCallback;
+  }
 
-  private _logResolution() {
+  setPhysicDebugModeEnabled(isEnabled: boolean) {
+    this._physicDebugModeEnabled = isEnabled;
+  }
+  setShowBvhDebugModeEnabled(isEnabled: boolean) {
+    this._showBvhDebugModeEnabled = isEnabled;
+  }
+
+  setAntiAliasing(isEnabled: boolean) {
+    this._renderer.rayTracerRenderer.setAntiAliasing(isEnabled);
+
+    this._def.logger.log(
+      `Anti aliasing change: ${isEnabled === true ? 'enabled' : 'disabled'}`
+    );
+  }
+
+  logResolution() {
     const rayTracerRenderer = this._renderer.rayTracerRenderer;
 
     const newCoef = rayTracerRenderer.getResolutionCoef();
@@ -524,6 +506,16 @@ export class Experiment {
       `resolution changed (1/${Math.ceil(1 / newCoef)}) => ${newSize[0]}x${
         newSize[1]
       } (${totalPixels}px)`
+    );
+  }
+
+  setPerformanceAutoScaling(isEnabled: boolean) {
+    this._framesUntilNextCheck = k_maxFramesUntilNextCheck;
+
+    this._perfAutoScalingEnabled = isEnabled;
+
+    this._def.logger.log(
+      `Performance auto scaler change: ${isEnabled ? 'enabled' : 'disabled'}`
     );
   }
 
@@ -547,14 +539,17 @@ export class Experiment {
       `performance auto scaling: slow framerate, scaling down resolution`
     );
 
-    const currValue = this._def.resolution.value as unknown as number;
+    const currValue = this._resolution;
     const newValue = currValue - 1;
 
     if (newValue >= 0 && newValue <= 9) {
-      this._setResolution(newValue);
-      this._logResolution();
+      this.setResolution(newValue);
+      this.logResolution();
 
-      this._def.resolution.value = newValue as unknown as string;
+      this._resolution = newValue;
+      if (this._onResolutionChange) {
+        this._onResolutionChange();
+      }
     }
 
     this._framesUntilNextCheck = k_maxFramesUntilNextCheck;

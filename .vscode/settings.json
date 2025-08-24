@@ -2,5 +2,13 @@
   "files.associations": {
     "*.glsl.vert": "glsl",
     "*.glsl.frag": "glsl"
-  }
+  },
+  "cSpell.words": [
+    "aabb",
+    "fract",
+    "highp",
+    "inout",
+    "ivec",
+    "texel"
+  ]
 }

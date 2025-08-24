@@ -35,16 +35,44 @@ export interface IDefinition {
   fovy: number;
 }
 
+//
+//
+//
+
+export interface IPublicBaseMaterial {
+  materialAlias: number;
+}
+export interface IInternalBaseMaterial {
+  materialType: 0 | 1;
+}
+
+export interface IPublicBasicMaterial extends IPublicBaseMaterial {
+  reflectionFactor: number;
+  refractionFactor: number;
+  castShadowEnabled: boolean;
+  color: glm.ReadonlyVec3;
+  receiveLightEnabled: boolean;
+}
+
+export type IInternalBasicMaterial = IPublicBasicMaterial & IInternalBaseMaterial;
+
+export interface IPublicChessboardMaterial extends IPublicBaseMaterial {
+  materialIdA: number;
+  materialIdB: number;
+  chessboardArgs?: glm.ReadonlyVec3;
+}
+
+export type IInternalChessboardMaterial = IPublicChessboardMaterial & IInternalBaseMaterial;
+
+//
+//
+//
+
 export interface IPublicSphere {
   position: glm.ReadonlyVec3;
   orientation: glm.ReadonlyQuat;
   radius: number;
-  color: glm.ReadonlyVec3;
-  reflectionFactor: number;
-  refractionFactor: number;
-  castShadowEnabled: boolean;
-  receiveLightEnabled: boolean;
-  chessboardEnabled: 0 | 1 | 2;
+  materialAlias: number;
 }
 
 export type IInternalSphere = IPublicSphere;
@@ -53,12 +81,7 @@ export interface IPublicBox {
   position: glm.ReadonlyVec3;
   orientation: glm.ReadonlyQuat;
   boxSize: glm.ReadonlyVec3;
-  color: glm.ReadonlyVec3;
-  reflectionFactor: number;
-  refractionFactor: number;
-  castShadowEnabled: boolean;
-  receiveLightEnabled: boolean;
-  chessboardEnabled: boolean;
+  materialAlias: number;
 }
 
 export type IInternalBox = IPublicBox;
@@ -67,25 +90,29 @@ export interface IPublicTriangle {
   v0: glm.ReadonlyVec3;
   v1: glm.ReadonlyVec3;
   v2: glm.ReadonlyVec3;
-  color: glm.ReadonlyVec3;
-  reflectionFactor: number;
-  refractionFactor: number;
-  castShadowEnabled: boolean;
-  receiveLightEnabled: boolean;
+  materialAlias: number;
 }
 
 export type IInternalTriangle = IPublicTriangle;
 
-export interface ISunLight {
-  direction: glm.ReadonlyVec3;
-  intensity: number;
-}
+//
+//
+//
+
+// export interface ISunLight {
+//   direction: glm.ReadonlyVec3;
+//   intensity: number;
+// }
 
 export interface ISpotLight {
   position: glm.ReadonlyVec3;
   intensity: number;
   radius: number;
 }
+
+//
+//
+//
 
 export interface ICamera {
   position: glm.vec3;
@@ -123,39 +150,15 @@ export interface IStackRenderer {
 // #region RAYTRACER
 
 export interface IRayTracerRenderer {
-  pushSphere({
-    position,
-    orientation,
-    radius,
-    color,
-    reflectionFactor,
-    chessboardEnabled,
-    castShadowEnabled,
-    receiveLightEnabled
-  }: IPublicSphere): void;
 
-  pushBox({
-    position,
-    orientation,
-    boxSize,
-    color,
-    reflectionFactor,
-    chessboardEnabled,
-    castShadowEnabled,
-    receiveLightEnabled
-  }: IPublicBox): void;
+  pushBasicMaterial(params: IPublicBasicMaterial): void;
+  pushChessboardMaterial(params: IPublicChessboardMaterial): void;
 
-  pushTriangle({
-    v0,
-    v1,
-    v2,
-    color,
-    reflectionFactor,
-    castShadowEnabled,
-    receiveLightEnabled
-  }: IPublicTriangle): void;
+  pushSphere(params: IPublicSphere): void;
+  pushBox(params: IPublicBox): void;
+  pushTriangle(params: IPublicTriangle): void;
 
-  pushSunLight({ direction, intensity }: ISunLight): void;
+  // pushSunLight({ direction, intensity }: ISunLight): void;
 
   pushSpotLight({ position, intensity, radius }: ISpotLight): void;
 
@@ -205,10 +208,12 @@ export class RayTracerRenderer implements IRayTracerRenderer {
   private _boxes: IInternalBox[] = [];
   private _triangles: IInternalTriangle[] = [];
 
+  private _allBasicMaterials: IInternalBasicMaterial[] = []
+  private _allChessboardMaterials: IInternalChessboardMaterial[] = []
   private _materialsDataTexture: graphics.webgl2.IUnboundDataTextureVec4f32;
 
   private _lightsDataTexture: graphics.webgl2.IUnboundDataTextureVec4f32;
-  private _sunLights: ISunLight[] = [];
+  // private _sunLights: ISunLight[] = [];
   private _spotLights: ISpotLight[] = [];
 
   private _bvhDataTexture: graphics.webgl2.IUnboundDataTextureVec4f32;
@@ -231,10 +236,10 @@ export class RayTracerRenderer implements IRayTracerRenderer {
         'u_cameraEye',
 
         'u_sceneTextureData',
-        'u_sceneTextureSize',
+        // 'u_sceneTextureSize',
         'u_materialsTextureData',
 
-        'u_totalShapes',
+        // 'u_totalShapes',
 
         'u_lightsTextureData',
 
@@ -373,63 +378,61 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     };
   }
 
+  pushBasicMaterial(params: IPublicBasicMaterial): void {
+
+    if (params.reflectionFactor < 0 || params.reflectionFactor > 1) {
+      throw new Error('invalid sphere reflection');
+    }
+    if (params.refractionFactor < 0 || params.refractionFactor > 1) {
+      throw new Error('invalid sphere refractionFactor');
+    }
+    const foundMat = this._allBasicMaterials.find(currVal => currVal.materialAlias === params.materialAlias);
+    if (foundMat) {
+      throw new Error(`duplicated material alias -> "${params.materialAlias}"`)
+    }
+
+    this._allBasicMaterials.push({ ...params, materialType: 0 });
+  }
+
+  pushChessboardMaterial(params: IPublicChessboardMaterial): void {
+
+    const foundMat = this._allChessboardMaterials.find(currVal => currVal.materialAlias === params.materialAlias);
+    if (foundMat) {
+      throw new Error(`duplicated material alias -> "${params.materialAlias}"`);
+    }
+    const foundSubMatA = this._allBasicMaterials.find(currVal => currVal.materialAlias === params.materialIdA);
+    if (!foundSubMatA) {
+      throw new Error(`missing material alias -> "${params.materialIdA}"`);
+    }
+    const foundSubMatB = this._allBasicMaterials.find(currVal => currVal.materialAlias === params.materialIdB);
+    if (!foundSubMatB) {
+      throw new Error(`missing material alias -> "${params.materialIdB}"`);
+    }
+
+    this._allChessboardMaterials.push({ ...params, materialType: 1 });
+  }
+
   pushSphere({
     position,
     orientation,
     radius,
-    color,
-    reflectionFactor,
-    refractionFactor,
-    chessboardEnabled,
-    castShadowEnabled,
-    receiveLightEnabled
+    materialAlias,
   }: IPublicSphere): void {
     if (radius <= 0) {
       throw new Error('invalid sphere radius');
     }
-    if (reflectionFactor < 0 || reflectionFactor > 1) {
-      throw new Error('invalid sphere reflection');
+
+    const foundMat1 = this._allBasicMaterials.find(currVal => currVal.materialAlias === materialAlias);
+    const foundMat2 = this._allChessboardMaterials.find(currVal => currVal.materialAlias === materialAlias);
+    if (!foundMat1 && !foundMat2) {
+      throw new Error(`not found material alias -> "${materialAlias}"`);
     }
-    if (refractionFactor < 0 || refractionFactor > 1) {
-      throw new Error('invalid sphere refractionFactor');
-    }
-
-
-    // const quat = glm.quat.identity(glm.quat.create());
-    // glm.quat.setAxisAngle(quat, [0,0,1], Math.PI * 0.25);
-
-    // const quatA = glm.quat.identity(glm.quat.create());
-    // glm.quat.setAxisAngle(quatA, [0,0,1], Math.PI * 0.25);
-
-    // const quatB = glm.quat.identity(glm.quat.create());
-    // glm.quat.setAxisAngle(quatB, [1,0,0], Math.PI * 0.25);
-
-    // const quatC = glm.quat.identity(glm.quat.create());
-    // glm.quat.multiply(quatC, quatA, quatB);
-
-    // const mat4 = glm.mat4.create();
-    // glm.mat4.identity(mat4);
-    // glm.mat4.translate(mat4, mat4, position);
-
-    // glm.mat4.rotateY(mat4, mat4, Math.PI * 0.25); // vertical axis first
-
-    // // glm.mat4.rotateY(mat4, mat4, angleY); // vertical axis first
-    // // glm.mat4.rotateZ(mat4, mat4, angleZ);
-    // // glm.mat4.rotateX(mat4, mat4, angleX);
-    // // // glm.mat4.scale(mat4, mat4, [0.5,0.5,0.5]);
 
     this._spheres.push({
       position: [position[0], position[1], position[2]],
-      // orientation: [quatC[0], quatC[1], quatC[2], quatC[3]],
       orientation: [orientation[0], orientation[1], orientation[2], orientation[3]],
-      // matrix: mat4,
       radius,
-      color: [color[0], color[1], color[2]],
-      reflectionFactor,
-      refractionFactor,
-      chessboardEnabled,
-      castShadowEnabled,
-      receiveLightEnabled
+      materialAlias,
     });
   }
 
@@ -437,30 +440,23 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     position,
     orientation,
     boxSize,
-    color,
-    reflectionFactor,
-    refractionFactor,
-    chessboardEnabled,
-    castShadowEnabled,
-    receiveLightEnabled
+    materialAlias,
   }: IPublicBox): void {
     if (boxSize[0] <= 0 || boxSize[1] <= 0 || boxSize[2] <= 0) {
       throw new Error('invalid box size');
     }
-    if (reflectionFactor < 0 || reflectionFactor > 1) {
-      throw new Error('invalid box reflection');
+
+    const foundMat1 = this._allBasicMaterials.find(currVal => currVal.materialAlias === materialAlias);
+    const foundMat2 = this._allChessboardMaterials.find(currVal => currVal.materialAlias === materialAlias);
+    if (!foundMat1 && !foundMat2) {
+      throw new Error(`not found material alias -> "${materialAlias}"`);
     }
 
     this._boxes.push({
       position: [position[0], position[1], position[2]],
       orientation: [orientation[0], orientation[1], orientation[2], orientation[3]],
       boxSize: glm.vec3.clone(boxSize),
-      color: glm.vec3.clone(color),
-      reflectionFactor,
-      refractionFactor,
-      chessboardEnabled,
-      castShadowEnabled,
-      receiveLightEnabled
+      materialAlias,
     });
   }
 
@@ -468,45 +464,44 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     v0,
     v1,
     v2,
-    color,
-    refractionFactor,
-    reflectionFactor,
-    castShadowEnabled,
-    receiveLightEnabled
+    materialAlias,
   }: IPublicTriangle) {
-    if (reflectionFactor < 0 || reflectionFactor > 1) {
-      throw new Error('invalid triangle reflection');
+
+    const foundMat1 = this._allBasicMaterials.find(currVal => currVal.materialAlias === materialAlias);
+    const foundMat2 = this._allChessboardMaterials.find(currVal => currVal.materialAlias === materialAlias);
+    if (!foundMat1 && !foundMat2) {
+      throw new Error(`not found material alias -> "${materialAlias}"`);
     }
 
     this._triangles.push({
       v0: glm.vec3.clone(v0),
       v1: glm.vec3.clone(v1),
       v2: glm.vec3.clone(v2),
-      color: glm.vec3.clone(color),
-      refractionFactor,
-      reflectionFactor,
-      castShadowEnabled,
-      receiveLightEnabled
+      materialAlias,
     });
   }
 
-  pushSunLight({ direction, intensity }: ISunLight) {
-    // add sun light
+  // pushSunLight({ direction, intensity }: ISunLight) {
+  //   // add sun light
 
-    if (intensity <= 0) throw new Error('intensity cannot be 0');
-    if (glm.vec3.length(direction) === 0)
-      throw new Error('direction cannot be 0');
+  //   if (intensity <= 0) throw new Error('intensity cannot be 0');
+  //   if (glm.vec3.length(direction) === 0)
+  //     throw new Error('direction cannot be 0');
 
-    const dir = glm.vec3.normalize(glm.vec3.clone(direction), direction);
+  //   const dir = glm.vec3.normalize(glm.vec3.clone(direction), direction);
 
-    this._sunLights.push({ direction: dir, intensity });
-  }
+  //   this._sunLights.push({ direction: dir, intensity });
+  // }
 
   pushSpotLight({ position, intensity, radius }: ISpotLight): void {
     // add spot light
 
-    if (intensity <= 0) throw new Error('intensity cannot be 0');
-    if (radius <= 0) throw new Error('radius cannot be <= 0');
+    if (intensity <= 0) {
+      throw new Error('intensity cannot be <= 0');
+    }
+    if (radius <= 0) {
+      throw new Error('radius cannot be <= 0');
+    }
 
     this._spotLights.push({
       position: glm.vec3.clone(position),
@@ -595,7 +590,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
   private _renderRayTracingPass() {
     const gl = WebGLContext.getContext();
 
-    const farCorners = this._computeCameraFarCorners();
+    const farCorners = this._computeCameraFarCornersBufferGeometry();
     this._rayTracerGeometry.allocateBuffer(1, farCorners, farCorners.length);
 
     const scaledWidth = Math.floor(this._renderWidth);
@@ -604,11 +599,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     this._bvh.synchronize(this._spheres, this._boxes, this._triangles);
 
     const bvhPixelsData = this._bvh.fillDataTexture();
-
-    // u_bvhDataTexture
-    this._bvhDataTexture.bind((boundTexture) => {
-      boundTexture.update(0, bvhPixelsData);
-    })
 
     this._frameBuffer.bind(() => {
       gl.viewport(0, 0, scaledWidth, scaledHeight);
@@ -637,7 +627,57 @@ export class RayTracerRenderer implements IRayTracerRenderer {
             const sceneDataValues: [number,number,number,number][] = [];
             const materialsDataValues: [number,number,number,number][] = [];
 
-            let materialIndex = 0;
+            let currIndex = 0;
+
+            const matAliasToIndex = new Map<number, number>();
+            this._allBasicMaterials.forEach((currMat) => {
+
+              matAliasToIndex.set(currMat.materialAlias, currIndex);
+              currIndex += 1;
+
+              // currMat.materialAlias
+              materialsDataValues.push([
+                0 + 0.5, // [0] R
+                currMat.color[0], // [1] G
+                currMat.color[1], // [2] B
+                currMat.color[2], // [3] A
+              ]);
+              materialsDataValues.push([
+                currMat.reflectionFactor, // [4] R
+                currMat.refractionFactor, // [5] G
+                currMat.castShadowEnabled ? 1 : 0, // [6] B
+                currMat.receiveLightEnabled ? 1 : 0, // [7] A
+              ]);
+
+            });
+
+            this._allChessboardMaterials.forEach((currMat) => {
+
+              matAliasToIndex.set(currMat.materialAlias, currIndex);
+              currIndex += 1;
+
+              const sunMatIndexA = this._allBasicMaterials.findIndex(currVal => currVal.materialAlias === currMat.materialIdA);
+              const sunMatIndexB = this._allBasicMaterials.findIndex(currVal => currVal.materialAlias === currMat.materialIdB);
+
+              if (sunMatIndexA < 0 || sunMatIndexB < 0) {
+                throw new Error("chessboard material, material not found");
+              }
+
+              // currMat.materialAlias
+              materialsDataValues.push([
+                1 + 0.5, // [0] R
+                sunMatIndexA + 0.5, // [1] G
+                sunMatIndexB + 0.5, // [2] B
+                currMat.chessboardArgs ? currMat.chessboardArgs[0] : 1.0, // [3] A
+              ]);
+              materialsDataValues.push([
+                currMat.chessboardArgs ? currMat.chessboardArgs[1] : 1.0, // [4] R
+                currMat.chessboardArgs ? currMat.chessboardArgs[2] : 1.0, // [4] G
+                0, // [6] B
+                0, // [7] A
+              ]);
+
+            });
 
             {
               {
@@ -646,38 +686,30 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                 for (const sphere of this._spheres) {
                   // add sphere
 
-                  sceneDataValues.push([
-                    1, // [0]
-                    materialIndex + 0.5, // [1]
-                    sphere.position[0], // [2]
-                    sphere.position[1], // [3]
-                  ]);
-                  sceneDataValues.push([
-                    sphere.position[2], // [4]
-                    sphere.orientation[0], // [5]
-                    sphere.orientation[1], // [6]
-                    sphere.orientation[2], // [7]
-                  ]);
-                  sceneDataValues.push([
-                    sphere.orientation[3], // [8]
-                    sphere.radius, // [9]
-                    0,
-                    0,
-                  ]);
+                  const currMatIndex = matAliasToIndex.get(sphere.materialAlias);
+                  if (currMatIndex === undefined) {
+                    throw new Error(`sphere materialAlias not found ${sphere.materialAlias} (${JSON.stringify(this._allBasicMaterials)})`);
+                  }
 
-                  materialsDataValues.push([
-                    sphere.color[0], // [0]
-                    sphere.color[1], // [1]
-                    sphere.color[2], // [2]
-                    sphere.reflectionFactor, // [3]
+
+                  sceneDataValues.push([
+                    1 + 0.5, // [0] R
+                    currMatIndex + 0.5, // [1] G
+                    sphere.position[0], // [2] B
+                    sphere.position[1], // [3] A
                   ]);
-                  materialsDataValues.push([
-                    sphere.refractionFactor, // [4]
-                    sphere.castShadowEnabled ? 1 : 0, // [5]
-                    sphere.receiveLightEnabled ? 1 : 0, // [6]
-                    sphere.chessboardEnabled, // [7]
+                  sceneDataValues.push([
+                    sphere.position[2], // [4] R
+                    sphere.orientation[0], // [5] G
+                    sphere.orientation[1], // [6] B
+                    sphere.orientation[2], // [7] A
                   ]);
-                  materialIndex += 1;
+                  sceneDataValues.push([
+                    sphere.orientation[3], // [8] R
+                    sphere.radius, // [9] G
+                    0,
+                    0,
+                  ]);
 
                 }
 
@@ -689,9 +721,14 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                 for (const box of this._boxes) {
                   // add box
 
+                  const currMatIndex = matAliasToIndex.get(box.materialAlias);
+                  if (currMatIndex === undefined) {
+                    throw new Error(`box materialAlias not found ${box.materialAlias} (${JSON.stringify(this._allBasicMaterials)})`);
+                  }
+
                   sceneDataValues.push([
-                    2,
-                    materialIndex + 0.5, // [10]
+                    2 + 0.5,
+                    currMatIndex + 0.5, // [10]
                     box.position[0], // [0]
                     box.position[1], // [1]
                   ]);
@@ -708,21 +745,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                     box.boxSize[2], // [9]
                   ]);
 
-                  materialsDataValues.push([
-                    box.color[0], // [0]
-                    box.color[1], // [1]
-                    box.color[2], // [2]
-                    box.reflectionFactor, // [3]
-                  ]);
-                  materialsDataValues.push([
-                    box.refractionFactor, // [4]
-                    box.castShadowEnabled ? 1 : 0, // [5]
-                    box.receiveLightEnabled ? 1 : 0, // [6]
-                    box.chessboardEnabled ? 1 : 0, // [7]
-                  ]);
-                  materialIndex += 1;
-
-
                 }
 
               } // boxes
@@ -733,9 +755,14 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                 for (const triangle of this._triangles) {
                   // add triangle
 
+                  const currMatIndex = matAliasToIndex.get(triangle.materialAlias);
+                  if (currMatIndex === undefined) {
+                    throw new Error(`triangle materialAlias not found ${triangle.materialAlias} (${JSON.stringify(this._allBasicMaterials)})`);
+                  }
+
                   sceneDataValues.push([
-                    3,
-                    materialIndex + 0.5, // [0]
+                    3 + 0.5,
+                    currMatIndex + 0.5, // [0]
                     triangle.v0[0], // [1]
                     triangle.v0[1], // [2]
                   ]);
@@ -752,28 +779,12 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                     0,
                   ]);
 
-                  materialsDataValues.push([
-                    triangle.color[0], // [0]
-                    triangle.color[1], // [1]
-                    triangle.color[2], // [2]
-                    triangle.reflectionFactor, // [3]
-                  ]);
-                  materialsDataValues.push([
-                    triangle.refractionFactor, // [4]
-                    // 0,
-                    triangle.castShadowEnabled ? 1 : 0, // [5]
-                    triangle.receiveLightEnabled ? 1 : 0, // [6]
-                    // triangle.chessboardEnabled ? 1 : 0, // [7]
-                    0,
-                  ]);
-                  materialIndex += 1;
-
                 }
 
-                boundShader.setInteger1Uniform(
-                  'u_totalShapes',
-                  sceneDataValues.length
-                );
+                // boundShader.setInteger1Uniform(
+                //   'u_totalShapes',
+                //   sceneDataValues.length
+                // );
 
               } // triangles
             }
@@ -784,10 +795,10 @@ export class RayTracerRenderer implements IRayTracerRenderer {
             });
 
             boundShader.setInteger1Uniform('u_sceneTextureData', 0);
-            boundShader.setInteger1Uniform(
-              'u_sceneTextureSize',
-              sceneDataValues.length
-            );
+            // boundShader.setInteger1Uniform(
+            //   'u_sceneTextureSize',
+            //   sceneDataValues.length
+            // );
 
             {
               gl.activeTexture(gl.TEXTURE0 + 7);
@@ -806,22 +817,27 @@ export class RayTracerRenderer implements IRayTracerRenderer {
             const lightsDataValues: [number, number, number, number][] = [];
 
             {
-              // sun lights
+              // // sun lights
 
-              for (const sunLight of this._sunLights) {
-                // add sun light
+              // for (const sunLight of this._sunLights) {
+              //   // add sun light
 
-                lightsDataValues.push([
-                  sunLight.direction[0],
-                  sunLight.direction[1],
-                  sunLight.direction[2],
-                  sunLight.intensity,
-                ]);
-              }
+              //   lightsDataValues.push([
+              //     sunLight.direction[0],
+              //     sunLight.direction[1],
+              //     sunLight.direction[2],
+              //     sunLight.intensity,
+              //   ]);
+              // }
+
+              // boundShader.setInteger1Uniform(
+              //   'u_sunLightsStop',
+              //   lightsDataValues.length
+              // );
 
               boundShader.setInteger1Uniform(
                 'u_sunLightsStop',
-                lightsDataValues.length
+                0
               );
             } // sun lights
 
@@ -882,9 +898,11 @@ export class RayTracerRenderer implements IRayTracerRenderer {
   }
 
   reset(): void {
-    this._sunLights.length = 0;
+    // this._sunLights.length = 0;
     this._spotLights.length = 0;
 
+    this._allBasicMaterials.length = 0;
+    this._allChessboardMaterials.length = 0;
     this._spheres.length = 0;
     this._boxes.length = 0;
     this._triangles.length = 0;
@@ -931,7 +949,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     return [this._renderWidth, this._renderHeight];
   }
 
-  private _computeCameraFarCorners(): ReadonlyArray<number> {
+  private _computeCameraFarCornersBufferGeometry(): ReadonlyArray<number> {
     const forwardDir = glm.vec3.sub(
       glm.vec3.create(),
       this._camera.target,
@@ -1018,6 +1036,16 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     return this._camera;
   }
 
+  // getMaterialByAlias(materialAlias: number): IPublicBasicMaterial {
+  //   const foundMat = this._allBasicMaterials.find(currVal => currVal.materialAlias === materialAlias);
+  //   if (!foundMat) {
+  //     throw new Error(`not found material alias -> "${materialAlias}"`);
+  //   }
+  //   return foundMat;
+  // }
+  get basicMaterials(): ReadonlyArray<IInternalBasicMaterial> {
+    return this._allBasicMaterials;
+  }
   get spheres(): ReadonlyArray<IInternalSphere> {
     return this._spheres;
   }
@@ -1028,9 +1056,9 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     return this._triangles;
   }
 
-  get sunLights(): ReadonlyArray<ISunLight> {
-    return this._sunLights;
-  }
+  // get sunLights(): ReadonlyArray<ISunLight> {
+  //   return this._sunLights;
+  // }
   get spotLights(): ReadonlyArray<ISpotLight> {
     return this._spotLights;
   }

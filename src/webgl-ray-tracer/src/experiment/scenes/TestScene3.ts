@@ -16,9 +16,10 @@ interface BoxObject {
   reflectionFactor: number;
   refractionFactor: number;
   physicBody: physics.IPhysicBody;
-  chessboardMaterial: boolean;
+  chessboardMaterial: 0 | 1 | 2;
   receiveLightEnabled: boolean;
   castShadowEnabled: boolean;
+  chessboardArgs?: glm.ReadonlyVec3,
 };
 
 interface SphereObject {
@@ -45,9 +46,10 @@ const _createBox = (
   color: glm.ReadonlyVec3,
   reflectionFactor: number,
   refractionFactor: number = 0,
-  chessboardMaterial: boolean = false,
+  chessboardMaterial: 0 | 1 | 2 = 0,
   receiveLightEnabled: boolean = true,
-  castShadowEnabled: boolean = true
+  castShadowEnabled: boolean = true,
+  chessboardArgs?: glm.ReadonlyVec3,
 ) => {
 
   const physicBody = physicWorld.createRigidBody({
@@ -64,8 +66,9 @@ const _createBox = (
     boxSize, color,
     reflectionFactor: k_reflection ? reflectionFactor : 0,
     physicBody, refractionFactor,
-    chessboardMaterial: k_reflection ? chessboardMaterial : false,
-    receiveLightEnabled, castShadowEnabled
+    chessboardMaterial: k_reflection ? chessboardMaterial : 0,
+    receiveLightEnabled, castShadowEnabled,
+    chessboardArgs,
   });
 };
 
@@ -77,7 +80,7 @@ const _createBox2 = (
   color: glm.ReadonlyVec3,
   reflectionFactor: number,
   refractionFactor: number,
-  chessboardMaterial: boolean = false,
+  chessboardMaterial: 0 | 1 | 2 = 0,
   receiveLightEnabled: boolean = true,
   castShadowEnabled: boolean = true,
   mass: number = 1
@@ -97,7 +100,7 @@ const _createBox2 = (
     boxSize, color,
     reflectionFactor: k_reflection ? reflectionFactor : 0,
     physicBody, refractionFactor,
-    chessboardMaterial: k_reflection ? chessboardMaterial : false,
+    chessboardMaterial: k_reflection ? chessboardMaterial : 0,
     receiveLightEnabled, castShadowEnabled
   });
 };
@@ -163,7 +166,10 @@ export class TestScene3 {
       [1, 1, 1],
       0.5,
       0.0,
-      true
+      1,
+      // true,
+      // true,
+      // [0.9, 0.1, 0.1],
     );
 
     // downhill on Z
@@ -175,7 +181,7 @@ export class TestScene3 {
       [1, 1, 1],
       0.5,
       0.0,
-      true
+      1
     );
     // first ramp on Y
     _createBox(
@@ -208,7 +214,7 @@ export class TestScene3 {
       [1, 1, 1],
       0.5,
       0.0,
-      true
+      1
     );
 
     // some ramp (angled)
@@ -248,7 +254,7 @@ export class TestScene3 {
       [0.5, 1, 0.5],
       0.0,
       0.0,
-      false,
+      0,
       true,
       true,
       0
@@ -271,7 +277,7 @@ export class TestScene3 {
       [0.5, 1, 0.5],
       0.0,
       0.0,
-      false,
+      0,
       true,
       true,
       0
@@ -294,7 +300,7 @@ export class TestScene3 {
       [0.5, 1, 0.5],
       0.0,
       0.0,
-      false,
+      0,
       true,
       true,
       0
@@ -347,7 +353,7 @@ export class TestScene3 {
       [1, 0.0, 0.0],
       0.2,
       0.8,
-      false,
+      0,
       true,
       true
     );
@@ -376,7 +382,7 @@ export class TestScene3 {
 
     this.ensureSceneData(physicWorld);
 
-    physicWorld.stepSimulation(deltaTime, 0, deltaTime);
+    physicWorld.stepSimulation(deltaTime, 4, 1/60);
 
     continuousTime += deltaTime;
 
@@ -458,17 +464,22 @@ export class TestScene3 {
 
       {
 
+        renderer.rayTracerRenderer.pushBasicMaterial({
+          materialAlias: 666,
+          color: [1, 1, 0],
+          reflectionFactor: 0,
+          refractionFactor: 0,
+          // chessboardEnabled: 0,
+          receiveLightEnabled: false,
+          castShadowEnabled: false
+        });
+
         // graphical presentation of the spot lights
         renderer.rayTracerRenderer.pushSphere({
           position: g_lightPos,
           orientation: glm.quat.identity(glm.quat.create()),
           radius: 0.06125,
-          color: [1, 1, 0],
-          reflectionFactor: 0,
-          refractionFactor: 0,
-          chessboardEnabled: 0,
-          receiveLightEnabled: false,
-          castShadowEnabled: false
+          materialAlias: 666,
         });
 
         // actual spot lights
@@ -510,78 +521,67 @@ export class TestScene3 {
           indices.push([0,3,4]);
           indices.push([0,4,1]);
 
+          const materialAlias_lightCoverTriangle = 6000;
+          renderer.rayTracerRenderer.pushBasicMaterial({
+            materialAlias: materialAlias_lightCoverTriangle,
+              color: [0.5, 0.0, 0.5],
+              reflectionFactor: 0.0,
+              refractionFactor: 0.0,
+              receiveLightEnabled: false,
+              castShadowEnabled: true,
+              // chessboardEnabled: 0,
+          });
+
           indices.forEach(([idx0, idx1, idx2]) => {
 
             renderer.rayTracerRenderer.pushTriangle({
               v0: coverVertices[idx0],
               v1: coverVertices[idx1],
               v2: coverVertices[idx2],
-              color: [0.5, 0.0, 0.5],
-              reflectionFactor: 0.0,
-              refractionFactor: 0.0,
-              receiveLightEnabled: false,
-              castShadowEnabled: true
+              materialAlias: materialAlias_lightCoverTriangle,
             });
           });
 
         } // light mask (made of triangles)
 
-        { // debug refractive sphere
+        { // debug refractive planes
 
-          // // yellow refractive sphere
-          // renderer.rayTracerRenderer.pushSphere({
-          //   position: [g_lightPos[0] - 1, g_lightPos[1], g_lightPos[2]],
-          //   orientation: glm.quat.identity(glm.quat.create()),
-          //   radius: 0.5,
-          //   color: [1, 1, 0],
-          //   reflectionFactor: 0,
-          //   refractionFactor: 1.0,
-          //   chessboardEnabled: 0,
-          //   receiveLightEnabled: true,
-          //   castShadowEnabled: true
-          // });
-
-          // // white refractive sphere
-          // // -> here we test that it does not hide the yellow shadow of the first sphere
-          // renderer.rayTracerRenderer.pushSphere({
-          //   position: [g_lightPos[0] - 2.1, g_lightPos[1], g_lightPos[2]],
-          //   orientation: glm.quat.identity(glm.quat.create()),
-          //   radius: 0.5,
-          //   color: [1, 1, 1],
-          //   reflectionFactor: 0,
-          //   refractionFactor: 1.0,
-          //   chessboardEnabled: 0,
-          //   receiveLightEnabled: true,
-          //   castShadowEnabled: true
-          // });
-
-          renderer.rayTracerRenderer.pushBox({
-            position: [-9,2,2],
-            orientation: glm.quat.identity(glm.quat.create()),
-            // orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),
-            boxSize: [0.05, 0.5, 1.5],
+          const materialAlias_refractive1 = 1001;
+          renderer.rayTracerRenderer.pushBasicMaterial({
+            materialAlias: materialAlias_refractive1,
             color: [1.0,1.0,0.0],
             reflectionFactor: 0.0,
             refractionFactor: 0.8,
             castShadowEnabled: true,
             receiveLightEnabled: true,
-            chessboardEnabled: false,
+            // chessboardEnabled: 0,
           });
 
           renderer.rayTracerRenderer.pushBox({
-            position: [-9.2,2,2],
+            position: [-9,2,2],
             orientation: glm.quat.identity(glm.quat.create()),
-            // orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),
-            boxSize: [0.05, 1.5, 0.5],
+            boxSize: [0.05, 0.5, 1.5],
+            materialAlias: materialAlias_refractive1,
+          });
+
+          const materialAlias_refractive2 = 1002;
+          renderer.rayTracerRenderer.pushBasicMaterial({
+            materialAlias: materialAlias_refractive2,
             color: [0.0,1.0,0.0],
             reflectionFactor: 0.0,
             refractionFactor: 0.8,
             castShadowEnabled: true,
             receiveLightEnabled: true,
-            chessboardEnabled: false,
+            // chessboardEnabled: 0,
+          });
+          renderer.rayTracerRenderer.pushBox({
+            position: [-9.2,2,2],
+            orientation: glm.quat.identity(glm.quat.create()),
+            boxSize: [0.05, 1.5, 0.5],
+            materialAlias: materialAlias_refractive2,
           });
 
-        } // debug refractive sphere
+        } // debug refractive planes
 
       }
 
@@ -613,24 +613,60 @@ export class TestScene3 {
       //   intensity: 0.5
       // });
 
-      allBoxes.forEach((currBox) => {
+      allBoxes.forEach((currBox, index) => {
 
         const position = currBox.physicBody.getPosition();
         const rotation = currBox.physicBody.getRotation();
 
         // console.log('position', position);
 
+        let materialAlias_generic = 2001 + index;
+
+        if (currBox.chessboardMaterial === 0) {
+          renderer.rayTracerRenderer.pushBasicMaterial({
+            materialAlias: materialAlias_generic,
+            color: currBox.color,
+            refractionFactor: currBox.refractionFactor,
+            reflectionFactor: currBox.reflectionFactor,
+            // chessboardEnabled: currBox.chessboardMaterial,
+            receiveLightEnabled: currBox.receiveLightEnabled,
+            castShadowEnabled: currBox.castShadowEnabled,
+            // chessboardArgs: currBox.chessboardArgs,
+          });
+        }
+        else
+        {
+          renderer.rayTracerRenderer.pushBasicMaterial({
+            materialAlias: 3001 + index * 2 + 0,
+            color: currBox.color,
+            // refractionFactor: currBox.refractionFactor,
+            // reflectionFactor: currBox.reflectionFactor,
+            refractionFactor: 0,
+            reflectionFactor: 0,
+            receiveLightEnabled: currBox.receiveLightEnabled,
+            castShadowEnabled: currBox.castShadowEnabled,
+          });
+          renderer.rayTracerRenderer.pushBasicMaterial({
+            materialAlias: 3001 + index * 2 + 1,
+            color: [0,0,0],
+            refractionFactor: 0,
+            reflectionFactor: 0,
+            receiveLightEnabled: true,
+            castShadowEnabled: true,
+          });
+          renderer.rayTracerRenderer.pushChessboardMaterial({
+            materialAlias: materialAlias_generic,
+            materialIdA: 3001 + index * 2 + 0,
+            materialIdB: 3001 + index * 2 + 1,
+          });
+        }
+
         // floor
         renderer.rayTracerRenderer.pushBox({
           position: position,
           orientation: rotation,
           boxSize: currBox.boxSize,
-          color: currBox.color,
-          refractionFactor: currBox.refractionFactor,
-          reflectionFactor: currBox.reflectionFactor,
-          chessboardEnabled: currBox.chessboardMaterial,
-          receiveLightEnabled: currBox.receiveLightEnabled,
-          castShadowEnabled: currBox.castShadowEnabled
+          materialAlias: materialAlias_generic,
         });
 
       });
@@ -643,8 +679,67 @@ export class TestScene3 {
         if ((index % 2) === 0) {
 
           const lightCoef = system.math.easing.easePinPong(system.math.easing.easeClamp(continuousTime * 0.5));
+          // const lightCoef = 1;
 
           const blinkColor = 0.1 + lightCoef * 0.9;
+          // const blinkColor = 1;
+
+
+          const shapeCoef1 = system.math.easing.easePinPong(system.math.easing.easeClamp(continuousTime * 0.125));
+          const shapeCoef2 = system.math.easing.easeInOutSine(shapeCoef1);
+
+          const currColorMask: glm.vec3 = [1,1,1];
+          currColorMask[0] = system.math.lerp(shapeCoef2, 1, 0);
+          currColorMask[1] = system.math.lerp(shapeCoef2, 0, 0);
+          currColorMask[2] = system.math.lerp(shapeCoef2, 1, 1);
+
+          // renderer.rayTracerRenderer.pushBasicMaterial({
+          //   materialAlias: 667,
+          //   color: [1, 0, 1],
+          //   reflectionFactor: 0.0,
+          //   // refractionFactor: 0.9,
+          //   refractionFactor: lightCoef * 1.0,
+          //   // chessboardEnabled: 2,
+          //   receiveLightEnabled: true,
+          //   castShadowEnabled: true,
+          //   // chessboardArgs: [
+          //   //   // 1 - blinkColor,
+          //   //   // 1 - blinkColor,
+          //   //   // 1 - blinkColor
+          //   //   0.9,
+          //   //   0.9,
+          //   //   0.9,
+          //   // ]
+          // });
+
+          renderer.rayTracerRenderer.pushBasicMaterial({
+            materialAlias: 1111,
+            color: [currColorMask[0], currColorMask[1], currColorMask[2]],
+            reflectionFactor: 0.0,
+            // refractionFactor: 0.1 + lightCoef * 0.9,
+            refractionFactor: 0.9,
+            // refractionFactor: 0.0,
+            receiveLightEnabled: true,
+            castShadowEnabled: true,
+          });
+          renderer.rayTracerRenderer.pushBasicMaterial({
+            materialAlias: 1112,
+            color: [1, 1, 1],
+            reflectionFactor: 0.0,
+            refractionFactor: 0.0,
+            receiveLightEnabled: true,
+            castShadowEnabled: true,
+          });
+          renderer.rayTracerRenderer.pushChessboardMaterial({
+            materialAlias: 1113,
+            materialIdA: 1111,
+            materialIdB: 1112,
+            chessboardArgs: [
+              1 - (0.1 + shapeCoef2 * 0.9),
+              1 - (0.1 + shapeCoef2 * 0.9),
+              1 - (0.1 + shapeCoef2 * 0.9),
+            ],
+          });
 
           // PURPLE SPHERE HERE
           // -> sphere with transparent chessboard material
@@ -652,47 +747,53 @@ export class TestScene3 {
             position: position,
             orientation: rotation,
             radius: 1.0,
-            color: [1, 0, 1],
-            reflectionFactor: 0.0,
-            refractionFactor: 0.9,
-            chessboardEnabled: 2,
-            receiveLightEnabled: true,
-            castShadowEnabled: true
+            // materialAlias: 667,
+            materialAlias: 1113,
           });
 
+
           // graphical presentation of the spot lights
+          renderer.rayTracerRenderer.pushBasicMaterial({
+            materialAlias: 668,
+            // color: [blinkColor, blinkColor, 0],
+            color: [blinkColor*currColorMask[0], blinkColor*currColorMask[1], blinkColor*currColorMask[2]],
+            reflectionFactor: 0,
+            refractionFactor: 0,
+            receiveLightEnabled: false,
+            castShadowEnabled: false
+          });
           renderer.rayTracerRenderer.pushSphere({
             position: position,
             orientation: rotation,
-            radius: 0.899,
-            color: [blinkColor, 0, blinkColor],
-            reflectionFactor: 0,
-            refractionFactor: 0,
-            chessboardEnabled: 0,
-            receiveLightEnabled: false,
-            castShadowEnabled: false
+            // radius: 0.899,
+            // radius: 0.6,
+            radius: blinkColor * 0.9,
+            materialAlias: 668,
           });
 
           // actual spot light inside the sphere
           renderer.rayTracerRenderer.pushSpotLight({
             position: position,
-            intensity: 0.5 + 3.5 * lightCoef,
-            radius: 10
+            intensity: 0.1 + 3.9 * lightCoef,
+            radius: 10,
           });
 
         } else {
 
-          // refractive/reflective) sphere
+          // refractive and reflective sphere
+          renderer.rayTracerRenderer.pushBasicMaterial({
+            materialAlias: 669,
+            color: [1, 1, 1],
+            reflectionFactor: 0.8,
+            refractionFactor: 0.8,
+            receiveLightEnabled: true,
+            castShadowEnabled: true
+          });
           renderer.rayTracerRenderer.pushSphere({
             position: position,
             orientation: rotation,
             radius: 1.5,
-            color: [1, 1, 1],
-            reflectionFactor: 0.75,
-            refractionFactor: 0.75,
-            chessboardEnabled: 0,
-            receiveLightEnabled: true,
-            castShadowEnabled: true
+            materialAlias: 669,
           });
 
         }
@@ -702,16 +803,22 @@ export class TestScene3 {
 
       /**/
       // background reflective blue sphere
+
+      renderer.rayTracerRenderer.pushBasicMaterial({
+        materialAlias: 888,
+        color: [0, 0, 1],
+        reflectionFactor: 0.8,
+        refractionFactor: 0.0,
+        // chessboardEnabled: 0,
+        receiveLightEnabled: true,
+        castShadowEnabled: true
+      });
+
       renderer.rayTracerRenderer.pushSphere({
         position: [-5, 0, -7],
         orientation: glm.quat.identity(glm.quat.create()),
         radius: 5,
-        color: [0, 0, 1],
-        reflectionFactor: 0.8,
-        refractionFactor: 0.0,
-        chessboardEnabled: 0,
-        receiveLightEnabled: true,
-        castShadowEnabled: true
+        materialAlias: 888,
       });
       //*/
 
@@ -746,35 +853,33 @@ export class TestScene3 {
         ];
 
         // simple reflective triangle
-        renderer.rayTracerRenderer.pushTriangle({
-          v0: vertices[0],
-          v1: vertices[1],
-          v2: vertices[2],
+        const materialAlias_heartTriangle = 4000;
+        renderer.rayTracerRenderer.pushBasicMaterial({
+          materialAlias: materialAlias_heartTriangle,
           color: [1.0, 0.5, 0.5],
           reflectionFactor: 0.0,
           refractionFactor: 0.0,
           receiveLightEnabled: true,
-          castShadowEnabled: true
+          castShadowEnabled: true,
+          // chessboardEnabled: 0,
+        });
+        renderer.rayTracerRenderer.pushTriangle({
+          v0: vertices[0],
+          v1: vertices[1],
+          v2: vertices[2],
+          materialAlias: materialAlias_heartTriangle,
         });
         renderer.rayTracerRenderer.pushTriangle({
           v0: vertices[0],
           v1: vertices[4],
           v2: vertices[3],
-          color: [1.0, 0.5, 0.5],
-          reflectionFactor: 0.0,
-          refractionFactor: 0.0,
-          receiveLightEnabled: true,
-          castShadowEnabled: true
+          materialAlias: materialAlias_heartTriangle,
         });
         renderer.rayTracerRenderer.pushTriangle({
           v0: vertices[2],
           v1: vertices[5],
           v2: vertices[4],
-          color: [1.0, 0.5, 0.5],
-          reflectionFactor: 0.0,
-          refractionFactor: 0.0,
-          receiveLightEnabled: true,
-          castShadowEnabled: true
+          materialAlias: materialAlias_heartTriangle,
         });
 
         // heart border
@@ -785,17 +890,23 @@ export class TestScene3 {
         allPos.push([-10, -1+1.0, +2+ 1.5]);
         allPos.push([-10, -1+0.5, +2+ 2]);
 
-        for (const currPos of allPos) {
-          renderer.rayTracerRenderer.pushBox({
-            position: currPos,
-            orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),
-            boxSize: [0.05, 0.25, 0.25],
+        const materialAlias_wallBoxes = 5000;
+        renderer.rayTracerRenderer.pushBasicMaterial({
+          materialAlias: materialAlias_wallBoxes,
             color: [1.0,0.5,0.5],
             reflectionFactor: 0.0,
             castShadowEnabled: true,
             receiveLightEnabled: true,
             refractionFactor: 0,
-            chessboardEnabled: false,
+            // chessboardEnabled: 0,
+        });
+
+        for (const currPos of allPos) {
+          renderer.rayTracerRenderer.pushBox({
+            position: currPos,
+            orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),
+            boxSize: [0.05, 0.25, 0.25],
+            materialAlias: materialAlias_wallBoxes,
           });
         }
 

@@ -18,7 +18,8 @@ import * as glm from 'gl-matrix';
 const k_fovy = 70;
 
 interface IDefinition {
-  canvasDomElement: HTMLCanvasElement;
+  width: number;
+  height: number;
 }
 
 export class Renderer {
@@ -36,22 +37,20 @@ export class Renderer {
     this._def = def;
 
     this.resize(
-      this._def.canvasDomElement.width,
-      this._def.canvasDomElement.height
+      this._def.width,
+      this._def.height
     );
 
-    WebGLContext.initialize(this._def.canvasDomElement);
-
     this._rayTracerRenderer = new RayTracerRenderer({
-      canvasWidth: this._def.canvasDomElement.width,
-      canvasHeight: this._def.canvasDomElement.height,
+      canvasWidth: this._def.width,
+      canvasHeight: this._def.height,
       fovy: k_fovy
     });
     this._textRenderer = new TextRenderer();
     this._stackRenderers = new StackRenderers();
     this._multipleBuffering = new graphics.renderers.MultiBuffersRendering(
-      this._def.canvasDomElement.width,
-      this._def.canvasDomElement.height
+      this._def.width,
+      this._def.height
     );
   }
 
@@ -103,12 +102,12 @@ export class Renderer {
     this._mainHudCamera.computeMatrices();
   }
 
-  private _pushWireFrameSphere(sphere: IPublicSphere) {
+  private _pushWireFrameSphere(sphere: IPublicSphere, color: glm.ReadonlyVec3) {
     const X = 0.525731112119133606 * sphere.radius;
     const Z = 0.850650808352039932 * sphere.radius;
     const N = 0.0;
 
-    const positions: ReadonlyArray<glm.vec3> = [
+    const k_positions: ReadonlyArray<glm.ReadonlyVec3> = [
       [-X, N, Z],
       [X, N, Z],
       [-X, N, -Z],
@@ -123,13 +122,21 @@ export class Renderer {
       [-Z, -X, N]
     ];
 
-    for (let ii = 0; ii < positions.length; ++ii) {
-      positions[ii][0] += sphere.position[0];
-      positions[ii][1] += sphere.position[1];
-      positions[ii][2] += sphere.position[2];
-    }
+    const positions2: glm.ReadonlyVec3[] = [];
 
-    const indices: ReadonlyArray<glm.ReadonlyVec3> = [
+    k_positions.forEach((vertex) => {
+      const pos = glm.vec3.fromValues(0, 0, 0);
+
+      const mat4 = glm.mat4.identity(glm.mat4.create());
+      glm.mat4.translate(mat4, mat4, sphere.position);
+      const mat4b = glm.mat4.fromQuat(glm.mat4.create(), sphere.orientation);
+      glm.mat4.multiply(mat4, mat4, mat4b);
+
+      glm.vec3.transformMat4(pos, vertex, mat4);
+      positions2.push(pos);
+    });
+
+    const k_indices: ReadonlyArray<glm.ReadonlyVec3> = [
       [0, 4, 1],
       [0, 9, 4],
       [9, 5, 4],
@@ -152,18 +159,18 @@ export class Renderer {
       [7, 2, 11]
     ];
 
-    for (const index of indices) {
-      const v1 = positions[index[0]];
-      const v2 = positions[index[1]];
-      const v3 = positions[index[2]];
+    for (const index of k_indices) {
+      const v1 = positions2[index[0]];
+      const v2 = positions2[index[1]];
+      const v3 = positions2[index[2]];
 
-      this._stackRenderers.pushLine(v1, v2, sphere.color);
-      this._stackRenderers.pushLine(v2, v3, sphere.color);
-      this._stackRenderers.pushLine(v3, v1, sphere.color);
+      this._stackRenderers.pushLine(v1, v2, color);
+      this._stackRenderers.pushLine(v2, v3, color);
+      this._stackRenderers.pushLine(v3, v1, color);
     }
   }
 
-  private _pushWireFrameBox(box: IPublicBox) {
+  private _pushWireFrameBox(box: IPublicBox, color: glm.ReadonlyVec3) {
     const vertices: ReadonlyArray<glm.ReadonlyVec3> = [
       glm.vec3.fromValues(-box.boxSize[0], -box.boxSize[1], -box.boxSize[2]),
       glm.vec3.fromValues(+box.boxSize[0], -box.boxSize[1], -box.boxSize[2]),
@@ -208,15 +215,15 @@ export class Renderer {
       this._stackRenderers.pushLine(
         vertices2[index[0]],
         vertices2[index[1]],
-        box.color
+        color
       );
     });
   }
 
-  private _pushWireFrameTriangle(triangle: IPublicTriangle) {
-    this._stackRenderers.pushLine(triangle.v0, triangle.v1, triangle.color);
-    this._stackRenderers.pushLine(triangle.v1, triangle.v2, triangle.color);
-    this._stackRenderers.pushLine(triangle.v2, triangle.v0, triangle.color);
+  private _pushWireFrameTriangle(triangle: IPublicTriangle, color: glm.ReadonlyVec3) {
+    this._stackRenderers.pushLine(triangle.v0, triangle.v1, color);
+    this._stackRenderers.pushLine(triangle.v1, triangle.v2, color);
+    this._stackRenderers.pushLine(triangle.v2, triangle.v0, color);
   }
 
   safeSceneWireFrame(inCallback: () => void) {
@@ -244,14 +251,15 @@ export class Renderer {
     this._rayTracerRenderer.bvhRender(this._stackRenderers);
 
 
+    const defaultColor: glm.ReadonlyVec3 = [1,1,1];
     this._rayTracerRenderer.spheres.forEach((sphere) => {
-      this._pushWireFrameSphere(sphere);
+      this._pushWireFrameSphere(sphere, defaultColor);
     });
     this._rayTracerRenderer.boxes.forEach((box) => {
-      this._pushWireFrameBox(box);
+      this._pushWireFrameBox(box, defaultColor);
     });
     this._rayTracerRenderer.triangles.forEach((triangle) => {
-      this._pushWireFrameTriangle(triangle);
+      this._pushWireFrameTriangle(triangle, defaultColor);
     });
 
   }

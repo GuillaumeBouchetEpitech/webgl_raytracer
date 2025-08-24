@@ -57,6 +57,10 @@ export class WebGLContext {
   //
   //
 
+  static setContext(gl: WebGL2RenderingContext) {
+    return WebGLContext._gl = gl;
+  }
+
   static getContext() {
     if (!WebGLContext._gl) {
       throw new Error('webgl context not initialized');
