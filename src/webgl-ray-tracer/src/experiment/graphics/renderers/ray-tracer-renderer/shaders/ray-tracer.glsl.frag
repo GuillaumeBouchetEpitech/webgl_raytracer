@@ -325,20 +325,8 @@ void intersectSceneOneShape(
   if (shadowMode == true)
   {
     vec4 matTexel0 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 0, 0), 0);
-    vec4 matTexel1 = vec4(0.0);
 
-    int materialType = int(matTexel0.r);
-    if (materialType == 0)
-    {
-      matTexel1 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 1, 0), 0);
-    }
-    else
-    {
-      int subMaterialIndex = int(matTexel0.g);
-      matTexel1 = texelFetch(u_materialsTextureData, ivec2(subMaterialIndex * 2 + 1, 0), 0);
-    }
-
-    bool castShadowEnabled = (matTexel1.b != 0.0);
+    bool castShadowEnabled = (int(matTexel0.g) == 1);
     if (castShadowEnabled == false) {
       return; // this shape does not cast a shadow -> skip
     }
@@ -772,20 +760,20 @@ void lightAt(
 
         vec3 txPos = _lightStack[lightStackReadIndex].result.txPos;
         if (
-          (fract(txPos.x * matTexel0.a) > 0.5)
-          != (fract(txPos.y * matTexel1.r) > 0.5)
-          != (fract(txPos.z * matTexel1.g) > 0.5)
+          (fract(txPos.x * matTexel1.t) > 0.5)
+          != (fract(txPos.y * matTexel1.g) > 0.5)
+          != (fract(txPos.z * matTexel1.b) > 0.5)
         ) {
-          subMaterialIndex = int(matTexel0.b);
+          subMaterialIndex = int(matTexel0.a);
         } else {
-          subMaterialIndex = int(matTexel0.g);
+          subMaterialIndex = int(matTexel0.b);
         }
 
         matTexel0 = texelFetch(u_materialsTextureData, ivec2(subMaterialIndex * 2 + 0, 0), 0);
         matTexel1 = texelFetch(u_materialsTextureData, ivec2(subMaterialIndex * 2 + 1, 0), 0);
       }
 
-      float refractionFactor = matTexel1.g;
+      float refractionFactor = matTexel0.a;
 
       if (refractionFactor <= 0.01)
       {
@@ -794,7 +782,7 @@ void lightAt(
         break;
       }
 
-      vec3 shapeColor = matTexel0.gba;
+      vec3 shapeColor = matTexel1.gba;
 
       _lightStack[lightStackReadIndex].lightResult.intensity = refractionFactor;
       _lightStack[lightStackReadIndex].lightResult.color = shapeColor.xyz;
@@ -980,28 +968,28 @@ void main()
 
       vec3 txPos = _sceneStack[sceneStackReadIndex].result.txPos;
       if (
-        (fract(txPos.x * matTexel0.a) > 0.5)
-        == (fract(txPos.y * matTexel1.r) > 0.5)
-        == (fract(txPos.z * matTexel1.g) > 0.5)
+        (fract(txPos.x * matTexel1.r) > 0.5)
+        == (fract(txPos.y * matTexel1.g) > 0.5)
+        == (fract(txPos.z * matTexel1.b) > 0.5)
       ) {
-        subMaterialIndex = int(matTexel0.b);
+        subMaterialIndex = int(matTexel0.a);
       } else {
-        subMaterialIndex = int(matTexel0.g);
+        subMaterialIndex = int(matTexel0.b);
       }
 
       matTexel0 = texelFetch(u_materialsTextureData, ivec2(subMaterialIndex * 2 + 0, 0), 0);
       matTexel1 = texelFetch(u_materialsTextureData, ivec2(subMaterialIndex * 2 + 1, 0), 0);
     }
 
-    vec3 color = matTexel0.gba;
-    float reflectionFactor = matTexel1.r;
-    float refractionFactor = matTexel1.g;
+    vec3 color = matTexel1.gba;
+    float reflectionFactor = matTexel0.b;
+    float refractionFactor = matTexel0.a;
 
     _sceneStack[sceneStackReadIndex].result.color = vec4(color, 0.5);
     _sceneStack[sceneStackReadIndex].result.reflectionFactor = reflectionFactor;
     _sceneStack[sceneStackReadIndex].result.refractionFactor = refractionFactor;
 
-    bool lightEnabled = (matTexel1.a != 0.0);
+    bool lightEnabled = (matTexel1.r != 0.0);
     _sceneStack[sceneStackReadIndex].result.lightEnabled = lightEnabled;
 
     //

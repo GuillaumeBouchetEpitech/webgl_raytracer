@@ -656,6 +656,7 @@ export class TestScene3 {
           });
           renderer.rayTracerRenderer.pushChessboardMaterial({
             materialAlias: materialAlias_generic,
+            castShadowEnabled: true,
             materialIdA: 3001 + index * 2 + 0,
             materialIdB: 3001 + index * 2 + 1,
           });
@@ -732,6 +733,7 @@ export class TestScene3 {
           });
           renderer.rayTracerRenderer.pushChessboardMaterial({
             materialAlias: 1113,
+            castShadowEnabled: true,
             materialIdA: 1111,
             materialIdB: 1112,
             chessboardArgs: [

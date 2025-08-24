@@ -41,6 +41,7 @@ export interface IDefinition {
 
 export interface IPublicBaseMaterial {
   materialAlias: number;
+  castShadowEnabled: boolean;
 }
 export interface IInternalBaseMaterial {
   materialType: 0 | 1;
@@ -49,7 +50,6 @@ export interface IInternalBaseMaterial {
 export interface IPublicBasicMaterial extends IPublicBaseMaterial {
   reflectionFactor: number;
   refractionFactor: number;
-  castShadowEnabled: boolean;
   color: glm.ReadonlyVec3;
   receiveLightEnabled: boolean;
 }
@@ -635,18 +635,20 @@ export class RayTracerRenderer implements IRayTracerRenderer {
               matAliasToIndex.set(currMat.materialAlias, currIndex);
               currIndex += 1;
 
+              const matType = 0;
+
               // currMat.materialAlias
               materialsDataValues.push([
-                0 + 0.5, // [0] R
-                currMat.color[0], // [1] G
-                currMat.color[1], // [2] B
-                currMat.color[2], // [3] A
+                matType + 0.5, // [0] R
+                (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
+                currMat.reflectionFactor, // [2] B
+                currMat.refractionFactor, // [3] A
               ]);
               materialsDataValues.push([
-                currMat.reflectionFactor, // [4] R
-                currMat.refractionFactor, // [5] G
-                currMat.castShadowEnabled ? 1 : 0, // [6] B
-                currMat.receiveLightEnabled ? 1 : 0, // [7] A
+                currMat.receiveLightEnabled ? 1 : 0, // [4] R
+                currMat.color[0], // [5] G
+                currMat.color[1], // [6] B
+                currMat.color[2], // [7] A
               ]);
 
             });
@@ -663,17 +665,19 @@ export class RayTracerRenderer implements IRayTracerRenderer {
                 throw new Error("chessboard material, material not found");
               }
 
+              const matType = 1;
+
               // currMat.materialAlias
               materialsDataValues.push([
-                1 + 0.5, // [0] R
-                sunMatIndexA + 0.5, // [1] G
-                sunMatIndexB + 0.5, // [2] B
-                currMat.chessboardArgs ? currMat.chessboardArgs[0] : 1.0, // [3] A
+                matType + 0.5, // [0] R
+                (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
+                sunMatIndexA + 0.5, // [2] B
+                sunMatIndexB + 0.5, // [3] A
               ]);
               materialsDataValues.push([
-                currMat.chessboardArgs ? currMat.chessboardArgs[1] : 1.0, // [4] R
-                currMat.chessboardArgs ? currMat.chessboardArgs[2] : 1.0, // [4] G
-                0, // [6] B
+                currMat.chessboardArgs ? currMat.chessboardArgs[0] : 1.0, // [4] R
+                currMat.chessboardArgs ? currMat.chessboardArgs[1] : 1.0, // [5] G
+                currMat.chessboardArgs ? currMat.chessboardArgs[2] : 1.0, // [6] B
                 0, // [7] A
               ]);
 
