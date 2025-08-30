@@ -5,10 +5,8 @@ const { TextRenderer, StackRenderers } = graphics.renderers;
 
 import {
   RayTracerRenderer,
-  IPublicTriangle,
-  IPublicSphere,
   IRayTracerRenderer,
-  IPublicBox
+  allInterfaces
 } from './renderers';
 
 import * as glm from 'gl-matrix';
@@ -102,7 +100,7 @@ export class Renderer {
     this._mainHudCamera.computeMatrices();
   }
 
-  private _pushWireFrameSphere(sphere: IPublicSphere, color: glm.ReadonlyVec3) {
+  private _pushWireFrameSphere(sphere: allInterfaces.IPublicSphere, color: glm.ReadonlyVec3) {
     const X = 0.525731112119133606 * sphere.radius;
     const Z = 0.850650808352039932 * sphere.radius;
     const N = 0.0;
@@ -170,7 +168,7 @@ export class Renderer {
     }
   }
 
-  private _pushWireFrameBox(box: IPublicBox, color: glm.ReadonlyVec3) {
+  private _pushWireFrameBox(box: allInterfaces.IPublicBox, color: glm.ReadonlyVec3) {
     const vertices: ReadonlyArray<glm.ReadonlyVec3> = [
       glm.vec3.fromValues(-box.boxSize[0], -box.boxSize[1], -box.boxSize[2]),
       glm.vec3.fromValues(+box.boxSize[0], -box.boxSize[1], -box.boxSize[2]),
@@ -220,16 +218,16 @@ export class Renderer {
     });
   }
 
-  private _pushWireFrameTriangle(triangle: IPublicTriangle, color: glm.ReadonlyVec3) {
+  private _pushWireFrameTriangle(triangle: allInterfaces.IPublicTriangle, color: glm.ReadonlyVec3) {
     this._stackRenderers.pushLine(triangle.v0, triangle.v1, color);
     this._stackRenderers.pushLine(triangle.v1, triangle.v2, color);
     this._stackRenderers.pushLine(triangle.v2, triangle.v0, color);
   }
 
   safeSceneWireFrame(inCallback: () => void) {
-    this._debugSceneCamera.setEye(this._rayTracerRenderer.camera.position);
-    this._debugSceneCamera.setTarget(this._rayTracerRenderer.camera.target);
-    this._debugSceneCamera.setUpAxis(this._rayTracerRenderer.camera.up);
+    this._debugSceneCamera.setEye(this._rayTracerRenderer.rayTracerPass.camera.position);
+    this._debugSceneCamera.setTarget(this._rayTracerRenderer.rayTracerPass.camera.target);
+    this._debugSceneCamera.setUpAxis(this._rayTracerRenderer.rayTracerPass.camera.up);
     this._debugSceneCamera.computeMatrices();
 
     this._stackRenderers.safeRender(
@@ -246,19 +244,18 @@ export class Renderer {
     this._textRenderer.flush(this._mainHudCamera.getComposedMatrix());
   }
 
-  setupDebugRenderer() {
+  bvhRenderDebugWireframe() {
 
-    this._rayTracerRenderer.bvhRender(this._stackRenderers);
-
+    this._rayTracerRenderer.rayTracerPass.bvhRenderDebugWireframe(this._stackRenderers);
 
     const defaultColor: glm.ReadonlyVec3 = [1,1,1];
-    this._rayTracerRenderer.spheres.forEach((sphere) => {
+    this._rayTracerRenderer.rayTracerPass.spheres.forEach((sphere) => {
       this._pushWireFrameSphere(sphere, defaultColor);
     });
-    this._rayTracerRenderer.boxes.forEach((box) => {
+    this._rayTracerRenderer.rayTracerPass.boxes.forEach((box) => {
       this._pushWireFrameBox(box, defaultColor);
     });
-    this._rayTracerRenderer.triangles.forEach((triangle) => {
+    this._rayTracerRenderer.rayTracerPass.triangles.forEach((triangle) => {
       this._pushWireFrameTriangle(triangle, defaultColor);
     });
 

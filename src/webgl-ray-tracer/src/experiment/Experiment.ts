@@ -398,7 +398,7 @@ export class Experiment {
     this._renderer.flushHudWireFrame();
     this._renderer.flushHudText();
 
-    this._renderer.rayTracerRenderer.reset();
+    this._renderer.rayTracerRenderer.rayTracerPass.reset();
   }
   // #endregion hud
 
@@ -416,7 +416,7 @@ export class Experiment {
         gl.disable(gl.DEPTH_TEST);
       }
 
-      this._renderer.rayTracerRenderer.lookAt(
+      this._renderer.rayTracerRenderer.rayTracerPass.lookAt(
         this._freeFlyController.getPosition(),
         this._freeFlyController.getTarget(),
         this._freeFlyController.getUpAxis()
@@ -447,16 +447,16 @@ export class Experiment {
         this._renderer.stackRenderers.clear();
         this._renderer.safeSceneWireFrame(() => {
 
+          // render wireframe axis
           const axisOrigin: glm.ReadonlyVec3 = [0, 0, 0];
           const axisX: glm.ReadonlyVec3 = [100, 0, 0];
           const axisY: glm.ReadonlyVec3 = [0, 100, 0];
           const axisZ: glm.ReadonlyVec3 = [0, 0, 100];
-
           this._renderer.stackRenderers.pushLine(axisOrigin, axisX, [1, 0, 0]);
           this._renderer.stackRenderers.pushLine(axisOrigin, axisY, [0, 1, 0]);
           this._renderer.stackRenderers.pushLine(axisOrigin, axisZ, [0, 0, 1]);
 
-          this._renderer.setupDebugRenderer();
+          this._renderer.bvhRenderDebugWireframe();
         });
       }
 
@@ -499,7 +499,7 @@ export class Experiment {
     const rayTracerRenderer = this._renderer.rayTracerRenderer;
 
     const newCoef = rayTracerRenderer.getResolutionCoef();
-    const newSize = rayTracerRenderer.getCurrentSize();
+    const newSize = rayTracerRenderer.rayTracerPass.getCurrentSize();
     const totalPixels = newSize[0] * newSize[1];
 
     this._def.logger.log(

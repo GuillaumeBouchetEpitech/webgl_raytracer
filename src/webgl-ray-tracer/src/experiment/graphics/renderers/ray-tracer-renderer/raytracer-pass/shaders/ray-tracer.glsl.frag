@@ -23,22 +23,19 @@ const float Eta = Air / Glass;
 //
 
 uniform vec3        u_cameraEye;
+uniform int         u_useBvh;
 
 //
 
 uniform highp sampler2D   u_sceneTextureData;
-// uniform int               u_sceneTextureSize;
+uniform int               u_sceneTextureSize;
 
 uniform highp sampler2D   u_materialsTextureData;
-
-// uniform int               u_totalShapes;
 
 //
 
 uniform highp sampler2D   u_lightsTextureData;
-
-uniform int       u_sunLightsStop;
-uniform int       u_spotLightsStop;
+uniform int               u_lightsTextureSize;
 
 //
 
@@ -480,21 +477,27 @@ bool intersectScene(
   outBestResult.hasHit = false;
   outBestResult.distance = -1.0;
 
-  // if (u_sceneTextureSize <= 0)
-  // {
-  //   return false;
-  // }
+  if (u_sceneTextureSize == 0)
+  {
+    return false;
+  }
 
-  // for (int shapeIndex = 0; shapeIndex < u_totalShapes; shapeIndex += 3) {
-  //   if (shapeIndex != toIgnoreShapeIndex) {
-  //     intersectSceneOneShape(shapeIndex, ray, outBestResult, shadowMode);
-  //   }
-  // }
+  if (u_useBvh == 0)
+  {
 
+    // no BVH optimization -> brute force all the shapes
+    for (int shapeIndex = 0; shapeIndex < u_sceneTextureSize; shapeIndex += 3) {
+      if (shapeIndex != toIgnoreShapeIndex) {
+        intersectSceneOneShape(shapeIndex, ray, outBestResult, shadowMode);
+      }
+    }
 
-  /**/
-  // if (u_totalShapes > 0)
-  // {
+  }
+  else
+  {
+
+    // use BVH optimization -> traverse the nodes and their associated AABB
+    // -> this should reduce the total number intersections execute
 
     const int maxBvhStack = 16;
     int bvhStack[maxBvhStack];
@@ -559,8 +562,7 @@ bool intersectScene(
 
     }
 
-  // }
-  //*/
+  }
 
   return outBestResult.hasHit;
 }
@@ -593,77 +595,23 @@ void lightAt(
   lightResult.intensity = g_ambientLightIntensity;
   lightResult.color = vec3(1.0);
 
-  // for (int index = 0; index < u_sunLightsStop; index += 1)
-  // {
-  //   vec4 texel0 = texelFetch(u_lightsTextureData, ivec2(index + 0, 0), 0);
-  //   vec3 lightDir = texel0.rgb;
-  //   float localIntensity = texel0.a;
+  //
+  // handle spot lights
+  //
 
-  //   float lightCoefficient = localIntensity;
-  //   lightDir = normalize(lightDir);
+  const int maxLightStackSize = 5;
+  LightStackData _lightStack[maxLightStackSize];
 
-  //   // is the sun light blocked by an object?
-  //   RayResult result;
-  //   if (intersectScene(RayValues(impactPosition, lightDir), result, true))
-  //   {
+  vec3 lightDir = vec3(1.0);
+  float currLightIntensity = 1.0;
+  vec3 currLightColor = vec3(1.0);
 
-  //     // // light ray is blocked, skip this light... unless? (<- chessboard material check)
-  //     // continue;
-
-  //     vec4 matTexel1 = texelFetch(u_materialsTextureData, ivec2(result.materialIndex * 3 + 1, 0), 0);
-  //     int chessboardMaterialEnabled = int(matTexel1.a);
-  //     if (chessboardMaterialEnabled == 2)
-  //     {
-  //       // chessboard color effect
-  //       if ((fract(result.txPos.x * 0.9) > 0.5) == (fract(result.txPos.y * 0.9) > 0.5) == (fract(result.txPos.z * 0.9) > 0.5))
-  //       {
-  //         result.hasHit = false; // no shadow -> allow light to go through
-  //       }
-  //     }
-
-  //     // TODO: check refraction -> colored light
-  //     // float refractionFactor = matTexel1.r;
-  //     // if (refractionFactor > 0.0 && bestIntensity)
-  //     // {
-  //     //   bestIntensity = ;
-  //     //   bestColor =
-  //     // }
-
-  //     if (result.hasHit) {
-  //       // light ray is blocked, skip this light... unless? (<- chessboard material check)
-  //       continue;
-  //     }
-  //   }
-
-  //   //
-  //   //
-  //   //
-
-  //   float intensity = 0.0;
-  //   vec3 reflectionFactor = reflect(-lightDir, impactNormal);
-  //   intensity += 0.6 * pow(max(dot(reflectionFactor, viewer), 0.0), 30.0);
-  //   intensity += 1.0 * dot(lightDir, impactNormal);
-
-  //   intensity *= lightCoefficient;
-
-  //   if (lightResult.intensity < intensity) {
-  //     lightResult.intensity = intensity;
-  //   }
-  // }
-
-  for (int lightIndex = u_sunLightsStop; lightIndex < u_spotLightsStop; lightIndex += 2)
+  for (int lightIndex = 0; lightIndex < u_lightsTextureSize; lightIndex += 2)
   {
-    vec3 lightDir = vec3(1.0);
-    float currLightIntensity = 1.0;
-    vec3 currLightColor = vec3(1.0);
-
-    // spot light
 
     vec4 texel0 = texelFetch(u_lightsTextureData, ivec2(lightIndex + 0, 0), 0);
-    vec4 texel1 = texelFetch(u_lightsTextureData, ivec2(lightIndex + 1, 0), 0);
     vec3 lightPos = texel0.rgb;
     float lightRadius = texel0.a;
-    float localIntensity = texel1.r;
 
     vec3 lightToImpactVec3 = lightPos - impactPosition;
 
@@ -675,17 +623,18 @@ void lightAt(
       continue;
     }
 
-    lightDir.x = lightToImpactVec3.x / lightToImpactDistance; // normalize
-    lightDir.y = lightToImpactVec3.y / lightToImpactDistance; // normalize
-    lightDir.z = lightToImpactVec3.z / lightToImpactDistance; // normalize
+    // normalize lightDir
+    lightDir.x = lightToImpactVec3.x / lightToImpactDistance;
+    lightDir.y = lightToImpactVec3.y / lightToImpactDistance;
+    lightDir.z = lightToImpactVec3.z / lightToImpactDistance;
+
+    vec4 texel1 = texelFetch(u_lightsTextureData, ivec2(lightIndex + 1, 0), 0);
+    float localIntensity = texel1.r;
 
     currLightIntensity = localIntensity * (1.0 - lightToImpactDistance / lightRadius);
 
-    const int maxLightStack = 5;
-    LightStackData _lightStack[maxLightStack];
-
     // initialize stack
-    for (int ii = 0; ii < maxLightStack; ++ii)
+    for (int ii = 0; ii < maxLightStackSize; ++ii)
     {
       _lightStack[ii].used = false;
       _lightStack[ii].ray.direction = lightDir;
@@ -713,7 +662,7 @@ void lightAt(
     //
 
     int lightStackReadIndex = 0;
-    for (; lightStackReadIndex < maxLightStack; ++lightStackReadIndex)
+    for (; lightStackReadIndex < maxLightStackSize; ++lightStackReadIndex)
     {
       // intersect object
       // if reflection/refraction push to stack
@@ -791,7 +740,7 @@ void lightAt(
       // handle refraction/transparency
       //
 
-      if (lightStackWriteIndex + 1 >= maxLightStack)
+      if (lightStackWriteIndex + 1 >= maxLightStackSize)
       {
         // no more stack space left -> stop now
         break;
@@ -802,7 +751,7 @@ void lightAt(
       _lightStack[lightStackWriteIndex].used = true;
       _lightStack[lightStackWriteIndex].ray.origin = _lightStack[lightStackReadIndex].result.position;
 
-    } // for (int ii = 0; ii < maxLightStack; ++ii)
+    } // for (int ii = 0; ii < maxLightStackSize; ++ii)
 
     if (lightIsBlocked)
     {
@@ -818,7 +767,7 @@ void lightAt(
     // -> from last element to first element
     // -> here we start from where we stopped during the accumulation phase
     // for (lightStackReadIndex = lightStackWriteIndex; lightStackReadIndex >= 0; --lightStackReadIndex)
-    for (lightStackReadIndex = maxLightStack - 1; lightStackReadIndex >= 0; --lightStackReadIndex)
+    for (lightStackReadIndex = maxLightStackSize - 1; lightStackReadIndex >= 0; --lightStackReadIndex)
     {
       if (_lightStack[lightStackReadIndex].used == false)
       {
@@ -863,7 +812,7 @@ void lightAt(
     lightResult.color = lightResult.color * oldBlendRatio + currLightColor * newBlendRatio;
     lightResult.intensity = maxIntensity;
 
-  } // for (int index = u_sunLightsStop; index < u_spotLightsStop; index += 2)
+  } // for (int index = 0; index < u_lightsTextureSize; index += 2)
 }
 
 //
@@ -893,11 +842,12 @@ void main()
   vec3 rayDir = normalize(v_position - u_cameraEye); // camera direction
   vec3 finalPixelColor = g_backgroundColor;
 
-  const int maxSceneStack = 7;
-  StackData _sceneStack[maxSceneStack];
+  // need a scene stack size of 7 for a reflective AND refractive sphere
+  const int maxSceneStackSize = 7;
+  StackData _sceneStack[maxSceneStackSize];
 
   // initialize stack
-  for (int ii = 0; ii < maxSceneStack; ++ii)
+  for (int ii = 0; ii < maxSceneStackSize; ++ii)
   {
     _sceneStack[ii].used = false;
     _sceneStack[ii].result.reflectionFactor = 0.0;
@@ -925,17 +875,17 @@ void main()
   //
 
   int sceneStackReadIndex = 0;
-  for (; sceneStackReadIndex < maxSceneStack; ++sceneStackReadIndex)
+  for (; sceneStackReadIndex < maxSceneStackSize; ++sceneStackReadIndex)
   {
     // intersect object
     // if reflection/refraction push to stack & set index
     // repeat
 
-    if (!_sceneStack[sceneStackReadIndex].used)
-    {
-      // nothing to process anymore
-      break;
-    }
+    // if (!_sceneStack[sceneStackReadIndex].used)
+    // {
+    //   // nothing to process anymore
+    //   break;
+    // }
 
     _sceneStack[sceneStackReadIndex].result.hasHit = intersectScene(
       _sceneStack[sceneStackReadIndex].ray,
@@ -1034,7 +984,7 @@ void main()
 
     if (
       // first check if more stack space is left
-      sceneStackWriteIndex + 1 < maxSceneStack &&
+      sceneStackWriteIndex + 1 < maxSceneStackSize &&
       _sceneStack[sceneStackReadIndex].result.refractionFactor > 0.0
     ) {
       // push new refraction iteration to the stack
@@ -1059,7 +1009,7 @@ void main()
 
     if (
       // first check if more stack space is left
-      sceneStackWriteIndex + 1 < maxSceneStack &&
+      sceneStackWriteIndex + 1 < maxSceneStackSize &&
       _sceneStack[sceneStackReadIndex].result.reflectionFactor > 0.0
     ) {
       // push new reflection iteration to the stack
@@ -1082,12 +1032,12 @@ void main()
   // combine all colors
   // -> from last element to first element
   // -> here we start from where we stopped during the accumulation phase
-  // for (sceneStackReadIndex = sceneStackWriteIndex; sceneStackReadIndex >= 0; --sceneStackReadIndex)
-  for (sceneStackReadIndex = maxSceneStack - 1; sceneStackReadIndex >= 0; --sceneStackReadIndex)
+  for (sceneStackReadIndex = sceneStackWriteIndex; sceneStackReadIndex >= 0; --sceneStackReadIndex)
+  // for (sceneStackReadIndex = maxSceneStackSize - 1; sceneStackReadIndex >= 0; --sceneStackReadIndex)
   {
-    if (!_sceneStack[sceneStackReadIndex].used) {
-      continue;
-    }
+    // if (!_sceneStack[sceneStackReadIndex].used) {
+    //   continue;
+    // }
 
     // handle any connected reflection
     int reflectionIndex = _sceneStack[sceneStackReadIndex].reflectionIndex;
