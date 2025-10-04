@@ -10,6 +10,7 @@ export interface IUnboundDataTextureVec4f32 {
 export interface IBoundDataTextureVec4f32 extends IUnboundDataTextureVec4f32 {
   allocate(data: [number, number, number, number][] | number): void;
   update(start: number, data: [number, number, number, number][]): void;
+  updateFromBuffer(start: number, data: Float32Array): void;
 }
 
 export class DataTextureVec4f32 implements IBoundDataTextureVec4f32 {
@@ -66,6 +67,11 @@ export class DataTextureVec4f32 implements IBoundDataTextureVec4f32 {
       // -> new Float32Array(number[])
       this._buffer = new Float32Array(data.flat());
     } else {
+
+      if ((data % 4) !== 0) {
+        throw new Error(`data texture update buffer length is not a multiple of 4, length: ${data}.`);
+      }
+
       // -> new Float32Array(number)
       this._buffer = new Float32Array(data);
     }
@@ -107,8 +113,6 @@ export class DataTextureVec4f32 implements IBoundDataTextureVec4f32 {
 
     gl.bindTexture(gl.TEXTURE_2D, this._texture);
 
-    // this._buffer = new Uint8Array(data.flat());
-
     for (let ii = 0; ii < data.length; ++ii) {
       this._buffer[ii * 4 + 0] = data[ii][0];
       this._buffer[ii * 4 + 1] = data[ii][1];
@@ -116,8 +120,31 @@ export class DataTextureVec4f32 implements IBoundDataTextureVec4f32 {
       this._buffer[ii * 4 + 3] = data[ii][3];
     }
 
+    this.updateFromBuffer(start, this._buffer);
+  }
+
+  updateFromBuffer(start: number, inputBuffer: Float32Array): void {
+    if (!this._texture) {
+      throw new Error('data texture not initialized');
+    }
+    if (!this._buffer) {
+      throw new Error('data texture update but not previously allocated');
+    }
+    if (start + inputBuffer.length > this._buffer.length) {
+      throw new Error(
+        `data texture update but size is larger (start: ${start}, length: ${inputBuffer.length}, max: ${this._buffer.length})`
+      );
+    }
+    if ((inputBuffer.length % 4) !== 0) {
+      throw new Error(`data texture update buffer length is not a multiple of 4, length: ${inputBuffer.length}.`);
+    }
+
+    const gl = WebGLContext.getContext();
+
+    gl.bindTexture(gl.TEXTURE_2D, this._texture);
+
     const level = 0;
-    const width = data.length;
+    const width = inputBuffer.length / 4;
     const height = 1;
     const format = gl.RGBA;
     const type = gl.FLOAT;
@@ -135,7 +162,7 @@ export class DataTextureVec4f32 implements IBoundDataTextureVec4f32 {
       height,
       format,
       type,
-      this._buffer,
+      inputBuffer,
       srcOffset
     );
   }

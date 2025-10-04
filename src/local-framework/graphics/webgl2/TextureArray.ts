@@ -138,6 +138,16 @@ export class TextureArray implements IUnboundTextureArray, IBoundTextureArray {
         inPixels
       );
     } else {
+
+      if (inPixels) {
+
+        const expectedLength = inWidth * inHeight * inTotalLayers * 4;
+
+        if (inPixels.length !== expectedLength) {
+          throw new Error(`wrong pixels buffer size for (3d) texture array, got ${inPixels.length}/${expectedLength}`);
+        }
+      }
+
       gl.texImage3D(
         gl.TEXTURE_2D_ARRAY,
         level,

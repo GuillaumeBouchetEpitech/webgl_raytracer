@@ -11,6 +11,7 @@ import * as allInterfaces from './all-interfaces';
 import * as glm from 'gl-matrix';
 
 import { BvhTree } from './internals/BvhTree';
+import { GpuDataTexture } from './internals/GpuDataTexture';
 
 const {
   WebGLContext,
@@ -101,7 +102,7 @@ export class RayTracerPass implements IRayTracerPass {
 
   private _rayTracerGeometry: graphics.webgl2.GeometryWrapper.Geometry;
 
-  private _sceneDataTexture: graphics.webgl2.IUnboundDataTextureVec4f32;
+  private _sceneDataTexture: GpuDataTexture;
   private _spheres: allInterfaces.IInternalSphere[] = [];
   private _boxes: allInterfaces.IInternalBox[] = [];
   private _triangles: allInterfaces.IInternalTriangle[] = [];
@@ -110,16 +111,16 @@ export class RayTracerPass implements IRayTracerPass {
   private _allBasicMaterials: allInterfaces.IInternalBasicMaterial[] = []
   private _chessboardMaterialsPerAliases = new Map<number, allInterfaces.IInternalChessboardMaterial>();
   private _allChessboardMaterials: allInterfaces.IInternalChessboardMaterial[] = []
-  private _materialsDataTexture: graphics.webgl2.IUnboundDataTextureVec4f32;
+  private _materialsDataTexture: GpuDataTexture;
 
-  private _lightsDataTexture: graphics.webgl2.IUnboundDataTextureVec4f32;
+  private _lightsDataTexture: GpuDataTexture;
   private _spotLights: allInterfaces.ISpotLight[] = [];
 
-  private _bvhDataTexture: graphics.webgl2.IUnboundDataTextureVec4f32;
+  private _bvhDataTexture: GpuDataTexture;
+  private _bvhTree = new BvhTree();
 
   private _camera: ICamera;
 
-  private _bvhTree = new BvhTree();
 
   constructor(inDef: IDefinition) {
     this._cameraFovy = inDef.fovy;
@@ -183,17 +184,15 @@ export class RayTracerPass implements IRayTracerPass {
     //
     //
 
-    this._sceneDataTexture = new DataTextureVec4f32();
-    this._sceneDataTexture.initialize(2048);
+    this._sceneDataTexture = new GpuDataTexture('u_sceneTextureData', 'u_sceneTextureSize');
+    this._materialsDataTexture = new GpuDataTexture('u_materialsTextureData');
+    this._lightsDataTexture = new GpuDataTexture("u_lightsTextureData", "u_lightsTextureSize");
 
-    this._materialsDataTexture = new DataTextureVec4f32();
-    this._materialsDataTexture.initialize(2048);
 
-    this._lightsDataTexture = new DataTextureVec4f32();
-    this._lightsDataTexture.initialize(2048);
+    // this._bvhDataTexture = new DataTextureVec4f32();
+    // this._bvhDataTexture.initialize(2048);
+    this._bvhDataTexture = new GpuDataTexture("u_bvhDataTexture");
 
-    this._bvhDataTexture = new DataTextureVec4f32();
-    this._bvhDataTexture.initialize(2048);
 
     this._camera = {
       position: glm.vec3.fromValues(0, 0, 0),
@@ -355,9 +354,210 @@ export class RayTracerPass implements IRayTracerPass {
     const farCorners = this._computeCameraFarCornersBufferGeometry();
     this._rayTracerGeometry.allocateBuffer(1, farCorners, farCorners.length);
 
+    this._sceneDataTexture.clear();
+    this._materialsDataTexture.clear();
+    this._lightsDataTexture.clear();
+    this._bvhDataTexture.clear();
+
+    {
+      // scene data
+
+      let currIndex = 0;
+
+      const matAliasToIndex = new Map<number, number>();
+      this._allBasicMaterials.forEach((currMat) => {
+
+        matAliasToIndex.set(currMat.materialAlias, currIndex);
+        currIndex += 1;
+
+        const matType = 0;
+
+        this._materialsDataTexture.push(
+          matType + 0.5, // [0] R
+          (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
+          currMat.reflectionFactor, // [2] B
+          currMat.refractionFactor, // [3] A
+        );
+        this._materialsDataTexture.push(
+          currMat.receiveLightEnabled ? 1 : 0, // [4] R
+          currMat.color[0], // [5] G
+          currMat.color[1], // [6] B
+          currMat.color[2], // [7] A
+        );
+
+      });
+
+      this._allChessboardMaterials.forEach((currMat) => {
+
+        matAliasToIndex.set(currMat.materialAlias, currIndex);
+        currIndex += 1;
+
+        const subMatIndexA = matAliasToIndex.get(currMat.materialAliasA);
+        const subMatIndexB = matAliasToIndex.get(currMat.materialAliasB);
+
+        if (subMatIndexA === undefined || subMatIndexB === undefined) {
+          throw new Error("chessboard material, associated basic material not found");
+        }
+
+        const matType = 1;
+
+        this._materialsDataTexture.push(
+          matType + 0.5, // [0] R
+          (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
+          subMatIndexA + 0.5, // [2] B
+          subMatIndexB + 0.5, // [3] A
+        );
+        this._materialsDataTexture.push(
+          currMat.chessboardArgs ? currMat.chessboardArgs[0] : 1.0, // [4] R
+          currMat.chessboardArgs ? currMat.chessboardArgs[1] : 1.0, // [5] G
+          currMat.chessboardArgs ? currMat.chessboardArgs[2] : 1.0, // [6] B
+          0, // [7] A
+        );
+
+      });
+
+      {
+        {
+          // spheres
+
+          for (const sphere of this._spheres) {
+            // add sphere
+
+            const currMatIndex = matAliasToIndex.get(sphere.materialAlias);
+            if (currMatIndex === undefined) {
+              throw new Error(`sphere materialAlias not found ${sphere.materialAlias}`);
+            }
+
+            const shapeType = 1;
+
+            this._sceneDataTexture.push(
+              shapeType + 0.5, // [0] R
+              currMatIndex + 0.5, // [1] G
+              sphere.position[0], // [2] B
+              sphere.position[1], // [3] A
+            );
+            this._sceneDataTexture.push(
+              sphere.position[2], // [4] R
+              sphere.orientation[0], // [5] G
+              sphere.orientation[1], // [6] B
+              sphere.orientation[2], // [7] A
+            );
+            this._sceneDataTexture.push(
+              sphere.orientation[3], // [8] R
+              sphere.radius, // [9] G
+              0,
+              0,
+            );
+
+          }
+
+        } // spheres
+
+        {
+          // boxes
+
+          for (const box of this._boxes) {
+            // add box
+
+            const currMatIndex = matAliasToIndex.get(box.materialAlias);
+            if (currMatIndex === undefined) {
+              throw new Error(`box materialAlias not found ${box.materialAlias}`);
+            }
+
+            const shapeType = 2;
+
+            this._sceneDataTexture.push(
+              shapeType + 0.5,
+              currMatIndex + 0.5, // [10]
+              box.position[0], // [0]
+              box.position[1], // [1]
+            );
+            this._sceneDataTexture.push(
+              box.position[2], // [2]
+              box.orientation[0], // [3]
+              box.orientation[1], // [4]
+              box.orientation[2], // [5]
+            );
+            this._sceneDataTexture.push(
+              box.orientation[3], // [6]
+              box.boxSize[0], // [7]
+              box.boxSize[1], // [8]
+              box.boxSize[2], // [9]
+            );
+
+          }
+
+        } // boxes
+
+        {
+          // triangles
+
+          for (const triangle of this._triangles) {
+            // add triangle
+
+            const currMatIndex = matAliasToIndex.get(triangle.materialAlias);
+            if (currMatIndex === undefined) {
+              throw new Error(`triangle materialAlias not found ${triangle.materialAlias}`);
+            }
+
+            const shapeType = 3;
+
+            this._sceneDataTexture.push(
+              shapeType + 0.5,
+              currMatIndex + 0.5, // [0]
+              triangle.v0[0], // [1]
+              triangle.v0[1], // [2]
+            );
+            this._sceneDataTexture.push(
+              triangle.v0[2], // [3]
+              triangle.v1[0], // [4]
+              triangle.v1[1], // [5]
+              triangle.v1[2], // [6]
+            );
+            this._sceneDataTexture.push(
+              triangle.v2[0], // [7]
+              triangle.v2[1], // [8]
+              triangle.v2[2], // [9]
+              0,
+            );
+
+          }
+
+        } // triangles
+      }
+
+    } // scene data
+
+    {
+      // lights data
+
+      {
+        // spot lights
+
+        for (const spotLight of this._spotLights) {
+          // add spot light
+
+          this._lightsDataTexture.push(
+            spotLight.position[0],
+            spotLight.position[1],
+            spotLight.position[2],
+            spotLight.radius,
+          );
+          this._lightsDataTexture.push(
+            spotLight.intensity,
+            0,
+            0,
+            0,
+          );
+        }
+
+      } // spot lights
+
+    } // lights data
+
     this._bvhTree.synchronize(this._spheres, this._boxes, this._triangles);
 
-    const bvhPixelsData = this._bvhTree.fillDataTexture();
+    this._bvhTree.fillDataTexture(this._bvhDataTexture);
 
     gl.viewport(0, 0, this._renderWidth, this._renderHeight);
     gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
@@ -382,245 +582,33 @@ export class RayTracerPass implements IRayTracerPass {
         //
 
         {
-          // scene data
-
-          const sceneDataValues: [number,number,number,number][] = [];
-          const materialsDataValues: [number,number,number,number][] = [];
-
-          let currIndex = 0;
-
-          const matAliasToIndex = new Map<number, number>();
-          this._allBasicMaterials.forEach((currMat) => {
-
-            matAliasToIndex.set(currMat.materialAlias, currIndex);
-            currIndex += 1;
-
-            const matType = 0;
-
-            materialsDataValues.push([
-              matType + 0.5, // [0] R
-              (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
-              currMat.reflectionFactor, // [2] B
-              currMat.refractionFactor, // [3] A
-            ]);
-            materialsDataValues.push([
-              currMat.receiveLightEnabled ? 1 : 0, // [4] R
-              currMat.color[0], // [5] G
-              currMat.color[1], // [6] B
-              currMat.color[2], // [7] A
-            ]);
-
-          });
-
-          this._allChessboardMaterials.forEach((currMat) => {
-
-            matAliasToIndex.set(currMat.materialAlias, currIndex);
-            currIndex += 1;
-
-            const subMatIndexA = matAliasToIndex.get(currMat.materialAliasA);
-            const subMatIndexB = matAliasToIndex.get(currMat.materialAliasB);
-
-            if (subMatIndexA === undefined || subMatIndexB === undefined) {
-              throw new Error("chessboard material, associated basic material not found");
-            }
-
-            const matType = 1;
-
-            materialsDataValues.push([
-              matType + 0.5, // [0] R
-              (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
-              subMatIndexA + 0.5, // [2] B
-              subMatIndexB + 0.5, // [3] A
-            ]);
-            materialsDataValues.push([
-              currMat.chessboardArgs ? currMat.chessboardArgs[0] : 1.0, // [4] R
-              currMat.chessboardArgs ? currMat.chessboardArgs[1] : 1.0, // [5] G
-              currMat.chessboardArgs ? currMat.chessboardArgs[2] : 1.0, // [6] B
-              0, // [7] A
-            ]);
-
-          });
-
-          {
-            {
-              // spheres
-
-              for (const sphere of this._spheres) {
-                // add sphere
-
-                const currMatIndex = matAliasToIndex.get(sphere.materialAlias);
-                if (currMatIndex === undefined) {
-                  throw new Error(`sphere materialAlias not found ${sphere.materialAlias}`);
-                }
-
-                const shapeType = 1;
-
-                sceneDataValues.push([
-                  shapeType + 0.5, // [0] R
-                  currMatIndex + 0.5, // [1] G
-                  sphere.position[0], // [2] B
-                  sphere.position[1], // [3] A
-                ]);
-                sceneDataValues.push([
-                  sphere.position[2], // [4] R
-                  sphere.orientation[0], // [5] G
-                  sphere.orientation[1], // [6] B
-                  sphere.orientation[2], // [7] A
-                ]);
-                sceneDataValues.push([
-                  sphere.orientation[3], // [8] R
-                  sphere.radius, // [9] G
-                  0,
-                  0,
-                ]);
-
-              }
-
-            } // spheres
-
-            {
-              // boxes
-
-              for (const box of this._boxes) {
-                // add box
-
-                const currMatIndex = matAliasToIndex.get(box.materialAlias);
-                if (currMatIndex === undefined) {
-                  throw new Error(`box materialAlias not found ${box.materialAlias}`);
-                }
-
-                const shapeType = 2;
-
-                sceneDataValues.push([
-                  shapeType + 0.5,
-                  currMatIndex + 0.5, // [10]
-                  box.position[0], // [0]
-                  box.position[1], // [1]
-                ]);
-                sceneDataValues.push([
-                  box.position[2], // [2]
-                  box.orientation[0], // [3]
-                  box.orientation[1], // [4]
-                  box.orientation[2], // [5]
-                ]);
-                sceneDataValues.push([
-                  box.orientation[3], // [6]
-                  box.boxSize[0], // [7]
-                  box.boxSize[1], // [8]
-                  box.boxSize[2], // [9]
-                ]);
-
-              }
-
-            } // boxes
-
-            {
-              // triangles
-
-              for (const triangle of this._triangles) {
-                // add triangle
-
-                const currMatIndex = matAliasToIndex.get(triangle.materialAlias);
-                if (currMatIndex === undefined) {
-                  throw new Error(`triangle materialAlias not found ${triangle.materialAlias}`);
-                }
-
-                const shapeType = 3;
-
-                sceneDataValues.push([
-                  shapeType + 0.5,
-                  currMatIndex + 0.5, // [0]
-                  triangle.v0[0], // [1]
-                  triangle.v0[1], // [2]
-                ]);
-                sceneDataValues.push([
-                  triangle.v0[2], // [3]
-                  triangle.v1[0], // [4]
-                  triangle.v1[1], // [5]
-                  triangle.v1[2], // [6]
-                ]);
-                sceneDataValues.push([
-                  triangle.v2[0], // [7]
-                  triangle.v2[1], // [8]
-                  triangle.v2[2], // [9]
-                  0,
-                ]);
-
-              }
-
-              boundShader.setInteger1Uniform(
-                'u_sceneTextureSize',
-                sceneDataValues.length
-              );
-
-            } // triangles
-          }
-
-          gl.activeTexture(gl.TEXTURE0 + 0);
-          this._sceneDataTexture.preBind((boundDataTexture) => {
-            boundDataTexture.update(0, sceneDataValues);
-          });
-
-          boundShader.setInteger1Uniform('u_sceneTextureData', 0);
-
-          {
-            gl.activeTexture(gl.TEXTURE0 + 7);
-            this._materialsDataTexture.preBind((boundDataTexture) => {
-              boundDataTexture.update(0, materialsDataValues);
-            });
-
-            boundShader.setInteger1Uniform('u_materialsTextureData', 7);
-          }
-
-        } // scene data
+          const textureUnit = 0;
+          gl.activeTexture(gl.TEXTURE0 + textureUnit);
+          this._sceneDataTexture.syncGpuDataLength(boundShader);
+          this._sceneDataTexture.syncGpuData();
+          this._sceneDataTexture.setForShader(boundShader, textureUnit);
+        }
 
         {
-          // lights data
-
-          const lightsDataValues: [number, number, number, number][] = [];
-
-          {
-            // spot lights
-
-            for (const spotLight of this._spotLights) {
-              // add spot light
-
-              lightsDataValues.push([
-                spotLight.position[0],
-                spotLight.position[1],
-                spotLight.position[2],
-                spotLight.radius,
-              ]);
-              lightsDataValues.push([
-                spotLight.intensity,
-                0,
-                0,
-                0,
-              ]);
-            }
-
-            boundShader.setInteger1Uniform(
-              'u_lightsTextureSize',
-              lightsDataValues.length
-            );
-          } // spot lights
-
-          gl.activeTexture(gl.TEXTURE0 + 1);
-          this._lightsDataTexture.preBind((boundDataTexture) => {
-            boundDataTexture.update(0, lightsDataValues);
-          });
-
-          boundShader.setInteger1Uniform('u_lightsTextureData', 1);
-        } // lights data
-
+          const textureUnit = 7;
+          gl.activeTexture(gl.TEXTURE0 + textureUnit);
+          this._materialsDataTexture.syncGpuData();
+          this._materialsDataTexture.setForShader(boundShader, textureUnit);
+        }
 
         {
-          gl.activeTexture(gl.TEXTURE0 + 6);
-          this._bvhDataTexture.preBind((boundDataTexture) => {
-            boundDataTexture.update(0, bvhPixelsData);
-          });
+          const textureUnit = 1;
+          gl.activeTexture(gl.TEXTURE0 + textureUnit);
+          this._lightsDataTexture.syncGpuDataLength(boundShader);
+          this._lightsDataTexture.syncGpuData();
+          this._lightsDataTexture.setForShader(boundShader, textureUnit);
+        }
 
-          boundShader.setInteger1Uniform('u_bvhDataTexture', 6);
+        {
+          const textureUnit = 6;
+          gl.activeTexture(gl.TEXTURE0 + textureUnit);
+          this._bvhDataTexture.syncGpuData();
+          this._bvhDataTexture.setForShader(boundShader, textureUnit);
         }
 
         //

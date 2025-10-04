@@ -346,12 +346,18 @@ export class BvhTree {
   }
 
 
-  fillDataTexture(): [number, number, number, number][] {
+  // fillDataTexture(): [number, number, number, number][] {
+  fillDataTexture(
+    dataTexture: {
+      push(r: number, g: number, b: number, a: number,): void;
+    }
+  ): void {
 
-    const pixels: [number, number, number, number][] = [];
+    // const pixels: [number, number, number, number][] = [];
 
     if (!this._rootNode) {
-      return pixels;
+      // return pixels;
+      return;
     }
 
     const allNodes: BvhTreeNode[] = [];
@@ -374,30 +380,30 @@ export class BvhTree {
 
     for (const currNode of allNodes) {
 
-      pixels.push([
+      dataTexture.push(
         currNode._min[0],
         currNode._min[1],
         currNode._min[2],
         currNode._max[0],
-      ]);
-      pixels.push([
+      );
+      dataTexture.push(
         currNode._max[1],
         currNode._max[2],
         (currNode._leftNode?._index ?? -2) + 0.5,
         (currNode._rightNode?._index ?? -2) + 0.5,
-      ]);
-      pixels.push([
+      );
+      dataTexture.push(
         (currNode._leftLeaf?.index ?? -2) + 0.5,
         (currNode._rightLeaf?.index ?? -2) + 0.5,
         0,
         0,
-      ]);
+      );
 
     }
 
     //
 
-    return pixels;
+    // return pixels;
   }
 
   renderDebugWireframe(

@@ -842,7 +842,7 @@ void main()
   vec3 rayDir = normalize(v_position - u_cameraEye); // camera direction
   vec3 finalPixelColor = g_backgroundColor;
 
-  // need a scene stack size of 7 for a reflective AND refractive sphere
+  // need a scene stack size of minimum 7 for a reflective AND refractive sphere
   const int maxSceneStackSize = 7;
   StackData _sceneStack[maxSceneStackSize];
 
