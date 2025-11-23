@@ -2,7 +2,8 @@ import * as webgl2 from '../../../../graphics/webgl2';
 
 import * as glm from 'gl-matrix';
 
-const k_bufferSize = 14 * 1024;
+// const k_bufferSize = 14 * 1024;
+const k_bufferSize = 1024 * 1024; // 1Mo
 
 export class WireFramesStackRenderer {
   private _shader: webgl2.IUnboundShader;

@@ -40,7 +40,16 @@ export interface IStackRenderers {
     inPointA: glm.ReadonlyVec3,
     inPointB: glm.ReadonlyVec3,
     thickness: number,
-    inColor: glm.ReadonlyVec3
+    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
+  ): void;
+
+  push3dLine(
+    inPointA: glm.ReadonlyVec3,
+    inPointB: glm.ReadonlyVec3,
+    thicknessA: number,
+    thicknessB: number,
+    inColorA: glm.ReadonlyVec3 | glm.ReadonlyVec4,
+    inColorB: glm.ReadonlyVec3 | glm.ReadonlyVec4
   ): void;
 
   pushRotatedLine(
@@ -135,14 +144,38 @@ export class StackRenderers implements IStackRenderers {
     inPointA: glm.ReadonlyVec3,
     inPointB: glm.ReadonlyVec3,
     thickness: number,
-    inColor: glm.ReadonlyVec3
-  ) {
-    this._trianglesStackRenderer.pushLine(
+    inColor: glm.ReadonlyVec3 | glm.ReadonlyVec4
+  ): void {
+
+    this._trianglesStackRenderer.push3dLine(
       inPointA,
       inPointB,
       thickness,
-      inColor
+      thickness,
+      inColor,
+      inColor,
     );
+
+  }
+
+  push3dLine(
+    inPointA: glm.ReadonlyVec3,
+    inPointB: glm.ReadonlyVec3,
+    thicknessA: number,
+    thicknessB: number,
+    inColorA: glm.ReadonlyVec3 | glm.ReadonlyVec4,
+    inColorB: glm.ReadonlyVec3 | glm.ReadonlyVec4
+  ): void {
+
+    this._trianglesStackRenderer.push3dLine(
+      inPointA,
+      inPointB,
+      thicknessA,
+      thicknessB,
+      inColorA,
+      inColorB,
+    );
+
   }
 
   pushRotatedLine(

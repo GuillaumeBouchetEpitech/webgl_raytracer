@@ -48,6 +48,17 @@ export interface IStackRenderer {
     inPointB: glm.ReadonlyVec3,
     inColor: glm.ReadonlyVec3,
   ): void;
+
+  push3dLine(
+    inPointA: glm.ReadonlyVec3,
+    inPointB: glm.ReadonlyVec3,
+    thicknessA: number,
+    thicknessB: number,
+    inColorA: glm.ReadonlyVec3 | glm.ReadonlyVec4,
+    inColorB: glm.ReadonlyVec3 | glm.ReadonlyVec4
+  ): void;
+
+
 };
 
 //
@@ -641,7 +652,7 @@ export class RayTracerPass implements IRayTracerPass {
   }
 
   setRenderSize(width: number, height: number): void {
-    if (width < 100 || height < 100) {
+    if (width < 10 || height < 10) {
       return;
     }
 

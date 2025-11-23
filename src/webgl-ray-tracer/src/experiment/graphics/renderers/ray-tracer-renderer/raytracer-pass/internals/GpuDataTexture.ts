@@ -9,7 +9,6 @@ export class GpuDataTexture {
   private _lengthUniformName?: string;
 
   private _dataTexture: graphics.webgl2.IUnboundDataTextureVec4f32;
-  // private _dataValues: [number,number,number,number][] = [];
   private _dataValues = new Float32Array(k_maxLength);
   private _currentIndex = 0;
 
@@ -25,12 +24,9 @@ export class GpuDataTexture {
 
   push(r: number, g: number, b: number, a: number) {
 
-    // if (this._dataValues.length >= k_maxLength) {
     if (this._currentIndex >= k_maxLength) {
       throw new Error(`not more space left in the GpuDataTexture, max length is ${k_maxLength}.`);
     }
-
-    // this._dataValues.push([r,g,b,a]);
 
     this._dataValues[this._currentIndex * 4 + 0] = r;
     this._dataValues[this._currentIndex * 4 + 1] = g;
@@ -40,7 +36,6 @@ export class GpuDataTexture {
   }
 
   clear() {
-    // this._dataValues.length = 0;
     this._currentIndex = 0;
   }
 
@@ -53,14 +48,12 @@ export class GpuDataTexture {
 
     boundShader.setInteger1Uniform(
       this._lengthUniformName,
-      // this._dataValues.length
       this._currentIndex
     );
   }
 
   syncGpuData() {
     this._dataTexture.preBind((boundDataTexture) => {
-      // boundDataTexture.update(0, this._dataValues);
       boundDataTexture.updateFromBuffer(0, this._dataValues);
     });
   }

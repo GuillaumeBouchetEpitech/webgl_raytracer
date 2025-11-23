@@ -107,11 +107,11 @@ struct LightStackData
 //
 //
 
-vec3 apply_quat_to_vec3(vec3 position, vec4 q)
-{
-  vec3 v = position.xyz;
-  return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
-}
+// vec3 apply_quat_to_vec3(vec3 position, vec4 q)
+// {
+//   vec3 v = position.xyz;
+//   return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+// }
 mat3 quat_to_mat3(vec4 q)
 {
 
@@ -1067,5 +1067,7 @@ void main()
   //
 
   o_color = vec4(finalPixelColor, 1.0);
+
+  // gl_FragDepth = 0.1;
 
 }

@@ -1,21 +1,4 @@
 import { graphics } from '@local-framework';
-const {
-  WebGLContext,
-  Texture,
-  FrameBuffer,
-  ShaderProgram,
-  GeometryWrapper
-} = graphics.webgl2;
-
-// // @ts-ignore
-// import textureVertex from './shaders/texture.glsl.vert';
-// // @ts-ignore
-// import textureFragment from './shaders/texture.glsl.frag';
-
-// // @ts-ignore
-// import asciiArtVertex from './shaders/ascii-art.glsl.vert';
-// // @ts-ignore
-// import asciiArtFragment from './shaders/ascii-art.glsl.frag';
 
 import * as glm from 'gl-matrix';
 
@@ -23,6 +6,8 @@ import { RayTracerPass, IRayTracerPass } from './raytracer-pass/RaytracingPass';
 import { PostProcessPass, IPostProcessPass } from './post-process-pass/PostProcessPass';
 
 export * as allInterfaces from './raytracer-pass/all-interfaces';
+
+const { WebGLContext } = graphics.webgl2;
 
 export interface IDefinition {
   canvasWidth: number;

@@ -1,8 +1,11 @@
 import * as webgl2 from '../../../../graphics/webgl2';
 
+import * as math from '../../../../system/math';
+
 import * as glm from 'gl-matrix';
 
-const k_bufferSize = 7 * 1024;
+// const k_bufferSize = 7 * 1024;
+const k_bufferSize = 1024 * 1024; // 1Mo
 
 export class TrianglesStackRenderer {
   private _shader: webgl2.IUnboundShader;
@@ -24,6 +27,57 @@ export class TrianglesStackRenderer {
     this._geometry = new webgl2.GeometryWrapper.Geometry(inShader, geometryDef);
   }
 
+  pushRawTriangle(
+    inPointA: glm.ReadonlyVec3,
+    inPointB: glm.ReadonlyVec3,
+    inPointC: glm.ReadonlyVec3,
+    inColorA: glm.ReadonlyVec3 | glm.ReadonlyVec4,
+    inColorB: glm.ReadonlyVec3 | glm.ReadonlyVec4,
+    inColorC: glm.ReadonlyVec3 | glm.ReadonlyVec4,
+  ) {
+    if (this._currentSize + 7 * 6 >= this._buffer.length) {
+      if (this._shader.isBound()) {
+        this.flush();
+      } else {
+        return;
+      }
+    }
+
+    const alphaValueA = inColorA.length == 4 ? inColorA[3] : 1;
+    const alphaValueB = inColorA.length == 4 ? inColorA[3] : 1;
+    const alphaValueC = inColorA.length == 4 ? inColorA[3] : 1;
+
+    // 0
+    this._buffer[this._currentSize + 0] = inPointA[0];
+    this._buffer[this._currentSize + 1] = inPointA[1];
+    this._buffer[this._currentSize + 2] = inPointA[2];
+    this._buffer[this._currentSize + 3] = inColorA[0];
+    this._buffer[this._currentSize + 4] = inColorA[1];
+    this._buffer[this._currentSize + 5] = inColorA[2];
+    this._buffer[this._currentSize + 6] = alphaValueA;
+    this._currentSize += 7;
+
+    // 2
+    this._buffer[this._currentSize + 0] = inPointB[0];
+    this._buffer[this._currentSize + 1] = inPointB[1];
+    this._buffer[this._currentSize + 2] = inPointB[2];
+    this._buffer[this._currentSize + 3] = inColorB[0];
+    this._buffer[this._currentSize + 4] = inColorB[1];
+    this._buffer[this._currentSize + 5] = inColorB[2];
+    this._buffer[this._currentSize + 6] = alphaValueB;
+    this._currentSize += 7;
+
+    // 3
+    this._buffer[this._currentSize + 0] = inPointC[0];
+    this._buffer[this._currentSize + 1] = inPointC[1];
+    this._buffer[this._currentSize + 2] = inPointC[2];
+    this._buffer[this._currentSize + 3] = inColorC[0];
+    this._buffer[this._currentSize + 4] = inColorC[1];
+    this._buffer[this._currentSize + 5] = inColorC[2];
+    this._buffer[this._currentSize + 6] = alphaValueC;
+    this._currentSize += 7;
+  }
+
   pushTriangle(
     inPointA: glm.ReadonlyVec3,
     inPointB: glm.ReadonlyVec3,
@@ -38,37 +92,7 @@ export class TrianglesStackRenderer {
       }
     }
 
-    const alphaValue = inColor.length == 4 ? inColor[3] : 1;
-
-    // 0
-    this._buffer[this._currentSize + 0] = inPointA[0];
-    this._buffer[this._currentSize + 1] = inPointA[1];
-    this._buffer[this._currentSize + 2] = inPointA[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
-
-    // 2
-    this._buffer[this._currentSize + 0] = inPointB[0];
-    this._buffer[this._currentSize + 1] = inPointB[1];
-    this._buffer[this._currentSize + 2] = inPointB[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
-
-    // 3
-    this._buffer[this._currentSize + 0] = inPointC[0];
-    this._buffer[this._currentSize + 1] = inPointC[1];
-    this._buffer[this._currentSize + 2] = inPointC[2];
-    this._buffer[this._currentSize + 3] = inColor[0];
-    this._buffer[this._currentSize + 4] = inColor[1];
-    this._buffer[this._currentSize + 5] = inColor[2];
-    this._buffer[this._currentSize + 6] = alphaValue;
-    this._currentSize += 7;
+    this.pushRawTriangle(inPointA, inPointB, inPointC, inColor, inColor, inColor);
   }
 
   pushLine(
@@ -100,6 +124,96 @@ export class TrianglesStackRenderer {
       [inPointA[0] + stepX, inPointA[1] + stepY, inPointA[2]],
       inColor
     );
+  }
+
+  push3dLine(
+    inPointA: glm.ReadonlyVec3,
+    inPointB: glm.ReadonlyVec3,
+    thicknessA: number,
+    thicknessB: number,
+    inColorA: glm.ReadonlyVec3 | glm.ReadonlyVec4,
+    inColorB: glm.ReadonlyVec3 | glm.ReadonlyVec4,
+  ): void {
+    if (this._currentSize + 7 * 6 >= this._buffer.length) {
+      return;
+    }
+
+    const diffX = inPointB[0] - inPointA[0];
+    const diffY = inPointB[1] - inPointA[1];
+    const diffZ = inPointB[2] - inPointA[2];
+    const horizontalAngle = Math.atan2(diffY, diffX);
+    const verticalAngle = Math.atan2(diffZ, math.magnitude(diffX, diffY));
+
+    const mat4 = glm.mat4.identity(glm.mat4.create());
+    glm.mat4.rotateZ(mat4, mat4, horizontalAngle);
+    glm.mat4.rotateY(mat4, mat4, -verticalAngle);
+
+    const totalLength = glm.vec3.distance(inPointA, inPointB);
+
+    const sideA: glm.vec3[] = [
+      [totalLength * 0.0, +thicknessA * 0.5, +thicknessA * 0.5],
+      [totalLength * 0.0, -thicknessA * 0.5, +thicknessA * 0.5],
+      [totalLength * 0.0, -thicknessA * 0.5, -thicknessA * 0.5],
+      [totalLength * 0.0, +thicknessA * 0.5, -thicknessA * 0.5],
+    ];
+    const sideB: glm.vec3[] = [
+      [totalLength * 1.0, +thicknessB * 0.5, +thicknessB * 0.5],
+      [totalLength * 1.0, -thicknessB * 0.5, +thicknessB * 0.5],
+      [totalLength * 1.0, -thicknessB * 0.5, -thicknessB * 0.5],
+      [totalLength * 1.0, +thicknessB * 0.5, -thicknessB * 0.5],
+    ];
+
+    for (const pos of sideA) {
+      glm.vec3.transformMat4(pos, pos, mat4);
+      glm.vec3.add(pos, pos, inPointA);
+    }
+    for (const pos of sideB) {
+      glm.vec3.transformMat4(pos, pos, mat4);
+      glm.vec3.add(pos, pos, inPointA);
+    }
+
+    interface TmpVertex {
+      pos: glm.vec3;
+      color: glm.ReadonlyVec3 | glm.ReadonlyVec4;
+    }
+
+    const allQuads: [TmpVertex,TmpVertex,TmpVertex,TmpVertex][] = [
+      [ {pos: sideA[0], color: inColorA}, { pos: sideA[1], color: inColorA }, { pos: sideB[0], color: inColorB }, {pos: sideB[1], color: inColorB} ],
+      [ {pos: sideA[1], color: inColorA}, { pos: sideA[2], color: inColorA }, { pos: sideB[1], color: inColorB }, {pos: sideB[2], color: inColorB} ],
+      [ {pos: sideA[2], color: inColorA}, { pos: sideA[3], color: inColorA }, { pos: sideB[2], color: inColorB }, {pos: sideB[3], color: inColorB} ],
+      [ {pos: sideA[3], color: inColorA}, { pos: sideA[0], color: inColorA }, { pos: sideB[3], color: inColorB }, {pos: sideB[0], color: inColorB} ],
+    ];
+
+    const indices: glm.ReadonlyVec3[] = [ [0, 3, 2], [0, 1, 3] ];
+
+    for (const quad of allQuads) {
+      for (const index of indices) {
+        this.pushRawTriangle(
+          quad[index[0]].pos,
+          quad[index[1]].pos,
+          quad[index[2]].pos,
+          quad[index[0]].color,
+          quad[index[1]].color,
+          quad[index[2]].color
+        );
+      }
+    }
+
+    // const stepX = Math.cos(angle) * thickness * 0.5;
+    // const stepY = Math.sin(angle) * thickness * 0.5;
+
+    // this.pushTriangle(
+    //   [inPointA[0] - stepX, inPointA[1] - stepY, inPointA[2]],
+    //   [inPointB[0] - stepX, inPointB[1] - stepY, inPointB[2]],
+    //   [inPointB[0] + stepX, inPointB[1] + stepY, inPointB[2]],
+    //   inColor
+    // );
+    // this.pushTriangle(
+    //   [inPointA[0] - stepX, inPointA[1] - stepY, inPointA[2]],
+    //   [inPointB[0] + stepX, inPointB[1] + stepY, inPointB[2]],
+    //   [inPointA[0] + stepX, inPointA[1] + stepY, inPointA[2]],
+    //   inColor
+    // );
   }
 
   pushRotatedLine(

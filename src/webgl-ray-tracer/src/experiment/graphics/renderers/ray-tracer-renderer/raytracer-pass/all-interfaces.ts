@@ -77,5 +77,33 @@ export interface IStackRenderer {
     inPointB: glm.ReadonlyVec3,
     inColor: glm.ReadonlyVec3,
   ): void;
+
+  push3dLine(
+    inPointA: glm.ReadonlyVec3,
+    inPointB: glm.ReadonlyVec3,
+    thicknessA: number,
+    thicknessB: number,
+    inColorA: glm.ReadonlyVec3 | glm.ReadonlyVec4,
+    inColorB: glm.ReadonlyVec3 | glm.ReadonlyVec4
+  ): void;
+
+  // pushThickLine(
+  //   inPointA: glm.ReadonlyVec3,
+  //   inPointB: glm.ReadonlyVec3,
+  //   thicknessA: number,
+  //   thicknessB: number,
+  //   inColorA: glm.ReadonlyVec3 | glm.ReadonlyVec4,
+  //   inColorB: glm.ReadonlyVec3 | glm.ReadonlyVec4
+  // ): void;
+
+  // push3dLine(
+  //   inPointA: glm.ReadonlyVec3,
+  //   inPointB: glm.ReadonlyVec3,
+  //   thicknessA: number,
+  //   thicknessB: number,
+  //   inColorA: glm.ReadonlyVec3 | glm.ReadonlyVec4,
+  //   inColorB: glm.ReadonlyVec3 | glm.ReadonlyVec4,
+  // ): void;
+
 };
 

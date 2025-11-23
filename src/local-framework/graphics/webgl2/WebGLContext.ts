@@ -39,7 +39,10 @@ export class WebGLContext {
 
       // Boolean that indicates that the drawing buffer has a
       // stencil buffer of at least 8 bits.
-      stencil: false
+      stencil: false,
+
+      desynchronized: false,
+      // desynchronized: true,
     };
 
     WebGLContext._gl = canvas.getContext('webgl2', renderingContextAttribs);

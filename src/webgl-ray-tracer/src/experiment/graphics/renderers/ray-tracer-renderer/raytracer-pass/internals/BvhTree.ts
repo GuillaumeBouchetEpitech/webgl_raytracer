@@ -31,14 +31,14 @@ const _renderAABB = (
 ) => {
 
   const vertices: ReadonlyArray<glm.ReadonlyVec3> = [
-    [min[0], min[1], min[2]],
-    [max[0], min[1], min[2]],
-    [min[0], max[1], min[2]],
-    [max[0], max[1], min[2]],
-    [min[0], min[1], max[2]],
-    [max[0], min[1], max[2]],
-    [min[0], max[1], max[2]],
-    [max[0], max[1], max[2]],
+    [min[0]-0.1, min[1]-0.1, min[2]-0.1],
+    [max[0]+0.1, min[1]-0.1, min[2]-0.1],
+    [min[0]-0.1, max[1]+0.1, min[2]-0.1],
+    [max[0]+0.1, max[1]+0.1, min[2]-0.1],
+    [min[0]-0.1, min[1]-0.1, max[2]+0.1],
+    [max[0]+0.1, min[1]-0.1, max[2]+0.1],
+    [min[0]-0.1, max[1]+0.1, max[2]+0.1],
+    [max[0]+0.1, max[1]+0.1, max[2]+0.1],
   ];
 
   const indices: ReadonlyArray<glm.ReadonlyVec2> = [
@@ -48,7 +48,8 @@ const _renderAABB = (
   ];
 
   for (const pair of indices) {
-    renderer.pushLine(vertices[pair[0]], vertices[pair[1]], color);
+    // renderer.pushLine(vertices[pair[0]], vertices[pair[1]], color);
+    renderer.push3dLine(vertices[pair[0]], vertices[pair[1]], 0.025, 0.025, color, color);
   }
 };
 
@@ -99,40 +100,39 @@ class BvhTreeNode {
     }
 
     // split the AABB into two across the longest AABB axis
-    const dx = Math.abs(this._max[0] - this._min[0]);
-    const dy = Math.abs(this._max[1] - this._min[1]);
-    const dz = Math.abs(this._max[2] - this._min[2]);
-    const largestDelta = Math.max(dx, dy, dz);
+    const deltaX = Math.abs(this._max[0] - this._min[0]);
+    const deltaY = Math.abs(this._max[1] - this._min[1]);
+    const deltaZ = Math.abs(this._max[2] - this._min[2]);
+    const largestDelta = Math.max(deltaX, deltaY, deltaZ);
 
-    if (largestDelta === dx) {
-      this._splitAcross(0, allShapes); // split BV AABB across x axis
-    } else if (largestDelta === dy) {
-      this._splitAcross(1, allShapes); // split BV AABB across y axis
+    if (largestDelta === deltaX) {
+      this._splitAcross(0, allShapes); // split across x axis
+    } else if (largestDelta === deltaY) {
+      this._splitAcross(1, allShapes); // split across y axis
     } else {
-      this._splitAcross(2, allShapes); // split BV AABB across z axis
+      this._splitAcross(2, allShapes); // split across z axis
     }
   }
 
   private _splitAcross(axis: 0 | 1 | 2, allShapes: ReadonlyArray<IShape>) {
     const sorted = [...allShapes].sort((shapeA, shapeB) => {
-      const a0 = shapeA.min[axis];
-      const a1 = shapeA.max[axis];
+      const minA = shapeA.min[axis];
+      const maxA = shapeA.max[axis];
 
-      const b0 = shapeB.min[axis];
-      const b1 = shapeB.max[axis];
+      const minB = shapeB.min[axis];
+      const maxB = shapeB.max[axis];
 
-      return (a0 + a1) / 2.0 - (b0 + b1) / 2.0;
+      return (minA + maxA) / 2.0 - (minB + maxB) / 2.0;
     });
 
-    const h = sorted.length / 2;
-    const l = sorted.length;
-    const ltFaces = sorted.slice(0, h); // left faces
-    const rtFaces = sorted.slice(h, l); // right faces
+    const halfIndex = Math.floor(sorted.length / 2);
+    const leftSubFaces = sorted.slice(0, halfIndex);
+    const rightSubFaces = sorted.slice(halfIndex);
 
-    if (ltFaces.length > 0) {
+    if (leftSubFaces.length > 0) {
       const min = glm.vec3.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
       const max = glm.vec3.fromValues(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
-      ltFaces.forEach((f) => {
+      leftSubFaces.forEach((f) => {
         min[0] = Math.min(min[0], f.min[0]);
         min[1] = Math.min(min[1], f.min[1]);
         min[2] = Math.min(min[2], f.min[2]);
@@ -144,10 +144,10 @@ class BvhTreeNode {
       this._leftNode = new BvhTreeNode(min, max);
     }
 
-    if (rtFaces.length > 0) {
+    if (rightSubFaces.length > 0) {
       const min = glm.vec3.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
       const max = glm.vec3.fromValues(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
-      rtFaces.forEach((f) => {
+      rightSubFaces.forEach((f) => {
         min[0] = Math.min(min[0], f.min[0]);
         min[1] = Math.min(min[1], f.min[1]);
         min[2] = Math.min(min[2], f.min[2]);
@@ -160,10 +160,10 @@ class BvhTreeNode {
     }
 
     if (this._leftNode) {
-      this._leftNode.subDivide(ltFaces);
+      this._leftNode.subDivide(leftSubFaces);
     }
     if (this._rightNode) {
-      this._rightNode.subDivide(rtFaces);
+      this._rightNode.subDivide(rightSubFaces);
     }
   }
 
@@ -172,38 +172,42 @@ class BvhTreeNode {
 
     if (this._leftNode) {
       this._leftNode.render(renderer, [0, 0.5, 0]);
-      renderer.pushLine(
-        [ this._max[0] + 0.1, this._max[1] + 0.1, this._max[2] + 0.1 ],
-        [ this._leftNode._max[0] + 0.1, this._leftNode._max[1] + 0.1, this._leftNode._max[2] + 0.1 ],
-        [1,0,1]
-      );
+
+      // render the "link" to the child node (purple)
+      const pointA: glm.ReadonlyVec3 = [ this._max[0] + 0.1, this._max[1] + 0.1, this._max[2] + 0.1 ];
+      const pointB: glm.ReadonlyVec3 = [ this._leftNode._max[0] + 0.1, this._leftNode._max[1] + 0.1, this._leftNode._max[2] + 0.1 ];
+      // renderer.pushLine(pointA, pointB, [1,0,1]);
+      renderer.push3dLine(pointA, pointB, 0.2, 0.0, [1,0,1], [1,0,1]);
     }
 
     if (this._rightNode) {
       this._rightNode.render(renderer, [0, 0, 0.5]);
-      renderer.pushLine(
-        [ this._max[0] + 0.1, this._max[1] + 0.1, this._max[2] + 0.1 ],
-        [ this._rightNode._max[0] + 0.1, this._rightNode._max[1] + 0.1, this._rightNode._max[2] + 0.1 ],
-        [1,0,1]
-      );
+
+      // render the "link" to the child node (purple)
+      const pointA: glm.ReadonlyVec3 = [ this._max[0] + 0.1, this._max[1] + 0.1, this._max[2] + 0.1 ];
+      const pointB: glm.ReadonlyVec3 = [ this._rightNode._max[0] + 0.1, this._rightNode._max[1] + 0.1, this._rightNode._max[2] + 0.1 ];
+      // renderer.pushLine(pointA, pointB, [1,0,1]);
+      renderer.push3dLine(pointA, pointB, 0.2, 0.0, [1,0,1], [1,0,1]);
     }
 
     if (this._leftLeaf) {
       _renderAABB(renderer, this._leftLeaf.min, this._leftLeaf.max, [0.5,0.5,0]);
-      renderer.pushLine(
-        [ this._max[0] + 0.1, this._max[1] + 0.1, this._max[2] + 0.1 ],
-        [ this._leftLeaf.max[0] + 0.1, this._leftLeaf.max[1] + 0.1, this._leftLeaf.max[2] + 0.1 ],
-        [1,0,0]
-      );
+
+      // render the "link" to the leaf (red)
+      const pointA: glm.ReadonlyVec3 = [ this._max[0] + 0.1, this._max[1] + 0.1, this._max[2] + 0.1 ];
+      const pointB: glm.ReadonlyVec3 = [ this._leftLeaf.max[0] + 0.1, this._leftLeaf.max[1] + 0.1, this._leftLeaf.max[2] + 0.1 ];
+      // renderer.pushLine(pointA, pointB, [1,0,0]);
+      renderer.push3dLine(pointA, pointB, 0.2, 0.0, [1,0,0], [1,0,0]);
     }
 
     if (this._rightLeaf) {
       _renderAABB(renderer, this._rightLeaf.min, this._rightLeaf.max, [0.5,0.5,0]);
-      renderer.pushLine(
-        [ this._max[0] + 0.1, this._max[1] + 0.1, this._max[2] + 0.1 ],
-        [ this._rightLeaf.max[0] + 0.1, this._rightLeaf.max[1] + 0.1, this._rightLeaf.max[2] + 0.1 ],
-        [1,0,0]
-      );
+
+      // render the "link" to the leaf (red)
+      const pointA: glm.ReadonlyVec3 = [ this._max[0] + 0.1, this._max[1] + 0.1, this._max[2] + 0.1 ]
+      const pointB: glm.ReadonlyVec3 = [ this._rightLeaf.max[0] + 0.1, this._rightLeaf.max[1] + 0.1, this._rightLeaf.max[2] + 0.1 ]
+      // renderer.pushLine(pointA, pointB, [1,0,0]);
+      renderer.push3dLine(pointA, pointB, 0.2, 0.0, [1,0,0], [1,0,0]);
     }
 
   }
@@ -345,18 +349,13 @@ export class BvhTree {
     this._rootNode = BvhTreeNode.buildBvhGraph(min, max, this._allShapes);
   }
 
-
-  // fillDataTexture(): [number, number, number, number][] {
   fillDataTexture(
     dataTexture: {
       push(r: number, g: number, b: number, a: number,): void;
     }
   ): void {
 
-    // const pixels: [number, number, number, number][] = [];
-
     if (!this._rootNode) {
-      // return pixels;
       return;
     }
 
@@ -400,15 +399,9 @@ export class BvhTree {
       );
 
     }
-
-    //
-
-    // return pixels;
   }
 
-  renderDebugWireframe(
-    renderer: IStackRenderer,
-  ) {
+  renderDebugWireframe(renderer: IStackRenderer) {
 
     if (!this._rootNode) {
       return;
