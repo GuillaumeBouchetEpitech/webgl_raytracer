@@ -30,15 +30,17 @@ const _renderAABB = (
   color: glm.ReadonlyVec3,
 ) => {
 
+  const padding = 0.05;
+
   const vertices: ReadonlyArray<glm.ReadonlyVec3> = [
-    [min[0]-0.1, min[1]-0.1, min[2]-0.1],
-    [max[0]+0.1, min[1]-0.1, min[2]-0.1],
-    [min[0]-0.1, max[1]+0.1, min[2]-0.1],
-    [max[0]+0.1, max[1]+0.1, min[2]-0.1],
-    [min[0]-0.1, min[1]-0.1, max[2]+0.1],
-    [max[0]+0.1, min[1]-0.1, max[2]+0.1],
-    [min[0]-0.1, max[1]+0.1, max[2]+0.1],
-    [max[0]+0.1, max[1]+0.1, max[2]+0.1],
+    [min[0]-padding, min[1]-padding, min[2]-padding],
+    [max[0]+padding, min[1]-padding, min[2]-padding],
+    [min[0]-padding, max[1]+padding, min[2]-padding],
+    [max[0]+padding, max[1]+padding, min[2]-padding],
+    [min[0]-padding, min[1]-padding, max[2]+padding],
+    [max[0]+padding, min[1]-padding, max[2]+padding],
+    [min[0]-padding, max[1]+padding, max[2]+padding],
+    [max[0]+padding, max[1]+padding, max[2]+padding],
   ];
 
   const indices: ReadonlyArray<glm.ReadonlyVec2> = [
@@ -229,9 +231,9 @@ export class BvhTree {
   }
 
   synchronize(
-    allSpheres: IInternalSphere[],
-    allBoxes: IInternalBox[],
-    allTriangles: IInternalTriangle[],
+    allSpheres: ReadonlyArray<IInternalSphere>,
+    allBoxes: ReadonlyArray<IInternalBox>,
+    allTriangles: ReadonlyArray<IInternalTriangle>,
   ) {
 
     this.reset();

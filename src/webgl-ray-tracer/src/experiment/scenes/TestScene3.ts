@@ -464,7 +464,7 @@ export class TestScene3 {
 
       {
 
-        renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+        renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
           materialAlias: 666,
           color: [1, 1, 0],
           reflectionFactor: 0,
@@ -475,7 +475,7 @@ export class TestScene3 {
         });
 
         // graphical presentation of the spot lights
-        renderer.rayTracerRenderer.rayTracerPass.pushSphere({
+        renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushSphere({
           position: g_lightPos,
           orientation: glm.quat.identity(glm.quat.create()),
           radius: 0.06125,
@@ -483,7 +483,7 @@ export class TestScene3 {
         });
 
         // actual spot lights
-        renderer.rayTracerRenderer.rayTracerPass.pushSpotLight({
+        renderer.rayTracerRenderer.rayTracerPass.spotLightsManager.pushSpotLight({
           position: g_lightPos,
           intensity: 1,
           radius: 15
@@ -522,7 +522,7 @@ export class TestScene3 {
           indices.push([0,4,1]);
 
           const materialAlias_lightCoverTriangle = 6000;
-          renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: materialAlias_lightCoverTriangle,
               color: [0.5, 0.0, 0.5],
               reflectionFactor: 0.0,
@@ -534,7 +534,7 @@ export class TestScene3 {
 
           indices.forEach(([idx0, idx1, idx2]) => {
 
-            renderer.rayTracerRenderer.rayTracerPass.pushTriangle({
+            renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushTriangle({
               v0: coverVertices[idx0],
               v1: coverVertices[idx1],
               v2: coverVertices[idx2],
@@ -547,7 +547,7 @@ export class TestScene3 {
         { // debug refractive planes
 
           const materialAlias_refractive1 = 1001;
-          renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: materialAlias_refractive1,
             color: [1.0,1.0,0.0],
             reflectionFactor: 0.0,
@@ -557,7 +557,7 @@ export class TestScene3 {
             // chessboardEnabled: 0,
           });
 
-          renderer.rayTracerRenderer.rayTracerPass.pushBox({
+          renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushBox({
             position: [-9,2,2],
             orientation: glm.quat.identity(glm.quat.create()),
             boxSize: [0.05, 0.5, 1.5],
@@ -565,7 +565,7 @@ export class TestScene3 {
           });
 
           const materialAlias_refractive2 = 1002;
-          renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: materialAlias_refractive2,
             color: [0.0,1.0,0.0],
             reflectionFactor: 0.0,
@@ -574,7 +574,7 @@ export class TestScene3 {
             receiveLightEnabled: true,
             // chessboardEnabled: 0,
           });
-          renderer.rayTracerRenderer.rayTracerPass.pushBox({
+          renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushBox({
             position: [-9.2,2,2],
             orientation: glm.quat.identity(glm.quat.create()),
             boxSize: [0.05, 1.5, 0.5],
@@ -588,7 +588,7 @@ export class TestScene3 {
       {
 
         // // graphical presentation of the spot lights
-        // renderer.rayTracerRenderer.rayTracerPass.pushSphere({
+        // renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushSphere({
         //   position: g_refractivePos,
         //   orientation: glm.quat.identity(glm.quat.create()),
         //   radius: 1.0,
@@ -623,7 +623,7 @@ export class TestScene3 {
         let materialAlias_generic = 2001 + index;
 
         if (currBox.chessboardMaterial === 0) {
-          renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: materialAlias_generic,
             color: currBox.color,
             refractionFactor: currBox.refractionFactor,
@@ -636,7 +636,7 @@ export class TestScene3 {
         }
         else
         {
-          renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: 3001 + index * 2 + 0,
             color: currBox.color,
             // refractionFactor: currBox.refractionFactor,
@@ -646,7 +646,7 @@ export class TestScene3 {
             receiveLightEnabled: currBox.receiveLightEnabled,
             castShadowEnabled: currBox.castShadowEnabled,
           });
-          renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: 3001 + index * 2 + 1,
             color: [0,0,0],
             refractionFactor: 0,
@@ -654,7 +654,7 @@ export class TestScene3 {
             receiveLightEnabled: true,
             castShadowEnabled: true,
           });
-          renderer.rayTracerRenderer.rayTracerPass.pushChessboardMaterial({
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushChessboardMaterial({
             materialAlias: materialAlias_generic,
             castShadowEnabled: true,
             materialAliasA: 3001 + index * 2 + 0,
@@ -663,7 +663,7 @@ export class TestScene3 {
         }
 
         // floor
-        renderer.rayTracerRenderer.rayTracerPass.pushBox({
+        renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushBox({
           position: position,
           orientation: rotation,
           boxSize: currBox.boxSize,
@@ -694,7 +694,7 @@ export class TestScene3 {
           currColorMask[1] = system.math.lerp(shapeCoef2, 0, 0);
           currColorMask[2] = system.math.lerp(shapeCoef2, 1, 1);
 
-          // renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+          // renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
           //   materialAlias: 667,
           //   color: [1, 0, 1],
           //   reflectionFactor: 0.0,
@@ -713,7 +713,7 @@ export class TestScene3 {
           //   // ]
           // });
 
-          renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: 1111,
             color: [currColorMask[0], currColorMask[1], currColorMask[2]],
             reflectionFactor: 0.0,
@@ -723,7 +723,7 @@ export class TestScene3 {
             receiveLightEnabled: true,
             castShadowEnabled: true,
           });
-          renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: 1112,
             color: [1, 1, 1],
             reflectionFactor: 0.0,
@@ -731,7 +731,7 @@ export class TestScene3 {
             receiveLightEnabled: true,
             castShadowEnabled: true,
           });
-          renderer.rayTracerRenderer.rayTracerPass.pushChessboardMaterial({
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushChessboardMaterial({
             materialAlias: 1113,
             castShadowEnabled: true,
             materialAliasA: 1111,
@@ -745,7 +745,7 @@ export class TestScene3 {
 
           // PURPLE SPHERE HERE
           // -> sphere with transparent chessboard material
-          renderer.rayTracerRenderer.rayTracerPass.pushSphere({
+          renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushSphere({
             position: position,
             orientation: rotation,
             radius: 1.0,
@@ -755,7 +755,7 @@ export class TestScene3 {
 
 
           // graphical presentation of the spot lights
-          renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: 668,
             // color: [blinkColor, blinkColor, 0],
             color: [blinkColor*currColorMask[0], blinkColor*currColorMask[1], blinkColor*currColorMask[2]],
@@ -764,7 +764,7 @@ export class TestScene3 {
             receiveLightEnabled: false,
             castShadowEnabled: false
           });
-          renderer.rayTracerRenderer.rayTracerPass.pushSphere({
+          renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushSphere({
             position: position,
             orientation: rotation,
             // radius: 0.899,
@@ -774,7 +774,7 @@ export class TestScene3 {
           });
 
           // actual spot light inside the sphere
-          renderer.rayTracerRenderer.rayTracerPass.pushSpotLight({
+          renderer.rayTracerRenderer.rayTracerPass.spotLightsManager.pushSpotLight({
             position: position,
             intensity: 0.1 + 3.9 * lightCoef,
             radius: 10,
@@ -783,7 +783,7 @@ export class TestScene3 {
         } else {
 
           // refractive and reflective sphere
-          renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: 669,
             color: [1, 1, 1],
             reflectionFactor: 0.8,
@@ -791,7 +791,7 @@ export class TestScene3 {
             receiveLightEnabled: true,
             castShadowEnabled: true
           });
-          renderer.rayTracerRenderer.rayTracerPass.pushSphere({
+          renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushSphere({
             position: position,
             orientation: rotation,
             radius: 1.5,
@@ -806,7 +806,7 @@ export class TestScene3 {
       /**/
       // background reflective blue sphere
 
-      renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+      renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
         materialAlias: 888,
         color: [0, 0, 1],
         reflectionFactor: 0.8,
@@ -816,7 +816,7 @@ export class TestScene3 {
         castShadowEnabled: true
       });
 
-      renderer.rayTracerRenderer.rayTracerPass.pushSphere({
+      renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushSphere({
         position: [-5, 0, -7],
         orientation: glm.quat.identity(glm.quat.create()),
         radius: 5,
@@ -829,7 +829,7 @@ export class TestScene3 {
 
       //     meshTriangles.forEach((vertices) => {
 
-      //       renderer.rayTracerRenderer.rayTracerPass.pushTriangle({
+      //       renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushTriangle({
       //         v0: vertices[0],
       //         v1: vertices[1],
       //         v2: vertices[2],
@@ -856,7 +856,7 @@ export class TestScene3 {
 
         // simple reflective triangle
         const materialAlias_heartTriangle = 4000;
-        renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+        renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
           materialAlias: materialAlias_heartTriangle,
           color: [1.0, 0.5, 0.5],
           reflectionFactor: 0.0,
@@ -865,19 +865,19 @@ export class TestScene3 {
           castShadowEnabled: true,
           // chessboardEnabled: 0,
         });
-        renderer.rayTracerRenderer.rayTracerPass.pushTriangle({
+        renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushTriangle({
           v0: vertices[0],
           v1: vertices[1],
           v2: vertices[2],
           materialAlias: materialAlias_heartTriangle,
         });
-        renderer.rayTracerRenderer.rayTracerPass.pushTriangle({
+        renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushTriangle({
           v0: vertices[0],
           v1: vertices[4],
           v2: vertices[3],
           materialAlias: materialAlias_heartTriangle,
         });
-        renderer.rayTracerRenderer.rayTracerPass.pushTriangle({
+        renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushTriangle({
           v0: vertices[2],
           v1: vertices[5],
           v2: vertices[4],
@@ -893,7 +893,7 @@ export class TestScene3 {
         allPos.push([-10, -1+0.5, +2+ 2]);
 
         const materialAlias_wallBoxes = 5000;
-        renderer.rayTracerRenderer.rayTracerPass.pushBasicMaterial({
+        renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
           materialAlias: materialAlias_wallBoxes,
             color: [1.0,0.5,0.5],
             reflectionFactor: 0.0,
@@ -904,7 +904,7 @@ export class TestScene3 {
         });
 
         for (const currPos of allPos) {
-          renderer.rayTracerRenderer.rayTracerPass.pushBox({
+          renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushBox({
             position: currPos,
             orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),
             boxSize: [0.05, 0.25, 0.25],
@@ -1004,7 +1004,7 @@ export class TestScene3 {
           }
 
 
-          renderer.rayTracerRenderer.rayTracerPass.pushTriangle({
+          renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushTriangle({
             v0: v1ex,
             v1: v12,
             v2: v31,
@@ -1013,7 +1013,7 @@ export class TestScene3 {
             receiveLightEnabled: true,
             castShadowEnabled: true
           });
-          renderer.rayTracerRenderer.rayTracerPass.pushTriangle({
+          renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushTriangle({
             v0: v2ex,
             v1: v12,
             v2: v23,
@@ -1022,7 +1022,7 @@ export class TestScene3 {
             receiveLightEnabled: true,
             castShadowEnabled: true
           });
-          renderer.rayTracerRenderer.rayTracerPass.pushTriangle({
+          renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushTriangle({
             v0: v3ex,
             v1: v31,
             v2: v23,
@@ -1046,7 +1046,7 @@ export class TestScene3 {
       //*/
 
       // // refractive blue box
-      // renderer.rayTracerRenderer.rayTracerPass.pushBox({
+      // renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushBox({
       //   position: [-5, 2, +7],
       //   // orientation: glm.quat.identity(glm.quat.create()),
       //   orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),

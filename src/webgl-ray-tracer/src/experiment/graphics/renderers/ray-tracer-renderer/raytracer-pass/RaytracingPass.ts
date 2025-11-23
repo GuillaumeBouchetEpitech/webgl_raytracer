@@ -6,16 +6,17 @@ import rayTracerVertex from './shaders/ray-tracer.glsl.vert';
 // @ts-ignore
 import rayTracerFragment from './shaders/ray-tracer.glsl.frag';
 
-import * as allInterfaces from './all-interfaces';
-
 import * as glm from 'gl-matrix';
 
 import { BvhTree } from './internals/BvhTree';
 import { GpuDataTexture } from './internals/GpuDataTexture';
 
+import { IMaterialsManager, MaterialsManager } from './internals/MaterialsManager';
+import { ISpotLightsManager, SpotLightsManager } from './internals/SpotLightsManager';
+import { IShapesManager, ShapesManager } from './internals/ShapesManager';
+
 const {
   WebGLContext,
-  DataTextureVec4f32,
   ShaderProgram,
   GeometryWrapper
 } = graphics.webgl2;
@@ -67,14 +68,9 @@ export interface IStackRenderer {
 
 export interface IRayTracerPass {
 
-  pushBasicMaterial(params: allInterfaces.IPublicBasicMaterial): void;
-  pushChessboardMaterial(params: allInterfaces.IPublicChessboardMaterial): void;
-
-  pushSphere(params: allInterfaces.IPublicSphere): void;
-  pushBox(params: allInterfaces.IPublicBox): void;
-  pushTriangle(params: allInterfaces.IPublicTriangle): void;
-
-  pushSpotLight({ position, intensity, radius }: allInterfaces.ISpotLight): void;
+  // pushSphere(params: allInterfaces.IPublicSphere): void;
+  // pushBox(params: allInterfaces.IPublicBox): void;
+  // pushTriangle(params: allInterfaces.IPublicTriangle): void;
 
   lookAt(
     eye: glm.ReadonlyVec3,
@@ -93,15 +89,10 @@ export interface IRayTracerPass {
   renderWidth: number;
   renderHeight: number;
 
-  basicMaterials: ReadonlyArray<allInterfaces.IInternalBasicMaterial>;
-  spheres: ReadonlyArray<allInterfaces.IInternalSphere>;
-  boxes: ReadonlyArray<allInterfaces.IInternalBox>;
-  triangles: ReadonlyArray<allInterfaces.IInternalTriangle>;
-  spotLights: ReadonlyArray<allInterfaces.ISpotLight>;
+  materialsManager: Readonly<IMaterialsManager>;
+  shapesManager: Readonly<IShapesManager>;
+  spotLightsManager: Readonly<ISpotLightsManager>;
 };
-
-
-
 
 export class RayTracerPass implements IRayTracerPass {
   private _cameraFovy: number;
@@ -113,19 +104,9 @@ export class RayTracerPass implements IRayTracerPass {
 
   private _rayTracerGeometry: graphics.webgl2.GeometryWrapper.Geometry;
 
-  private _sceneDataTexture: GpuDataTexture;
-  private _spheres: allInterfaces.IInternalSphere[] = [];
-  private _boxes: allInterfaces.IInternalBox[] = [];
-  private _triangles: allInterfaces.IInternalTriangle[] = [];
-
-  private _basicMaterialsPerAliases = new Map<number, allInterfaces.IInternalBasicMaterial>();
-  private _allBasicMaterials: allInterfaces.IInternalBasicMaterial[] = []
-  private _chessboardMaterialsPerAliases = new Map<number, allInterfaces.IInternalChessboardMaterial>();
-  private _allChessboardMaterials: allInterfaces.IInternalChessboardMaterial[] = []
-  private _materialsDataTexture: GpuDataTexture;
-
-  private _lightsDataTexture: GpuDataTexture;
-  private _spotLights: allInterfaces.ISpotLight[] = [];
+  private _materialsManager = new MaterialsManager('u_materialsTextureData');
+  private _shapesManager: ShapesManager;
+  private _spotLightsManager = new SpotLightsManager("u_lightsTextureData", "u_lightsTextureSize");
 
   private _bvhDataTexture: GpuDataTexture;
   private _bvhTree = new BvhTree();
@@ -195,13 +176,9 @@ export class RayTracerPass implements IRayTracerPass {
     //
     //
 
-    this._sceneDataTexture = new GpuDataTexture('u_sceneTextureData', 'u_sceneTextureSize');
-    this._materialsDataTexture = new GpuDataTexture('u_materialsTextureData');
-    this._lightsDataTexture = new GpuDataTexture("u_lightsTextureData", "u_lightsTextureSize");
+    this._shapesManager = new ShapesManager(this._materialsManager, 'u_sceneTextureData', 'u_sceneTextureSize');
 
 
-    // this._bvhDataTexture = new DataTextureVec4f32();
-    // this._bvhDataTexture.initialize(2048);
     this._bvhDataTexture = new GpuDataTexture("u_bvhDataTexture");
 
 
@@ -210,129 +187,6 @@ export class RayTracerPass implements IRayTracerPass {
       target: glm.vec3.fromValues(1.5, 1.5, 1.5),
       up: glm.vec3.fromValues(0, 1, 0)
     };
-  }
-
-  pushBasicMaterial(params: allInterfaces.IPublicBasicMaterial): void {
-
-    if (this._basicMaterialsPerAliases.has(params.materialAlias)) {
-      throw new Error(`duplicated basic material alias -> "${params.materialAlias}"`);
-    }
-    if (params.reflectionFactor < 0 || params.reflectionFactor > 1) {
-      throw new Error('invalid sphere reflection');
-    }
-    if (params.refractionFactor < 0 || params.refractionFactor > 1) {
-      throw new Error('invalid sphere refractionFactor');
-    }
-
-    const newMat: allInterfaces.IInternalBasicMaterial = { ...params, materialType: 0 };
-    this._allBasicMaterials.push(newMat);
-    this._basicMaterialsPerAliases.set(newMat.materialAlias, newMat);
-  }
-
-  pushChessboardMaterial(params: allInterfaces.IPublicChessboardMaterial): void {
-
-    if (this._chessboardMaterialsPerAliases.has(params.materialAlias)) {
-      throw new Error(`duplicated chessboard material alias -> "${params.materialAlias}"`);
-    }
-    if (!this._basicMaterialsPerAliases.has(params.materialAliasA)) {
-      throw new Error(`missing material alias A -> "${params.materialAliasA}"`);
-    }
-    if (!this._basicMaterialsPerAliases.has(params.materialAliasB)) {
-      throw new Error(`missing material alias B -> "${params.materialAliasB}"`);
-    }
-
-    const newMat: allInterfaces.IInternalChessboardMaterial = { ...params, materialType: 0 };
-    this._allChessboardMaterials.push(newMat);
-    this._chessboardMaterialsPerAliases.set(newMat.materialAlias, newMat);
-  }
-
-  pushSphere({
-    position,
-    orientation,
-    radius,
-    materialAlias,
-  }: allInterfaces.IPublicSphere): void {
-    if (radius <= 0) {
-      throw new Error('invalid sphere radius');
-    }
-
-    if (
-      !this._basicMaterialsPerAliases.has(materialAlias) &&
-      !this._chessboardMaterialsPerAliases.has(materialAlias)
-    ) {
-      throw new Error(`not found material alias -> "${materialAlias}"`);
-    }
-
-    this._spheres.push({
-      position: [position[0], position[1], position[2]],
-      orientation: [orientation[0], orientation[1], orientation[2], orientation[3]],
-      radius,
-      materialAlias,
-    });
-  }
-
-  pushBox({
-    position,
-    orientation,
-    boxSize,
-    materialAlias,
-  }: allInterfaces.IPublicBox): void {
-    if (boxSize[0] <= 0 || boxSize[1] <= 0 || boxSize[2] <= 0) {
-      throw new Error('invalid box size');
-    }
-
-    if (
-      !this._basicMaterialsPerAliases.has(materialAlias) &&
-      !this._chessboardMaterialsPerAliases.has(materialAlias)
-    ) {
-      throw new Error(`not found material alias -> "${materialAlias}"`);
-    }
-
-    this._boxes.push({
-      position: [position[0], position[1], position[2]],
-      orientation: [orientation[0], orientation[1], orientation[2], orientation[3]],
-      boxSize: glm.vec3.clone(boxSize),
-      materialAlias,
-    });
-  }
-
-  pushTriangle({
-    v0,
-    v1,
-    v2,
-    materialAlias,
-  }: allInterfaces.IPublicTriangle) {
-
-    if (
-      !this._basicMaterialsPerAliases.has(materialAlias) &&
-      !this._chessboardMaterialsPerAliases.has(materialAlias)
-    ) {
-      throw new Error(`not found material alias -> "${materialAlias}"`);
-    }
-
-    this._triangles.push({
-      v0: glm.vec3.clone(v0),
-      v1: glm.vec3.clone(v1),
-      v2: glm.vec3.clone(v2),
-      materialAlias,
-    });
-  }
-
-  pushSpotLight({ position, intensity, radius }: allInterfaces.ISpotLight): void {
-    // add spot light
-
-    if (intensity <= 0) {
-      throw new Error('intensity cannot be <= 0');
-    }
-    if (radius <= 0) {
-      throw new Error('radius cannot be <= 0');
-    }
-
-    this._spotLights.push({
-      position: glm.vec3.clone(position),
-      intensity,
-      radius
-    });
   }
 
   lookAt(
@@ -365,208 +219,13 @@ export class RayTracerPass implements IRayTracerPass {
     const farCorners = this._computeCameraFarCornersBufferGeometry();
     this._rayTracerGeometry.allocateBuffer(1, farCorners, farCorners.length);
 
-    this._sceneDataTexture.clear();
-    this._materialsDataTexture.clear();
-    this._lightsDataTexture.clear();
     this._bvhDataTexture.clear();
 
-    {
-      // scene data
+    this._materialsManager.prepareBuffer();
+    this._shapesManager.prepareBuffer();
+    this._spotLightsManager.prepareBuffer();
 
-      let currIndex = 0;
-
-      const matAliasToIndex = new Map<number, number>();
-      this._allBasicMaterials.forEach((currMat) => {
-
-        matAliasToIndex.set(currMat.materialAlias, currIndex);
-        currIndex += 1;
-
-        const matType = 0;
-
-        this._materialsDataTexture.push(
-          matType + 0.5, // [0] R
-          (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
-          currMat.reflectionFactor, // [2] B
-          currMat.refractionFactor, // [3] A
-        );
-        this._materialsDataTexture.push(
-          currMat.receiveLightEnabled ? 1 : 0, // [4] R
-          currMat.color[0], // [5] G
-          currMat.color[1], // [6] B
-          currMat.color[2], // [7] A
-        );
-
-      });
-
-      this._allChessboardMaterials.forEach((currMat) => {
-
-        matAliasToIndex.set(currMat.materialAlias, currIndex);
-        currIndex += 1;
-
-        const subMatIndexA = matAliasToIndex.get(currMat.materialAliasA);
-        const subMatIndexB = matAliasToIndex.get(currMat.materialAliasB);
-
-        if (subMatIndexA === undefined || subMatIndexB === undefined) {
-          throw new Error("chessboard material, associated basic material not found");
-        }
-
-        const matType = 1;
-
-        this._materialsDataTexture.push(
-          matType + 0.5, // [0] R
-          (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
-          subMatIndexA + 0.5, // [2] B
-          subMatIndexB + 0.5, // [3] A
-        );
-        this._materialsDataTexture.push(
-          currMat.chessboardArgs ? currMat.chessboardArgs[0] : 1.0, // [4] R
-          currMat.chessboardArgs ? currMat.chessboardArgs[1] : 1.0, // [5] G
-          currMat.chessboardArgs ? currMat.chessboardArgs[2] : 1.0, // [6] B
-          0, // [7] A
-        );
-
-      });
-
-      {
-        {
-          // spheres
-
-          for (const sphere of this._spheres) {
-            // add sphere
-
-            const currMatIndex = matAliasToIndex.get(sphere.materialAlias);
-            if (currMatIndex === undefined) {
-              throw new Error(`sphere materialAlias not found ${sphere.materialAlias}`);
-            }
-
-            const shapeType = 1;
-
-            this._sceneDataTexture.push(
-              shapeType + 0.5, // [0] R
-              currMatIndex + 0.5, // [1] G
-              sphere.position[0], // [2] B
-              sphere.position[1], // [3] A
-            );
-            this._sceneDataTexture.push(
-              sphere.position[2], // [4] R
-              sphere.orientation[0], // [5] G
-              sphere.orientation[1], // [6] B
-              sphere.orientation[2], // [7] A
-            );
-            this._sceneDataTexture.push(
-              sphere.orientation[3], // [8] R
-              sphere.radius, // [9] G
-              0,
-              0,
-            );
-
-          }
-
-        } // spheres
-
-        {
-          // boxes
-
-          for (const box of this._boxes) {
-            // add box
-
-            const currMatIndex = matAliasToIndex.get(box.materialAlias);
-            if (currMatIndex === undefined) {
-              throw new Error(`box materialAlias not found ${box.materialAlias}`);
-            }
-
-            const shapeType = 2;
-
-            this._sceneDataTexture.push(
-              shapeType + 0.5,
-              currMatIndex + 0.5, // [10]
-              box.position[0], // [0]
-              box.position[1], // [1]
-            );
-            this._sceneDataTexture.push(
-              box.position[2], // [2]
-              box.orientation[0], // [3]
-              box.orientation[1], // [4]
-              box.orientation[2], // [5]
-            );
-            this._sceneDataTexture.push(
-              box.orientation[3], // [6]
-              box.boxSize[0], // [7]
-              box.boxSize[1], // [8]
-              box.boxSize[2], // [9]
-            );
-
-          }
-
-        } // boxes
-
-        {
-          // triangles
-
-          for (const triangle of this._triangles) {
-            // add triangle
-
-            const currMatIndex = matAliasToIndex.get(triangle.materialAlias);
-            if (currMatIndex === undefined) {
-              throw new Error(`triangle materialAlias not found ${triangle.materialAlias}`);
-            }
-
-            const shapeType = 3;
-
-            this._sceneDataTexture.push(
-              shapeType + 0.5,
-              currMatIndex + 0.5, // [0]
-              triangle.v0[0], // [1]
-              triangle.v0[1], // [2]
-            );
-            this._sceneDataTexture.push(
-              triangle.v0[2], // [3]
-              triangle.v1[0], // [4]
-              triangle.v1[1], // [5]
-              triangle.v1[2], // [6]
-            );
-            this._sceneDataTexture.push(
-              triangle.v2[0], // [7]
-              triangle.v2[1], // [8]
-              triangle.v2[2], // [9]
-              0,
-            );
-
-          }
-
-        } // triangles
-      }
-
-    } // scene data
-
-    {
-      // lights data
-
-      {
-        // spot lights
-
-        for (const spotLight of this._spotLights) {
-          // add spot light
-
-          this._lightsDataTexture.push(
-            spotLight.position[0],
-            spotLight.position[1],
-            spotLight.position[2],
-            spotLight.radius,
-          );
-          this._lightsDataTexture.push(
-            spotLight.intensity,
-            0,
-            0,
-            0,
-          );
-        }
-
-      } // spot lights
-
-    } // lights data
-
-    this._bvhTree.synchronize(this._spheres, this._boxes, this._triangles);
+    this._bvhTree.synchronize(this._shapesManager.spheres, this._shapesManager.boxes, this._shapesManager.triangles);
 
     this._bvhTree.fillDataTexture(this._bvhDataTexture);
 
@@ -595,24 +254,24 @@ export class RayTracerPass implements IRayTracerPass {
         {
           const textureUnit = 0;
           gl.activeTexture(gl.TEXTURE0 + textureUnit);
-          this._sceneDataTexture.syncGpuDataLength(boundShader);
-          this._sceneDataTexture.syncGpuData();
-          this._sceneDataTexture.setForShader(boundShader, textureUnit);
+          this._shapesManager.dataTexture.syncGpuDataLength(boundShader);
+          this._shapesManager.dataTexture.syncGpuData();
+          this._shapesManager.dataTexture.setForShader(boundShader, textureUnit);
         }
 
         {
           const textureUnit = 7;
           gl.activeTexture(gl.TEXTURE0 + textureUnit);
-          this._materialsDataTexture.syncGpuData();
-          this._materialsDataTexture.setForShader(boundShader, textureUnit);
+          this._materialsManager.dataTexture.syncGpuData();
+          this._materialsManager.dataTexture.setForShader(boundShader, textureUnit);
         }
 
         {
           const textureUnit = 1;
           gl.activeTexture(gl.TEXTURE0 + textureUnit);
-          this._lightsDataTexture.syncGpuDataLength(boundShader);
-          this._lightsDataTexture.syncGpuData();
-          this._lightsDataTexture.setForShader(boundShader, textureUnit);
+          this._spotLightsManager.dataTexture.syncGpuDataLength(boundShader);
+          this._spotLightsManager.dataTexture.syncGpuData();
+          this._spotLightsManager.dataTexture.setForShader(boundShader, textureUnit);
         }
 
         {
@@ -634,17 +293,9 @@ export class RayTracerPass implements IRayTracerPass {
 // #endregion RENDER
 
   reset(): void {
-    this._spotLights.length = 0;
-
-    this._chessboardMaterialsPerAliases.clear();
-    this._allBasicMaterials.length = 0;
-
-    this._basicMaterialsPerAliases.clear();
-    this._allChessboardMaterials.length = 0;
-
-    this._spheres.length = 0;
-    this._boxes.length = 0;
-    this._triangles.length = 0;
+    this._spotLightsManager.clear();
+    this._materialsManager.clear();
+    this._shapesManager.clear();
   }
 
   bvhRenderDebugWireframe(renderer: IStackRenderer) {
@@ -664,7 +315,32 @@ export class RayTracerPass implements IRayTracerPass {
     return [this._renderWidth, this._renderHeight];
   }
 
+  get renderWidth() {
+    return this._renderWidth;
+  }
+  get renderHeight() {
+    return this._renderHeight;
+  }
+
+  get camera(): Readonly<ICamera> {
+    return this._camera;
+  }
+
+  get materialsManager(): Readonly<IMaterialsManager> {
+    return this._materialsManager;
+  }
+
+  get shapesManager(): Readonly<IShapesManager> {
+    return this._shapesManager;
+  }
+
+  get spotLightsManager(): Readonly<ISpotLightsManager> {
+    return this._spotLightsManager;
+  }
+
+
   private _computeCameraFarCornersBufferGeometry(): ReadonlyArray<number> {
+
     const forwardDir = glm.vec3.sub(
       glm.vec3.create(),
       this._camera.target,
@@ -676,10 +352,13 @@ export class RayTracerPass implements IRayTracerPass {
       forwardDir,
       this._camera.up
     );
+
+    // must calculate the "camera up axis"
+    // -> since the value of "this._camera.up" is likely constant
     const upDir = glm.vec3.cross(glm.vec3.create(), leftDir, forwardDir);
 
-    const radHFovy = _degreeToRad(this._cameraFovy * 0.5);
-    const xLength = (Math.cos(radHFovy) * 1) / Math.sin(radHFovy);
+    const radHalfFovy = _degreeToRad(this._cameraFovy * 0.5);
+    const xLength = (Math.cos(radHalfFovy) * 1) / Math.sin(radHalfFovy);
 
     const scaledForwardDir = glm.vec3.multiply(
       glm.vec3.create(),
@@ -734,30 +413,4 @@ export class RayTracerPass implements IRayTracerPass {
     ];
   }
 
-  get renderWidth() {
-    return this._renderWidth;
-  }
-  get renderHeight() {
-    return this._renderHeight;
-  }
-
-  get camera(): Readonly<ICamera> {
-    return this._camera;
-  }
-
-  get basicMaterials(): ReadonlyArray<allInterfaces.IInternalBasicMaterial> {
-    return this._allBasicMaterials;
-  }
-  get spheres(): ReadonlyArray<allInterfaces.IInternalSphere> {
-    return this._spheres;
-  }
-  get boxes(): ReadonlyArray<allInterfaces.IInternalBox> {
-    return this._boxes;
-  }
-  get triangles(): ReadonlyArray<allInterfaces.IInternalTriangle> {
-    return this._triangles;
-  }
-  get spotLights(): ReadonlyArray<allInterfaces.ISpotLight> {
-    return this._spotLights;
-  }
 }
