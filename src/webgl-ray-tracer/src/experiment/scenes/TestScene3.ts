@@ -494,10 +494,10 @@ export class TestScene3 {
           const rotationCoef = system.math.easing.easeClamp(continuousTime * 0.125)
           const elevationCoef = system.math.easing.easePinPong(rotationCoef);
 
-          const elevation = 0.3 + 1 * elevationCoef;
+          const elevation = 0.15 + 1 * elevationCoef;
 
           const coverVertices: glm.vec3[] = [];
-          coverVertices.push([+0.0, elevation + 0.0, +0.0]);
+          coverVertices.push([+0.0, elevation + 0.2, +0.0]);
           coverVertices.push([+0.3, elevation - 0.6, +0.0]);
           coverVertices.push([+0.0, elevation - 0.6, +0.3]);
           coverVertices.push([-0.3, elevation - 0.6, -0.0]);
@@ -549,7 +549,7 @@ export class TestScene3 {
           const materialAlias_refractive1 = 1001;
           renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: materialAlias_refractive1,
-            color: [1.0,1.0,0.0],
+            color: [1.0,1.0,0.5],
             reflectionFactor: 0.0,
             refractionFactor: 0.8,
             castShadowEnabled: true,
@@ -567,7 +567,7 @@ export class TestScene3 {
           const materialAlias_refractive2 = 1002;
           renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: materialAlias_refractive2,
-            color: [0.0,1.0,0.0],
+            color: [0.5,1.0,0.5],
             reflectionFactor: 0.0,
             refractionFactor: 0.8,
             castShadowEnabled: true,

@@ -85,6 +85,10 @@ const onPageLoad = async () => {
       system.browser.GlobalVisibilityManager.deactivate();
     });
 
+    const playButton = _queryDomElement<HTMLButtonElement>('#play-button');
+    const pauseButton = _queryDomElement<HTMLButtonElement>('#pause-button');
+    const stopButton = _queryDomElement<HTMLButtonElement>('#stop-button');
+    const toggleHudButton = _queryDomElement<HTMLButtonElement>('#toggle-button');
     const perfAutoScaling = _queryDomElement<HTMLInputElement>(
       '#auto-scaling-enabled'
     );
@@ -112,6 +116,9 @@ const onPageLoad = async () => {
       errorText.style.display = 'block';
 
       // disable the user interface
+      playButton.disabled = true;
+      pauseButton.disabled = true;
+      stopButton.disabled = true;
       perfAutoScaling.disabled = true;
       resolution.min = resolution.max = resolution.value = 0 as unknown as string;
       anti_aliasing_enabled.disabled = true;
@@ -163,6 +170,35 @@ const onPageLoad = async () => {
       }
       resolution.value = mainDemo.getResolution() as unknown as string;
     })
+
+    playButton.addEventListener('click', () => {
+      if (!mainDemo) {
+        return;
+      }
+      mainDemo.setTimeRatio(1);
+      mainDemo.start();
+    });
+    pauseButton.addEventListener('click', () => {
+      if (!mainDemo) {
+        return;
+      }
+      mainDemo.setTimeRatio(0);
+      mainDemo.start();
+    });
+    stopButton.addEventListener('click', () => {
+      if (!mainDemo) {
+        return;
+      }
+      mainDemo.stop();
+    });
+    toggleHudButton.addEventListener('click', () => {
+      if (!mainDemo) {
+        return;
+      }
+      mainDemo.setHudVisibility(!mainDemo.getHudVisibility());
+    });
+
+    //refresh button?
 
     // performance auto-scaling
     perfAutoScaling.addEventListener('input', () => {

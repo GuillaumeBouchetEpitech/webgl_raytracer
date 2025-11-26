@@ -18,8 +18,6 @@ import * as scenes from './scenes/intex';
 
 import * as glm from 'gl-matrix';
 
-let g_frames_left = 3;
-
 const framerate = -1; // if negative -> use vsync (gpu expensive)
 // const framerate = 60; // if negative -> use vsync (gpu expensive)
 interface ExperimentDef {
@@ -38,6 +36,9 @@ export class Experiment {
   private _resolution: number = 9;
   private _onResolutionChange?: (() => void);
 
+  private _timeRatio: number = 1;
+  private _hudVisible: boolean = true;
+
   private _physicDebugModeEnabled: boolean = false;
   private _showBvhDebugModeEnabled: boolean = false;
 
@@ -47,7 +48,7 @@ export class Experiment {
 
   private _physicWorld?: physics.PhysicWorld;
 
-  private _running: boolean;
+  private _running: number = 0;
   private _errorGraphicContext: boolean;
 
   private _lastFrameTime: number = Date.now();
@@ -138,7 +139,7 @@ export class Experiment {
     //
     //
 
-    this._running = false;
+    this._running = 0;
     this._errorGraphicContext = false;
 
     // this._renderer.setOnContextLost(() => {
@@ -256,7 +257,7 @@ export class Experiment {
       return;
     }
 
-    this._running = true;
+    this._running = -1;
 
     this._tick();
   }
@@ -265,7 +266,7 @@ export class Experiment {
     if (!this.isRunning()) {
       return;
     }
-    this._running = false;
+    this._running = 0;
 
     if (framerate < 0) {
       window.cancelAnimationFrame(this._animationFrameHandle);
@@ -274,8 +275,42 @@ export class Experiment {
     }
   }
 
+  updateCanvasOnce() {
+    if (!this._physicWorld) {
+      return;
+    }
+    this._running = 2;
+    // this._mainLoop();
+    this._tick();
+
+    // this._scene.run(0.001, this._renderer, this._physicWorld);
+    // this._renderScene();
+    // this._renderHud();
+  }
+
   isRunning() {
-    return this._running && !this._errorGraphicContext;
+    return this._running !== 0 && !this.isCrashed();
+  }
+  isPaused() {
+    return this._running === 0 && !this.isCrashed();
+  }
+  isCrashed() {
+    return this._errorGraphicContext;
+  }
+
+  setTimeRatio(timeRatio: number): void {
+    this._timeRatio = system.math.clamp(timeRatio, 0, 4);
+  }
+
+  setHudVisibility(hudVisible: boolean) {
+    this._hudVisible = hudVisible;
+
+    if (this.isPaused()) {
+      this.updateCanvasOnce();
+    }
+  }
+  getHudVisibility() {
+    return this._hudVisible;
   }
 
   //
@@ -284,23 +319,27 @@ export class Experiment {
 
   private _tick() {
     const tick = () => {
-      if (!this._running || this._errorGraphicContext) {
+      if (!this.isRunning()) {
         return;
       }
 
       // plan the next frame
 
-      if (g_frames_left-- <= 0) {
-        // return;
+      if (this._running > 0) {
+        this._running -= 1;
       }
 
-      if (framerate < 0) {
-        this._animationFrameHandle = window.requestAnimationFrame(tick);
-      } else {
-        this._animationFrameHandle = window.setTimeout(tick, 1000 / framerate);
+      if (this._running !== 0) {
+
+        if (framerate < 0) {
+          this._animationFrameHandle = window.requestAnimationFrame(tick);
+        } else {
+          this._animationFrameHandle = window.setTimeout(tick, 1000 / framerate);
+        }
       }
 
       this._mainLoop();
+
     };
 
     tick();
@@ -322,7 +361,7 @@ export class Experiment {
     // this make sure the time sensitive logic isn't "jumping" in case of slow down
     const safeDelta = Math.min(deltaMsecTime, 100);
 
-    const deltaSecTime = safeDelta / 1000;
+    const deltaSecTime = (safeDelta / 1000);
 
     // this._continuousSecTime += deltaSecTime;
 
@@ -337,7 +376,7 @@ export class Experiment {
     // this._continuousSecTime += deltaSecTime;
 
     if (this._physicWorld) {
-      this._scene.run(deltaSecTime, this._renderer, this._physicWorld);
+      this._scene.run(deltaSecTime * this._timeRatio, this._renderer, this._physicWorld);
     }
 
     //
@@ -363,40 +402,43 @@ export class Experiment {
     //   this._renderer.mainHudCamera.getComposedMatrix()
     // );
 
-    {
-      const keyEventsPos: glm.ReadonlyVec2 = [7 + 20, 165];
-      const touchEventsPos: glm.ReadonlyVec2 = [7 + 20, 260];
-      const boardPos: glm.ReadonlyVec2 = [7, 35];
+    if (this._hudVisible) {
 
-      graphics.renderers.widgets.addKeyStrokesWidgets(
-        keyEventsPos,
+      {
+        const keyEventsPos: glm.ReadonlyVec2 = [7 + 20, 165];
+        const touchEventsPos: glm.ReadonlyVec2 = [7 + 20, 260];
+        const boardPos: glm.ReadonlyVec2 = [7, 35];
+
+        graphics.renderers.widgets.addKeyStrokesWidgets(
+          keyEventsPos,
+          this._renderer.stackRenderers,
+          this._renderer.textRenderer
+        );
+        graphics.renderers.widgets.addArrowStrokesWidgets(
+          touchEventsPos,
+          this._renderer.stackRenderers,
+          this._renderer.textRenderer
+        );
+        graphics.renderers.widgets.addKeysTouchesWidgets(
+          this._def.domElement,
+          boardPos,
+          this._renderer.stackRenderers,
+          this._renderer.textRenderer
+        );
+      }
+
+      graphics.renderers.widgets.renderFpsMeter(
+        [10, this._def.height - 60, 0],
+        [100, 50],
+        this._frameProfiler,
         this._renderer.stackRenderers,
-        this._renderer.textRenderer
+        this._renderer.textRenderer,
+        true
       );
-      graphics.renderers.widgets.addArrowStrokesWidgets(
-        touchEventsPos,
-        this._renderer.stackRenderers,
-        this._renderer.textRenderer
-      );
-      graphics.renderers.widgets.addKeysTouchesWidgets(
-        this._def.domElement,
-        boardPos,
-        this._renderer.stackRenderers,
-        this._renderer.textRenderer
-      );
+
+      this._renderer.flushHudWireFrame();
+      this._renderer.flushHudText();
     }
-
-    graphics.renderers.widgets.renderFpsMeter(
-      [10, this._def.height - 60, 0],
-      [100, 50],
-      this._frameProfiler,
-      this._renderer.stackRenderers,
-      this._renderer.textRenderer,
-      true
-    );
-
-    this._renderer.flushHudWireFrame();
-    this._renderer.flushHudText();
 
     this._renderer.rayTracerRenderer.rayTracerPass.reset();
   }
@@ -472,6 +514,10 @@ export class Experiment {
     const newValue = 10 - safeValue; // [1..10]
     const newCoef = 1 / newValue; // [0..1]
     this._renderer.rayTracerRenderer.setResolutionCoef(newCoef);
+
+    if (this.isPaused()) {
+      this.updateCanvasOnce();
+    }
   }
   getResolution(): number {
     return this._resolution;
@@ -482,9 +528,17 @@ export class Experiment {
 
   setPhysicDebugModeEnabled(isEnabled: boolean) {
     this._physicDebugModeEnabled = isEnabled;
+
+    if (this.isPaused()) {
+      this.updateCanvasOnce();
+    }
   }
   setShowBvhDebugModeEnabled(isEnabled: boolean) {
     this._showBvhDebugModeEnabled = isEnabled;
+
+    if (this.isPaused()) {
+      this.updateCanvasOnce();
+    }
   }
 
   setAntiAliasing(isEnabled: boolean) {
@@ -493,6 +547,10 @@ export class Experiment {
     this._def.logger.log(
       `Anti aliasing change: ${isEnabled === true ? 'enabled' : 'disabled'}`
     );
+
+    if (this.isPaused()) {
+      this.updateCanvasOnce();
+    }
   }
 
   logResolution() {
