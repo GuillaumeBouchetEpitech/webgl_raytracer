@@ -25,7 +25,7 @@ export interface IDefinition {
 
 export interface IPostProcessPass {
 
-  render(): void;
+  render(renderedWidth: number, renderedHeight: number): void;
   renderAsciiArt(): void;
 
   setAntiAliasing(enabled: boolean): void;
@@ -56,8 +56,15 @@ export class PostProcessPass implements IPostProcessPass {
     this._textureShaderProgram = new ShaderProgram('RayTracerRenderer-1', {
       vertexSrc: textureVertex,
       fragmentSrc: textureFragment,
-      attributes: ['a_vertexPosition', 'a_vertexTextureCoord'],
-      uniforms: ['u_texture', 'u_step']
+      attributes: [
+        'a_vertexPosition',
+        'a_vertexTextureCoord'
+      ],
+      uniforms: [
+        'u_texture',
+        'u_renderedSize',
+        'u_gridSize'
+      ]
     });
 
     this._asciiArtShaderProgram = new ShaderProgram('RayTracerRenderer-ascii-art', {
@@ -133,7 +140,7 @@ export class PostProcessPass implements IPostProcessPass {
     this._asciiArtScreenGeometry.setPrimitiveCount(4);
   }
 
-  render() {
+  render(renderedWidth: number, renderedHeight: number) {
     const gl = WebGLContext.getContext();
 
     gl.viewport(0, 0, this._width, this._height);
@@ -144,15 +151,14 @@ export class PostProcessPass implements IPostProcessPass {
     shader.bind((boundShader) => {
       boundShader.setTextureUniform('u_texture', this._finalTexture, 0);
 
+      boundShader.setFloat2Uniform('u_renderedSize', renderedWidth, renderedHeight);
+
       // anti aliasing setup
 
       if (this._antiAliasing) {
-        // const stepX = (1 - this._rayTracerPass.renderWidth / this._width) * 0.005;
-        // const stepY = (1 - this._rayTracerPass.renderHeight / this._height) * 0.005;
-
-        // boundShader.setFloat2Uniform('u_step', stepX, stepY);
+        boundShader.setFloat1Uniform('u_gridSize', 1);
       } else {
-        boundShader.setFloat2Uniform('u_step', 0, 0);
+        boundShader.setFloat1Uniform('u_gridSize', 0);
       }
 
       this._screenGeometry.render();

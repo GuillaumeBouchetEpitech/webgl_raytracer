@@ -376,7 +376,13 @@ export class Experiment {
     // this._continuousSecTime += deltaSecTime;
 
     if (this._physicWorld) {
-      this._scene.run(deltaSecTime * this._timeRatio, this._renderer, this._physicWorld);
+
+      let actualTimeRatio = this._timeRatio;
+      if (this._running >= 0) {
+        actualTimeRatio = 0;
+      }
+
+      this._scene.run(deltaSecTime * actualTimeRatio, this._renderer, this._physicWorld);
     }
 
     //

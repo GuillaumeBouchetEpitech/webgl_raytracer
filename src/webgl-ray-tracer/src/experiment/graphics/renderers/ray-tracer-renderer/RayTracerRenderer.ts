@@ -76,7 +76,11 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     gl.viewport(0, 0, this._canvasWidth, this._canvasHeight);
     gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
 
-    this._postProcessPass.render();
+    this._postProcessPass.setAntiAliasing(this._antiAliasing);
+    this._postProcessPass.render(
+      this._rayTracerPass.renderWidth,
+      this._rayTracerPass.renderHeight
+    );
   }
 
   private _renderAsciiArtTexturePass() {

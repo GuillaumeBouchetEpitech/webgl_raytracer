@@ -609,9 +609,9 @@ void lightAt(
   for (int lightIndex = 0; lightIndex < u_lightsTextureSize; lightIndex += 2)
   {
 
-    vec4 texel0 = texelFetch(u_lightsTextureData, ivec2(lightIndex + 0, 0), 0);
-    vec3 lightPos = texel0.rgb;
-    float lightRadius = texel0.a;
+    vec4 lightTexel0 = texelFetch(u_lightsTextureData, ivec2(lightIndex + 0, 0), 0);
+    vec3 lightPos = lightTexel0.rgb;
+    float lightRadius = lightTexel0.a;
 
     vec3 lightToImpactVec3 = lightPos - impactPosition;
 
@@ -624,12 +624,10 @@ void lightAt(
     }
 
     // normalize lightDir
-    lightDir.x = lightToImpactVec3.x / lightToImpactDistance;
-    lightDir.y = lightToImpactVec3.y / lightToImpactDistance;
-    lightDir.z = lightToImpactVec3.z / lightToImpactDistance;
+    lightDir = lightToImpactVec3 / lightToImpactDistance;
 
-    vec4 texel1 = texelFetch(u_lightsTextureData, ivec2(lightIndex + 1, 0), 0);
-    float localIntensity = texel1.r;
+    vec4 lightTexel1 = texelFetch(u_lightsTextureData, ivec2(lightIndex + 1, 0), 0);
+    float localIntensity = lightTexel1.r;
 
     currLightIntensity = localIntensity * (1.0 - lightToImpactDistance / lightRadius);
 

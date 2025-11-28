@@ -118,7 +118,12 @@ const _createSphere = (
   // dynamic falling sphere
   const physicBody = physicWorld.createRigidBody({
     mass: 1, // dynamic
-    shape: { type: 'sphere', radius },
+    shape: {
+      type: 'sphere',
+      // slightly larger physical sphere
+      // -> this fixes refraction graphic artifact
+      radius: radius + 0.05
+    },
     position,
     orientation: glm.quat.identity(glm.quat.create()),
   });
@@ -382,9 +387,11 @@ export class TestScene3 {
 
     this.ensureSceneData(physicWorld);
 
-    physicWorld.stepSimulation(deltaTime, 4, 1/60);
+    if (deltaTime > 0) {
+      physicWorld.stepSimulation(deltaTime, 4, 1/60);
 
-    continuousTime += deltaTime;
+      continuousTime += deltaTime;
+    }
 
     {
 

@@ -4,7 +4,8 @@
 precision highp float;
 
 uniform sampler2D u_texture;
-uniform vec2 u_step;
+uniform vec2 u_renderedSize;
+uniform float u_gridSize;
 
 in vec2 v_textureCoord;
 
@@ -12,61 +13,28 @@ out vec4 o_color;
 
 void main(void)
 {
-  // gl_FragColor = texture(u_texture, v_textureCoord);
-
   float total = 0.0;
   vec4 accumulated = vec4(0.0);
 
   //
 
-  if (v_textureCoord.x - u_step.x > 0.0)
-  {
-    accumulated += texture(u_texture, vec2(v_textureCoord.x - u_step.x, v_textureCoord.y));
-    total += 1.0;
-  }
+  int gridSize = int(u_gridSize);
 
-  if (v_textureCoord.x + u_step.x > 0.0)
-  {
-    accumulated += texture(u_texture, vec2(v_textureCoord.x + u_step.x, v_textureCoord.y));
-    total += 1.0;
-  }
+  int srcX = int(u_renderedSize.x * v_textureCoord.x);
+  int srcY = int(u_renderedSize.y * v_textureCoord.y);
 
-  if (v_textureCoord.y - u_step.y > 0.0)
-  {
-    accumulated += texture(u_texture, vec2(v_textureCoord.x, v_textureCoord.y - u_step.y));
-    total += 1.0;
-  }
+  int minX = min(max(srcX - gridSize, 0), int(u_renderedSize.x) - 1);
+  int minY = min(max(srcY - gridSize, 0), int(u_renderedSize.y) - 1);
+  int maxX = min(max(srcX + gridSize, 0), int(u_renderedSize.x) - 1);
+  int maxY = min(max(srcY + gridSize, 0), int(u_renderedSize.y) - 1);
 
-  if (v_textureCoord.y + u_step.y > 0.0)
+  for (int yy = minY; yy <= maxY; ++yy)
   {
-    accumulated += texture(u_texture, vec2(v_textureCoord.x, v_textureCoord.y + u_step.y));
-    total += 1.0;
-  }
-
-  //
-
-  if (v_textureCoord.x - u_step.x > 0.0 && v_textureCoord.y - u_step.y > 0.0)
-  {
-    accumulated += texture(u_texture, vec2(v_textureCoord.x - u_step.x, v_textureCoord.y - u_step.y));
-    total += 1.0;
-  }
-
-  if (v_textureCoord.x + u_step.x > 0.0 && v_textureCoord.y - u_step.y > 0.0)
-  {
-    accumulated += texture(u_texture, vec2(v_textureCoord.x + u_step.x, v_textureCoord.y - u_step.y));
-    total += 1.0;
-  }
-
-  if (v_textureCoord.x - u_step.x > 0.0 && v_textureCoord.y + u_step.y > 0.0)
-  {
-    accumulated += texture(u_texture, vec2(v_textureCoord.x - u_step.x, v_textureCoord.y + u_step.y));
-    total += 1.0;
-  }
-
-  if (v_textureCoord.x + u_step.x > 0.0 && v_textureCoord.y + u_step.y > 0.0)
-  {
-    accumulated += texture(u_texture, vec2(v_textureCoord.x + u_step.x, v_textureCoord.y + u_step.y));
-    total += 1.0;
+    for (int xx = minX; xx <= maxX; ++xx)
+    {
+      accumulated += texelFetch(u_texture, ivec2(xx, yy), 0);
+      total += 1.0;
+    }
   }
 
   //
