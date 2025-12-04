@@ -501,10 +501,10 @@ export class TestScene3 {
           const rotationCoef = system.math.easing.easeClamp(continuousTime * 0.125)
           const elevationCoef = system.math.easing.easePinPong(rotationCoef);
 
-          const elevation = 0.15 + 1 * elevationCoef;
+          const elevation = 0 + 1 * elevationCoef;
 
           const coverVertices: glm.vec3[] = [];
-          coverVertices.push([+0.0, elevation + 0.2, +0.0]);
+          coverVertices.push([+0.0, elevation + 0.4, +0.0]);
           coverVertices.push([+0.3, elevation - 0.6, +0.0]);
           coverVertices.push([+0.0, elevation - 0.6, +0.3]);
           coverVertices.push([-0.3, elevation - 0.6, -0.0]);
@@ -528,24 +528,47 @@ export class TestScene3 {
           indices.push([0,3,4]);
           indices.push([0,4,1]);
 
-          const materialAlias_lightCoverTriangle = 6000;
+          const materialAlias_lightCoverTriangle: number[] = [6000, 6001, 6002, 6003];
           renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
-            materialAlias: materialAlias_lightCoverTriangle,
-              color: [0.5, 0.0, 0.5],
+            materialAlias: materialAlias_lightCoverTriangle[0],
+              color: [1.0, 0.0, 1.0], // purple
               reflectionFactor: 0.0,
-              refractionFactor: 0.0,
+              refractionFactor: 0.4,
               receiveLightEnabled: false,
               castShadowEnabled: true,
-              // chessboardEnabled: 0,
+          });
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
+            materialAlias: materialAlias_lightCoverTriangle[1],
+              color: [1.0, 0.0, 0.0],
+              reflectionFactor: 0.0,
+              refractionFactor: 0.4,
+              receiveLightEnabled: false,
+              castShadowEnabled: true,
+          });
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
+            materialAlias: materialAlias_lightCoverTriangle[2],
+              color: [0.0, 1.0, 0.0],
+              reflectionFactor: 0.0,
+              refractionFactor: 0.4,
+              receiveLightEnabled: false,
+              castShadowEnabled: true,
+          });
+          renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
+            materialAlias: materialAlias_lightCoverTriangle[3],
+              color: [0.0, 0.0, 1.0],
+              reflectionFactor: 0.0,
+              refractionFactor: 0.4,
+              receiveLightEnabled: false,
+              castShadowEnabled: true,
           });
 
-          indices.forEach(([idx0, idx1, idx2]) => {
+          indices.forEach(([idx0, idx1, idx2], index) => {
 
             renderer.rayTracerRenderer.rayTracerPass.shapesManager.pushTriangle({
               v0: coverVertices[idx0],
               v1: coverVertices[idx1],
               v2: coverVertices[idx2],
-              materialAlias: materialAlias_lightCoverTriangle,
+              materialAlias: materialAlias_lightCoverTriangle[index],
             });
           });
 
@@ -686,8 +709,8 @@ export class TestScene3 {
 
         if ((index % 2) === 0) {
 
-          const lightCoef = system.math.easing.easePinPong(system.math.easing.easeClamp(continuousTime * 0.5));
-          // const lightCoef = 1;
+          // const lightCoef = system.math.easing.easePinPong(system.math.easing.easeClamp(continuousTime * 0.5));
+          const lightCoef = 1;
 
           const blinkColor = 0.1 + lightCoef * 0.9;
           // const blinkColor = 1;
@@ -697,9 +720,9 @@ export class TestScene3 {
           const shapeCoef2 = system.math.easing.easeInOutSine(shapeCoef1);
 
           const currColorMask: glm.vec3 = [1,1,1];
-          currColorMask[0] = system.math.lerp(shapeCoef2, 1, 0);
-          currColorMask[1] = system.math.lerp(shapeCoef2, 0, 0);
-          currColorMask[2] = system.math.lerp(shapeCoef2, 1, 1);
+          currColorMask[0] = system.math.lerp(shapeCoef2, 1, 1);
+          currColorMask[1] = system.math.lerp(shapeCoef2, 1, 1);
+          currColorMask[2] = system.math.lerp(shapeCoef2, 0, 1);
 
           // renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
           //   materialAlias: 667,
@@ -732,7 +755,7 @@ export class TestScene3 {
           });
           renderer.rayTracerRenderer.rayTracerPass.materialsManager.pushBasicMaterial({
             materialAlias: 1112,
-            color: [1, 1, 1],
+            color: [0.4, 0.4, 0.4],
             reflectionFactor: 0.0,
             refractionFactor: 0.0,
             receiveLightEnabled: true,
@@ -744,9 +767,9 @@ export class TestScene3 {
             materialAliasA: 1111,
             materialAliasB: 1112,
             chessboardArgs: [
-              1 - (0.1 + shapeCoef2 * 0.9),
-              1 - (0.1 + shapeCoef2 * 0.9),
-              1 - (0.1 + shapeCoef2 * 0.9),
+              1 - (0.05 + shapeCoef2 * 0.95),
+              1 - (0.05 + shapeCoef2 * 0.95),
+              1 - (0.05 + shapeCoef2 * 0.95),
             ],
           });
 
@@ -783,6 +806,7 @@ export class TestScene3 {
           // actual spot light inside the sphere
           renderer.rayTracerRenderer.rayTracerPass.spotLightsManager.pushSpotLight({
             position: position,
+            // intensity: 0.1 + 3.9 * lightCoef,
             intensity: 0.1 + 3.9 * lightCoef,
             radius: 10,
           });
