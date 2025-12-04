@@ -1,7 +1,7 @@
 
 import * as allInterfaces from '../all-interfaces';
 
-import { GpuDataTexture } from './GpuDataTexture';
+import { GpuDataTexture } from './GpuDataTexture1d';
 
 export interface IMaterialsManager {
   pushBasicMaterial(params: allInterfaces.IPublicBasicMaterial): void;

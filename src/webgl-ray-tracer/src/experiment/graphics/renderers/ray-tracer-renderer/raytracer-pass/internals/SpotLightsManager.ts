@@ -1,7 +1,7 @@
 
 import * as allInterfaces from '../all-interfaces';
 
-import { GpuDataTexture } from './GpuDataTexture';
+import { GpuDataTexture } from './GpuDataTexture1d';
 
 import * as glm from "gl-matrix"
 
