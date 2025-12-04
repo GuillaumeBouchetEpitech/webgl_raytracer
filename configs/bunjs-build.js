@@ -1,6 +1,8 @@
 
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
+import { _handleShaderFile } from './_handleShaderFile.js';
 
 // console.log('process.argv', process.argv);
 
@@ -29,18 +31,11 @@ const buildOptions = _getBuildOptions();
 const GlslFilesLoaderPlugin = {
   name: "GLSL Loader",
   setup(build) {
-    build.onLoad({ filter: /\.glsl\.(?:frag|vert)$/ }, ({ path }) => {
+    build.onLoad({ filter: /\.glsl\.(?:frag|vert)$/ }, ({ path: shaderFilepath }) => {
 
-      const fileContent = fs.readFileSync(path, { encoding: "utf8" });
+      const fileContent = _handleShaderFile(shaderFilepath);
 
-      const lines = fileContent
-        .split("\n")
-        // .map(line => line.trim())
-        // .filter(line => line.replace(/(.*?)\/\/.*/, "$1"))
-        // .filter(line => line.length > 0)
-        ;
-
-      const contents = `export default \`${lines.join('\n')}\`.trim();`;
+      const contents = `export default \`${fileContent}\`.trim();`;
 
       return { contents, loader: "js" };
     });

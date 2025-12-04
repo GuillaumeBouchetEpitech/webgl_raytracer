@@ -1,9 +1,13 @@
+
 import { rollup } from 'rollup';
 import typescript from '@rollup/plugin-typescript';
 import commonjs from '@rollup/plugin-commonjs';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
-import * as fs from 'fs';
+
+import * as fs from 'node:fs';
+
+import { _handleShaderFile } from './_handleShaderFile.js';
 
 // console.log('process.argv', process.argv);
 
@@ -40,6 +44,11 @@ const _handleGlslFilesPlugin = {
     if (!_isShader(id)) {
       return;
     }
+
+    code = _handleShaderFile(id);
+
+    // TODO: handle the #include directive here
+
     return {
       code: `export default \`${code}\`.trim();`,
       map: { mappings: "" }
