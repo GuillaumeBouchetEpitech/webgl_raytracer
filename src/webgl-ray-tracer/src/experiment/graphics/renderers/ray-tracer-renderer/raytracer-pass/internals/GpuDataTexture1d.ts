@@ -3,7 +3,7 @@ import { graphics } from '@local-framework';
 
 const k_maxLength = 2048;
 
-export class GpuDataTexture {
+export class GpuDataTexture1d {
 
   private _textureUniformName: string;
   private _lengthUniformName?: string;
@@ -25,7 +25,7 @@ export class GpuDataTexture {
   push(r: number, g: number, b: number, a: number) {
 
     if (this._currentIndex >= k_maxLength) {
-      throw new Error(`not more space left in the GpuDataTexture, max length is ${k_maxLength}.`);
+      throw new Error(`not more space left in the GpuDataTexture1d, max length is ${k_maxLength}.`);
     }
 
     this._dataValues[this._currentIndex * 4 + 0] = r;
@@ -43,7 +43,7 @@ export class GpuDataTexture {
     boundShader: graphics.webgl2.IBoundShader,
   ) {
     if (this._lengthUniformName === undefined) {
-      throw new Error(`not length uniform name specified for that GpuDataTexture.`);
+      throw new Error(`not length uniform name specified for that GpuDataTexture1d.`);
     }
 
     boundShader.setInteger1Uniform(

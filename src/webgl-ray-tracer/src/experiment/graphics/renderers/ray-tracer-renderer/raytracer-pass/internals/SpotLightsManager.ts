@@ -1,7 +1,7 @@
 
 import * as allInterfaces from '../all-interfaces';
 
-import { GpuDataTexture } from './GpuDataTexture1d';
+import { GpuDataTexture1d } from './GpuDataTexture1d';
 
 import * as glm from "gl-matrix"
 
@@ -12,10 +12,10 @@ export interface ISpotLightsManager {
 export class SpotLightsManager implements ISpotLightsManager {
 
   private _spotLights: allInterfaces.ISpotLight[] = [];
-  private _dataTexture: GpuDataTexture;
+  private _dataTexture: GpuDataTexture1d;
 
   constructor(textureUniformName: string, lengthUniformName: string) {
-    this._dataTexture = new GpuDataTexture(textureUniformName, lengthUniformName);
+    this._dataTexture = new GpuDataTexture1d(textureUniformName, lengthUniformName);
   }
 
 
@@ -64,7 +64,7 @@ export class SpotLightsManager implements ISpotLightsManager {
 
   }
 
-  get dataTexture(): Readonly<GpuDataTexture> {
+  get dataTexture(): Readonly<GpuDataTexture1d> {
     return this._dataTexture;
   }
 

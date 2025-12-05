@@ -1,7 +1,7 @@
 
 import * as allInterfaces from '../all-interfaces';
 
-import { GpuDataTexture } from './GpuDataTexture1d';
+import { GpuDataTexture1d } from './GpuDataTexture1d';
 import { MaterialsManager } from './MaterialsManager';
 
 
@@ -25,7 +25,7 @@ export class ShapesManager implements IShapesManager {
   private _boxes: allInterfaces.IInternalBox[] = [];
   private _triangles: allInterfaces.IInternalTriangle[] = [];
 
-  private _dataTexture: GpuDataTexture;
+  private _dataTexture: GpuDataTexture1d;
 
   constructor(
     materialsManager: MaterialsManager,
@@ -34,7 +34,7 @@ export class ShapesManager implements IShapesManager {
 
   ) {
     this._materialsManager = materialsManager;
-    this._dataTexture = new GpuDataTexture(textureUniformName, lengthUniformName);
+    this._dataTexture = new GpuDataTexture1d(textureUniformName, lengthUniformName);
   }
 
   pushSphere({
@@ -221,7 +221,7 @@ export class ShapesManager implements IShapesManager {
   }
 
 
-  get dataTexture(): Readonly<GpuDataTexture> {
+  get dataTexture(): Readonly<GpuDataTexture1d> {
     return this._dataTexture;
   }
 

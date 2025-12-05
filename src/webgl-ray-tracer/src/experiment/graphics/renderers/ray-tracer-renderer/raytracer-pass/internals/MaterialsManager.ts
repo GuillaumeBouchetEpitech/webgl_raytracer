@@ -1,7 +1,7 @@
 
 import * as allInterfaces from '../all-interfaces';
 
-import { GpuDataTexture } from './GpuDataTexture1d';
+import { GpuDataTexture1d } from './GpuDataTexture1d';
 
 export interface IMaterialsManager {
   pushBasicMaterial(params: allInterfaces.IPublicBasicMaterial): void;
@@ -18,10 +18,10 @@ export class MaterialsManager {
 
   private _matAliasToIndex = new Map<number, number>();
 
-  private _dataTexture: GpuDataTexture;
+  private _dataTexture: GpuDataTexture1d;
 
   constructor(textureUniformName: string) {
-    this._dataTexture = new GpuDataTexture(textureUniformName)
+    this._dataTexture = new GpuDataTexture1d(textureUniformName)
   }
 
   pushBasicMaterial(params: allInterfaces.IPublicBasicMaterial): void {
@@ -140,7 +140,7 @@ export class MaterialsManager {
     return this._matAliasToIndex.get(materialAlias);
   }
 
-  get dataTexture(): Readonly<GpuDataTexture> {
+  get dataTexture(): Readonly<GpuDataTexture1d> {
     return this._dataTexture;
   }
 
