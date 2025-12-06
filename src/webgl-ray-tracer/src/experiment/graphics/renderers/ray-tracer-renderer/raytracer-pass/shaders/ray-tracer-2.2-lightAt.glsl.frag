@@ -23,6 +23,15 @@ void lightAt(
   for (int lightIndex = 0; lightIndex < u_lightsTextureSize; lightIndex += 2)
   {
 
+    // spot-light-texel[0]:R: spot light position.x
+    // spot-light-texel[0]:G: spot light position.y
+    // spot-light-texel[0]:B: spot light position.z
+    // spot-light-texel[0]:A: spot light radius
+    // spot-light-texel[1]:R: spot light intensity
+    // spot-light-texel[1]:G: <unused>
+    // spot-light-texel[1]:B: <unused>
+    // spot-light-texel[1]:A: <unused>
+
     vec4 lightTexel0 = texelFetch(u_dataTexture, ivec2(lightIndex + 0, LIGHTS_ROW_INDEX), 0);
     vec3 lightPos = lightTexel0.rgb;
     float lightRadius = lightTexel0.a;
@@ -42,7 +51,6 @@ void lightAt(
 
     vec4 lightTexel1 = texelFetch(u_dataTexture, ivec2(lightIndex + 1, LIGHTS_ROW_INDEX), 0);
     float localIntensity = lightTexel1.r;
-    // float localIntensity = 1.0;
 
     currLightIntensity = localIntensity * (1.0 - lightToImpactDistance / lightRadius);
 
@@ -51,11 +59,9 @@ void lightAt(
     {
       g_lightStack[ii].used = false;
       g_lightStack[ii].ray.direction = lightDir;
-      g_lightStack[ii].result.color = vec4(1.0);
       g_lightStack[ii].result.reflectionFactor = 1.0;
       g_lightStack[ii].result.refractionFactor = 1.0;
       g_lightStack[ii].result.materialIndex = -1;
-      g_lightStack[ii].result.lightEnabled = false;
       g_lightStack[ii].lightResult.intensity = 1.0;
       g_lightStack[ii].lightResult.color = vec3(1.0);
     }
@@ -64,8 +70,11 @@ void lightAt(
     g_lightStack[0].used = true;
     g_lightStack[0].ray.origin = impactPosition;
 
+    // this variable allow us the skip the collision with the previously hit shape
+    // -> this will avoid a "double hit" of the same shape while we loop
     int previousShapeIndex = -1;
 
+    // start with assumption the light is not blocked
     bool lightIsBlocked = false;
 
     int lightStackWriteIndex = 0;
@@ -89,7 +98,7 @@ void lightAt(
 
       const bool shadowCastingMode = true;
 
-      g_lightStack[lightStackReadIndex].result.hasHit = intersectScene(
+      bool hasHit = intersectScene(
         g_lightStack[lightStackReadIndex].ray,
         g_lightStack[lightStackReadIndex].result,
         shadowCastingMode,
@@ -97,9 +106,12 @@ void lightAt(
       );
 
       if (
-        // we got no collision -> light not blocked
-        !g_lightStack[lightStackReadIndex].result.hasHit ||
-        // we got collision -> checking if the impact is behind the light
+        // if we got no collision -> light not blocked -> continue
+        hasHit == false ||
+        // if we're here: we got a collision
+        // -> now we must check if the impact is "behind" the light
+        // ---> basically, was the impact "too far" in the direction of the light?
+        // -----> if no -> light not blocked -> continue
         g_lightStack[lightStackReadIndex].result.distance > distance(g_lightStack[lightStackReadIndex].ray.origin, lightPos)
       ) {
         // ignore the light
@@ -107,11 +119,23 @@ void lightAt(
         break;
       }
 
+      // if we're here, the "shadow ray" has hit a shape, and normally this spot light should be skipped
+      // -> but we actually need to check for any refractive/transparent material associated to the shape hit
+
+      // save it now, in case we must loop again
       previousShapeIndex = g_lightStack[lightStackReadIndex].result.shapeIndex;
 
+      // now we're going to need the shape's material
       int materialIndex = g_lightStack[lightStackReadIndex].result.materialIndex;
 
-      // light ray is blocked, skip this light... unless? (<- chessboard/refraction material check)
+      // material-texel[0]:R: material type (0=basic or 1=chessboard)
+      // material-texel[0]:G: can cast shadows (0 or 1)
+      // material-texel[0]:B: ??? (per material type)
+      // material-texel[0]:A: ??? (per material type)
+      // material-texel[1]:R: ??? (per material type)
+      // material-texel[1]:G: ??? (per material type)
+      // material-texel[1]:B: ??? (per material type)
+      // material-texel[1]:A: ??? (per material type)
       vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
       vec4 matTexel1 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 1, MATERIALS_ROW_INDEX), 0);
 
@@ -120,11 +144,22 @@ void lightAt(
       // chessboard alternative material
       if (materialType == 1)
       {
+        // as a chessboard material
+
+        // chessboard-material-texel[0]:R: material type (0=basic or 1=chessboard)
+        // chessboard-material-texel[0]:G: can cast shadows (0 or 1)
+        // chessboard-material-texel[0]:B: sub material index A
+        // chessboard-material-texel[0]:A: sub material index B
+        // chessboard-material-texel[1]:R: chessboard-fraction.x
+        // chessboard-material-texel[1]:G: chessboard-fraction.y
+        // chessboard-material-texel[1]:B: chessboard-fraction.z
+        // chessboard-material-texel[1]:A: <unused>
+
         int subMaterialIndex = 0;
 
         vec3 txPos = g_lightStack[lightStackReadIndex].result.txPos;
         if (
-          (fract(txPos.x * matTexel1.t) > 0.5)
+          (fract(txPos.x * matTexel1.r) > 0.5)
           != (fract(txPos.y * matTexel1.g) > 0.5)
           != (fract(txPos.z * matTexel1.b) > 0.5)
         ) {
@@ -133,12 +168,23 @@ void lightAt(
           subMaterialIndex = int(matTexel0.b);
         }
 
+        // as a basic material
+
+        // basic-material-texel[0]:R: material type (0=basic or 1=chessboard)
+        // basic-material-texel[0]:G: can cast shadows (0 or 1)
+        // basic-material-texel[0]:B: reflection index [0..1]
+        // basic-material-texel[0]:A: refraction index [0..1]
+        // basic-material-texel[1]:R: can receive light
+        // basic-material-texel[1]:G: color.r
+        // basic-material-texel[1]:B: color.g
+        // basic-material-texel[1]:A: color.b
         matTexel0 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
         matTexel1 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 1, MATERIALS_ROW_INDEX), 0);
       }
 
       float refractionFactor = matTexel0.a;
 
+      // is the shape "solid enough"?
       if (refractionFactor <= 0.01)
       {
         // no refraction/transparency -> light ray is blocked -> ignore the light
@@ -157,7 +203,7 @@ void lightAt(
 
       if (lightStackWriteIndex + 1 >= g_maxLightStackSize)
       {
-        // no more stack space left -> stop now
+        // no more stack writing space left -> stop now
         break;
       }
 

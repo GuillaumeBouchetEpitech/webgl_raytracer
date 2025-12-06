@@ -44,10 +44,7 @@ const float     g_ambientLightIntensity = 0.15;
 
 const vec3      g_backgroundColor = vec3(0.1);
 
-const int       g_maxLightStackSize = 5;
 
-// need a scene stack size of minimum 7 for a reflective AND refractive sphere/shapes
-const int       g_maxSceneStackSize = 7;
 
 const int       g_maxBvhStack = 16;
 int             g_bvhStack[g_maxBvhStack];
@@ -65,7 +62,18 @@ const int       BVH_ROW_INDEX = 3;
 
 #include "./ray-tracer-1-all-interfaces.glsl.frag"
 
+//
+//
+//
+//
+//
+
+// ideal scene stack size is >=7 for reflective AND refractive shapes
+const int       g_maxSceneStackSize = 7;
 StackData       g_sceneStack[g_maxSceneStackSize];
+
+// ideal light stack size is >=5 to handle multiple transparent shapes
+const int       g_maxLightStackSize = 5;
 LightStackData  g_lightStack[g_maxLightStackSize];
 
 //
@@ -75,18 +83,6 @@ LightStackData  g_lightStack[g_maxLightStackSize];
 //
 
 #include "./ray-tracer-2-castInitialRay.glsl.frag"
-
-//
-//
-//
-//
-//
-
-//
-//
-//
-//
-//
 
 //
 //

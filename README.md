@@ -16,6 +16,10 @@ Beyond that: [follow that link to see for yourself](http://guillaumebouchetepite
 ### Demo2
 Some failed experiment: [link to failed demo](http://guillaumebouchetepitech.github.io/webgl_raytracer/dist-failed-experiment/index.html).
 
+## Physic Engine Used
+
+"FrankenPhys", here's the [link](https://github.com/GuillaumeBouchetEpitech/FrankenPhys) get it.
+
 ## How To Run
 
 First start the file server
@@ -28,7 +32,7 @@ Then open that link: http://localhost:16000/index.html
 
 ## How To Build
 
-Tested with: node@18 + npm@8
+Tested with: node@22 + npm@10
 
 ```bash
 # only once

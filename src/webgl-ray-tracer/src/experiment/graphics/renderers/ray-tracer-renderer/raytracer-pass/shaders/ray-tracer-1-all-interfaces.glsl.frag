@@ -11,10 +11,8 @@ struct RayResult
   float distance;
   vec3 position;
   vec3 normal;
-  vec4 color;
   float reflectionFactor;
   float refractionFactor;
-  bool lightEnabled;
   vec3 txPos;
   int shapeIndex;
   int materialIndex;
@@ -31,6 +29,7 @@ struct StackData
   bool used;
   RayValues ray;
   RayResult result;
+  vec4 color;
   int reflectionIndex;
   int refractionIndex;
 };

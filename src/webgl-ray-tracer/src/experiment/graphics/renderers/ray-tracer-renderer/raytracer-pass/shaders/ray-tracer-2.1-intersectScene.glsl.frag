@@ -1,8 +1,8 @@
 
 
-#include "./ray-tracer-2.1.1-intersectScene-quat-utils.glsl.frag"
+#include "./ray-tracer-2.1.1-quat-utils.glsl.frag"
 
-#include "./ray-tracer-2.1.2-intersectScene-shapes.glsl.frag"
+#include "./ray-tracer-2.1.2-intersect-shapes.glsl.frag"
 
 
 void intersectSceneOneShape(
@@ -11,21 +11,30 @@ void intersectSceneOneShape(
   inout RayResult outBestResult,
   bool shadowCastingMode
 ) {
-  RayValues tmpRay;
   vec3 normal;
   float currDistance = 0.0;
 
+  // shape texel 0:
+  // R: shape type
+  // G: material index
+  // B: ??? (per shape type)
+  // A: ??? (per shape type)
   vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex + 0, SHAPES_ROW_INDEX), 0);
 
   int materialIndex = int(shTexel0.g);
 
   if (shadowCastingMode == true)
   {
+    // material texel 0:
+    // R: material type (0=basic or 1=chessboard)
+    // G: can cast shadows (0 or 1)
+    // B: ??? (per material type)
+    // A: ??? (per material type)
     vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
 
-    bool castShadowEnabled = (int(matTexel0.g) == 1);
-    if (castShadowEnabled == false) {
-      return; // this shape does not cast a shadow -> skip
+    bool canCastShadows = (int(matTexel0.g) == 1);
+    if (canCastShadows == false) {
+      return; // not casting shadow while in shadow casting mode? -> skip the shape
     }
   }
 
@@ -41,6 +50,19 @@ void intersectSceneOneShape(
       // Sphere shape
       //
 
+      // sphere-shape-texel[0]:R: shape type
+      // sphere-shape-texel[0]:G: material index
+      // sphere-shape-texel[0]:B: center.x
+      // sphere-shape-texel[0]:A: center.y
+      // sphere-shape-texel[1]:R: center.z
+      // sphere-shape-texel[1]:G: quat.x
+      // sphere-shape-texel[1]:B: quat.y
+      // sphere-shape-texel[1]:A: quat.z
+      // sphere-shape-texel[2]:R: quat.w
+      // sphere-shape-texel[2]:G: radius
+      // sphere-shape-texel[2]:B: <unused>
+      // sphere-shape-texel[2]:A: <unused>
+
       vec3 center = vec3(shTexel0.b, shTexel0.a, shTexel1.r);
       float radius = shTexel2.g;
 
@@ -54,11 +76,14 @@ void intersectSceneOneShape(
       mat3 inverseNormalMatrix = inverse(normalMatrix);
 
       // convert ray from world space to sphere space
-      tmpRay.origin = (inverseNormalMatrix * (ray.origin - center));
-      tmpRay.direction = (inverseNormalMatrix * ray.direction);
+      RayValues sphereSpaceRay;
+      sphereSpaceRay.origin = (inverseNormalMatrix * (ray.origin - center));
+      sphereSpaceRay.direction = (inverseNormalMatrix * ray.direction);
 
       if (
-        !intersectSphere(tmpRay, radius, currDistance, normal) ||
+        // false if not hit
+        !intersectSphere(sphereSpaceRay, radius, currDistance, normal) ||
+        // false if hit but not the closest shape
         (outBestResult.distance > 0.0 && currDistance > outBestResult.distance)
       ) {
         return;
@@ -83,6 +108,19 @@ void intersectSceneOneShape(
       // Box shape
       //
 
+      // box-shape-texel[0]:R: shape type
+      // box-shape-texel[0]:G: material index
+      // box-shape-texel[0]:B: center.x
+      // box-shape-texel[0]:A: center.y
+      // box-shape-texel[1]:R: center.z
+      // box-shape-texel[1]:G: quat.x
+      // box-shape-texel[1]:B: quat.y
+      // box-shape-texel[1]:A: quat.z
+      // box-shape-texel[2]:R: quat.w
+      // box-shape-texel[2]:G: boxSize.x
+      // box-shape-texel[2]:B: boxSize.y
+      // box-shape-texel[2]:A: boxSize.z
+
       vec3 center = vec3(shTexel0.b, shTexel0.a, shTexel1.r);
       vec3 boxSize = shTexel2.gba;
 
@@ -95,12 +133,15 @@ void intersectSceneOneShape(
       mat3 normalMatrix = quat_to_mat3(orientation);
       mat3 inverseNormalMatrix = inverse(normalMatrix);
 
-      // convert ray from world space to sphere space
-      tmpRay.origin = (inverseNormalMatrix * (ray.origin - center));
-      tmpRay.direction = (inverseNormalMatrix * ray.direction);
+      // convert ray from world space to box space
+      RayValues boxSpaceRay;
+      boxSpaceRay.origin = (inverseNormalMatrix * (ray.origin - center));
+      boxSpaceRay.direction = (inverseNormalMatrix * ray.direction);
 
       if (
-        !intersectBox(tmpRay, boxSize, currDistance, normal) ||
+        // false if not hit
+        !intersectBox(boxSpaceRay, boxSize, currDistance, normal) ||
+        // false if hit but not the closest shape
         (outBestResult.distance > 0.0 && currDistance > outBestResult.distance)
       ) {
         return;
@@ -111,7 +152,7 @@ void intersectSceneOneShape(
 
       outBestResult.position = ray.origin + currDistance * ray.direction;
 
-      // the multiplication by 0.999 will remove graphic artifact
+      // the multiplication by 0.999 will remove unwanted graphic artifact
       vec3 txPos = (inverseNormalMatrix * 0.999) * (center - outBestResult.position);
       outBestResult.txPos = txPos;
 
@@ -123,15 +164,27 @@ void intersectSceneOneShape(
       // Triangle shape
       //
 
-      tmpRay.origin = ray.origin;
-      tmpRay.direction = ray.direction;
+      // triangle-shape-texel[0]:R: shape type
+      // triangle-shape-texel[0]:G: material index
+      // triangle-shape-texel[0]:B: triangle0.x
+      // triangle-shape-texel[0]:A: triangle0.y
+      // triangle-shape-texel[1]:R: triangle0.z
+      // triangle-shape-texel[1]:G: triangle1.x
+      // triangle-shape-texel[1]:B: triangle1.y
+      // triangle-shape-texel[1]:A: triangle1.z
+      // triangle-shape-texel[2]:R: triangle2.x
+      // triangle-shape-texel[2]:G: triangle2.y
+      // triangle-shape-texel[2]:B: triangle2.z
+      // triangle-shape-texel[2]:A: <unused>
 
       vec3 v0 = vec3(shTexel0.b, shTexel0.a, shTexel1.r);
       vec3 v1 = shTexel1.gba;
       vec3 v2 = shTexel2.rgb;
 
       if (
-        !intersectTriangle(tmpRay, v0, v1, v2, currDistance, normal) ||
+        // false if not hit
+        !intersectTriangle(ray, v0, v1, v2, currDistance, normal) ||
+        // false if hit but not the closest shape
         (outBestResult.distance > 0.0 && currDistance > outBestResult.distance)
       ) {
         return;
@@ -139,18 +192,24 @@ void intersectSceneOneShape(
 
       outBestResult.position = ray.origin + currDistance * ray.direction;
 
-      outBestResult.txPos = vec3(0.0); // TODO?
-      // outBestResult.txPos = vec3(1.0); // TODO?
-      // outBestResult.txPos = normal;
+      // outBestResult.txPos = vec3(0.0); // TODO?
 
       break;
     }
   }
 
   outBestResult.hasHit = true;
+
+  // used here to tell if the intersected shape is any closer than any previous one
+  // -> also used to tell if a shadow ray from a light is "too far" behind the spot light
   outBestResult.distance = currDistance;
+
   outBestResult.normal = normal;
+
+  // this is used by the spot lights to handle the transparency/refraction
   outBestResult.shapeIndex = shapeIndex;
+
+  // this is used by the spot lights to handle the transparency/refraction
   outBestResult.materialIndex = materialIndex;
 }
 
@@ -229,13 +288,6 @@ bool intersectScene(
   bool shadowCastingMode,
   int toIgnoreShapeIndex
 ) {
-  outBestResult.hasHit = false;
-  outBestResult.distance = -1.0;
-
-  // if (u_sceneTextureSize == 0)
-  // {
-  //   return false;
-  // }
 
 #ifndef false
 
@@ -252,7 +304,7 @@ bool intersectScene(
   // use BVH optimization -> traverse the nodes and their associated AABB
   // -> this should reduce the total number intersections executed
 
-  g_bvhStack[0] = 0; // BVH root node index
+  g_bvhStack[0] = 0; // start with the root BVH node index
   int bvhStackTopIndex = 0;
 
   while (bvhStackTopIndex >= 0)
@@ -261,6 +313,19 @@ bool intersectScene(
     // pop bvh stack
     int nodeIndex = g_bvhStack[bvhStackTopIndex];
     bvhStackTopIndex -= 1;
+
+    // BVH-node-texel[0]:R: min.x
+    // BVH-node-texel[0]:G: min.y
+    // BVH-node-texel[0]:B: min.z
+    // BVH-node-texel[0]:A: max.x
+    // BVH-node-texel[1]:R: max.y
+    // BVH-node-texel[1]:G: max.z
+    // BVH-node-texel[1]:B: left bvh node index
+    // BVH-node-texel[1]:A: right bvh node index
+    // BVH-node-texel[2]:R: left leaf shape index
+    // BVH-node-texel[2]:G: right leaf shape index
+    // BVH-node-texel[2]:B: <unused>
+    // BVH-node-texel[2]:A: <unused>
 
     vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(nodeIndex * 3 + 0, BVH_ROW_INDEX), 0);
     vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(nodeIndex * 3 + 1, BVH_ROW_INDEX), 0);
