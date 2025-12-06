@@ -390,6 +390,9 @@ export class Experiment {
 
     this._renderScene();
     this._renderHud();
+
+    this._renderer.rayTracerRenderer.renderRayTracingPass();
+    this._renderer.rayTracerRenderer.rayTracerPass.reset();
   }
   // #endregion main loop
 
@@ -445,8 +448,6 @@ export class Experiment {
       this._renderer.flushHudWireFrame();
       this._renderer.flushHudText();
     }
-
-    this._renderer.rayTracerRenderer.rayTracerPass.reset();
   }
   // #endregion hud
 
@@ -470,7 +471,7 @@ export class Experiment {
         this._freeFlyController.getUpAxis()
       );
 
-      this._renderer.rayTracerRenderer.render();
+      this._renderer.rayTracerRenderer.renderTexturePass();
       // this._renderer.rayTracerRenderer.renderAsciiArt();
 
 

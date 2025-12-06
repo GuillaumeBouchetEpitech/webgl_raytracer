@@ -17,8 +17,9 @@ export interface IDefinition {
 
 export interface IRayTracerRenderer {
 
-  render(): void;
-  renderAsciiArt(): void;
+  renderRayTracingPass(): void;
+  renderTexturePass(): void;
+  // renderAsciiArt(): void;
 
   setResolutionCoef(inResolutionCoef: number): void;
   getResolutionCoef(): number;
@@ -56,21 +57,15 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     });
   }
 
-  render() {
-    // texture pass first
-    // -> we render the previous frame to avoid potential webgl queue blocking
-    this._renderTexturePass();
-    this._renderRayTracingPass();
-  }
 
-  renderAsciiArt() {
-    // texture pass first
-    // -> we render the previous frame to avoid potential webgl queue blocking
-    this._renderAsciiArtTexturePass();
-    this._renderRayTracingPass();
-  }
+  // renderAsciiArt() {
+  //   // texture pass first
+  //   // -> we render the previous frame to avoid potential webgl queue blocking
+  //   this._renderAsciiArtTexturePass();
+  //   this._renderRayTracingPass();
+  // }
 
-  private _renderTexturePass() {
+  renderTexturePass() {
     const gl = WebGLContext.getContext();
 
     gl.viewport(0, 0, this._canvasWidth, this._canvasHeight);
@@ -92,7 +87,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     this._postProcessPass.renderAsciiArt();
   }
 
-  private _renderRayTracingPass() {
+  renderRayTracingPass() {
     this._postProcessPass.capture(() => {
       this._rayTracerPass.render();
     });
