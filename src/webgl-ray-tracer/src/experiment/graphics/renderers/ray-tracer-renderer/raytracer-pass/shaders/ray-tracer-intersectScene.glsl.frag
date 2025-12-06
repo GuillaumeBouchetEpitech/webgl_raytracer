@@ -1,6 +1,8 @@
 
 
-#include "./ray-tracer-quaternion-utils.glsl.frag"
+#include "./ray-tracer-intersectScene-quat-utils.glsl.frag"
+
+#include "./ray-tracer-intersectScene-shapes.glsl.frag"
 
 
 void intersectSceneOneShape(
@@ -13,13 +15,13 @@ void intersectSceneOneShape(
   vec3 normal;
   float currDistance = 0.0;
 
-  vec4 shTexel0 = texelFetch(u_sceneTextureData, ivec2(shapeIndex + 0, 0), 0);
+  vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex + 0, SHAPES_ROW_INDEX), 0);
 
   int materialIndex = int(shTexel0.g);
 
   if (shadowMode == true)
   {
-    vec4 matTexel0 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 0, 0), 0);
+    vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
 
     bool castShadowEnabled = (int(matTexel0.g) == 1);
     if (castShadowEnabled == false) {
@@ -27,8 +29,8 @@ void intersectSceneOneShape(
     }
   }
 
-  vec4 shTexel1 = texelFetch(u_sceneTextureData, ivec2(shapeIndex + 1, 0), 0);
-  vec4 shTexel2 = texelFetch(u_sceneTextureData, ivec2(shapeIndex + 2, 0), 0);
+  vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex + 1, SHAPES_ROW_INDEX), 0);
+  vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex + 2, SHAPES_ROW_INDEX), 0);
 
   int shapeType = int(shTexel0.r);
 
@@ -246,8 +248,8 @@ bool intersectScene(
       int bv_idx = bvhStack[top];
       top -= 1;
 
-      vec4 rootNodeTexel0 = texelFetch(u_bvhDataTexture, ivec2(bv_idx * 3 + 0, 0), 0);
-      vec4 rootNodeTexel1 = texelFetch(u_bvhDataTexture, ivec2(bv_idx * 3 + 1, 0), 0);
+      vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(bv_idx * 3 + 0, BVH_ROW_INDEX), 0);
+      vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(bv_idx * 3 + 1, BVH_ROW_INDEX), 0);
 
       vec3 aabbMin = rootNodeTexel0.rgb;
       vec3 aabbMax = vec3(rootNodeTexel0.a, rootNodeTexel1.r, rootNodeTexel1.g);
@@ -274,7 +276,7 @@ bool intersectScene(
 
       //
 
-      vec4 rootNodeTexel2 = texelFetch(u_bvhDataTexture, ivec2(bv_idx * 3 + 2, 0), 0);
+      vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(bv_idx * 3 + 2, BVH_ROW_INDEX), 0);
 
       int leftLEafShapeIndex = int(rootNodeTexel2.r);
       if (

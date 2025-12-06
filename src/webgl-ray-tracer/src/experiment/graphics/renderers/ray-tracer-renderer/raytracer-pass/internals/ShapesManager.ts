@@ -1,9 +1,6 @@
 
+import { GpuDataTexture2d } from './GpuDataTexture2d';
 import * as allInterfaces from '../all-interfaces';
-
-import { GpuDataTexture1d } from './GpuDataTexture1d';
-import { MaterialsManager } from './MaterialsManager';
-
 
 import * as glm from "gl-matrix"
 
@@ -17,24 +14,27 @@ export interface IShapesManager {
   triangles: ReadonlyArray<allInterfaces.IInternalTriangle>;
 }
 
+interface IMaterialsManager {
+  has(materialAlias: number): boolean;
+  getIndexFromAlias(materialAlias: number): number | undefined;
+}
+
 export class ShapesManager implements IShapesManager {
 
-  private _materialsManager: MaterialsManager;
+  private _materialsManager: IMaterialsManager;
 
   private _spheres: allInterfaces.IInternalSphere[] = [];
   private _boxes: allInterfaces.IInternalBox[] = [];
   private _triangles: allInterfaces.IInternalTriangle[] = [];
 
-  private _dataTexture: GpuDataTexture1d;
+  private _gpuDataTexture2d: GpuDataTexture2d;
 
   constructor(
-    materialsManager: MaterialsManager,
-    textureUniformName: string,
-    lengthUniformName: string,
-
+    gpuDataTexture2d: GpuDataTexture2d,
+    materialsManager: IMaterialsManager,
   ) {
+    this._gpuDataTexture2d = gpuDataTexture2d;
     this._materialsManager = materialsManager;
-    this._dataTexture = new GpuDataTexture1d(textureUniformName, lengthUniformName);
   }
 
   pushSphere({
@@ -108,7 +108,8 @@ export class ShapesManager implements IShapesManager {
 
   prepareBuffer() {
 
-    this._dataTexture.clear();
+    // this._dataTexture.clear();
+    this._gpuDataTexture2d.clear();
 
     {
       // spheres
@@ -123,19 +124,19 @@ export class ShapesManager implements IShapesManager {
 
         const shapeType = 1;
 
-        this._dataTexture.push(
+        this._gpuDataTexture2d.push(
           shapeType + 0.5, // [0] R
           currMatIndex + 0.5, // [1] G
           sphere.position[0], // [2] B
           sphere.position[1], // [3] A
         );
-        this._dataTexture.push(
+        this._gpuDataTexture2d.push(
           sphere.position[2], // [4] R
           sphere.orientation[0], // [5] G
           sphere.orientation[1], // [6] B
           sphere.orientation[2], // [7] A
         );
-        this._dataTexture.push(
+        this._gpuDataTexture2d.push(
           sphere.orientation[3], // [8] R
           sphere.radius, // [9] G
           0,
@@ -159,19 +160,19 @@ export class ShapesManager implements IShapesManager {
 
         const shapeType = 2;
 
-        this._dataTexture.push(
+        this._gpuDataTexture2d.push(
           shapeType + 0.5,
           currMatIndex + 0.5, // [10]
           box.position[0], // [0]
           box.position[1], // [1]
         );
-        this._dataTexture.push(
+        this._gpuDataTexture2d.push(
           box.position[2], // [2]
           box.orientation[0], // [3]
           box.orientation[1], // [4]
           box.orientation[2], // [5]
         );
-        this._dataTexture.push(
+        this._gpuDataTexture2d.push(
           box.orientation[3], // [6]
           box.boxSize[0], // [7]
           box.boxSize[1], // [8]
@@ -195,19 +196,19 @@ export class ShapesManager implements IShapesManager {
 
         const shapeType = 3;
 
-        this._dataTexture.push(
+        this._gpuDataTexture2d.push(
           shapeType + 0.5,
           currMatIndex + 0.5, // [0]
           triangle.v0[0], // [1]
           triangle.v0[1], // [2]
         );
-        this._dataTexture.push(
+        this._gpuDataTexture2d.push(
           triangle.v0[2], // [3]
           triangle.v1[0], // [4]
           triangle.v1[1], // [5]
           triangle.v1[2], // [6]
         );
-        this._dataTexture.push(
+        this._gpuDataTexture2d.push(
           triangle.v2[0], // [7]
           triangle.v2[1], // [8]
           triangle.v2[2], // [9]
@@ -221,9 +222,9 @@ export class ShapesManager implements IShapesManager {
   }
 
 
-  get dataTexture(): Readonly<GpuDataTexture1d> {
-    return this._dataTexture;
-  }
+  // get dataTexture(): Readonly<GpuDataTexture2d> {
+  //   return this._gpuDataTexture2d;
+  // }
 
   get spheres(): ReadonlyArray<allInterfaces.IInternalSphere> {
     return this._spheres;

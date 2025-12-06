@@ -15,6 +15,7 @@ import { BvhDebug } from './internals/BvhDebug';
 import { IMaterialsManager, MaterialsManager } from './internals/MaterialsManager';
 import { ISpotLightsManager, SpotLightsManager } from './internals/SpotLightsManager';
 import { IShapesManager, ShapesManager } from './internals/ShapesManager';
+import { GpuDataTexture2d } from './internals/GpuDataTexture2d';
 
 const {
   WebGLContext,
@@ -101,10 +102,12 @@ export class RayTracerPass implements IRayTracerPass {
 
   private _camera: ICamera;
 
-  private _bvhManager = new BvhManager('u_bvhDataTexture');
-  private _materialsManager = new MaterialsManager('u_materialsTextureData');
+  private _gpuDataTexture2d = new GpuDataTexture2d("u_dataTexture");
+
+  private _bvhManager: BvhManager;
+  private _materialsManager: MaterialsManager;
   private _shapesManager: ShapesManager;
-  private _spotLightsManager = new SpotLightsManager("u_lightsTextureData", "u_lightsTextureSize");
+  private _spotLightsManager: SpotLightsManager;
 
   constructor(inDef: IDefinition) {
     this._cameraFovy = inDef.fovy;
@@ -121,15 +124,10 @@ export class RayTracerPass implements IRayTracerPass {
 
         'u_useBvh',
 
-        'u_sceneTextureData',
+        'u_dataTexture',
+
         'u_sceneTextureSize',
-
-        'u_materialsTextureData',
-
-        'u_lightsTextureData',
         'u_lightsTextureSize',
-
-        'u_bvhDataTexture',
       ]
     });
 
@@ -168,7 +166,14 @@ export class RayTracerPass implements IRayTracerPass {
     //
     //
 
-    this._shapesManager = new ShapesManager(this._materialsManager, 'u_sceneTextureData', 'u_sceneTextureSize');
+    this._bvhManager = new BvhManager(this._gpuDataTexture2d);
+
+    this._materialsManager = new MaterialsManager(this._gpuDataTexture2d);
+    this._shapesManager = new ShapesManager(
+      this._gpuDataTexture2d,
+      this._materialsManager,
+    );
+    this._spotLightsManager = new SpotLightsManager(this._gpuDataTexture2d);
 
     this._camera = {
       position: glm.vec3.fromValues(0, 0, 0),
@@ -210,9 +215,18 @@ export class RayTracerPass implements IRayTracerPass {
     this._bvhTree.synchronize(this._shapesManager.spheres, this._shapesManager.boxes, this._shapesManager.triangles);
     this._bvhManager.syncRootNode(this._bvhTree.getRootNode());
     this._bvhManager.prepareBuffer();
+    this._gpuDataTexture2d.uploadGpuDataAsRow(3);
+
     this._materialsManager.prepareBuffer();
+    this._gpuDataTexture2d.uploadGpuDataAsRow(1);
+
     this._shapesManager.prepareBuffer();
+    this._gpuDataTexture2d.uploadGpuDataAsRow(0);
+    const sceneTextureSize = this._gpuDataTexture2d.getCurrentIndex();
+
     this._spotLightsManager.prepareBuffer();
+    this._gpuDataTexture2d.uploadGpuDataAsRow(2);
+    const lightsTextureSize = this._gpuDataTexture2d.getCurrentIndex();
 
     gl.viewport(0, 0, this._renderWidth, this._renderHeight);
     gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
@@ -232,38 +246,17 @@ export class RayTracerPass implements IRayTracerPass {
 
         boundShader.setInteger1Uniform('u_useBvh', 1);
 
-        //
-        //
-        //
+        boundShader.setInteger1Uniform('u_sceneTextureSize', sceneTextureSize);
+        boundShader.setInteger1Uniform('u_lightsTextureSize', lightsTextureSize);
 
-        {
-          const textureUnit = 6;
-          gl.activeTexture(gl.TEXTURE0 + textureUnit);
-          this._bvhManager.dataTexture.syncGpuData();
-          this._bvhManager.dataTexture.setForShader(boundShader, textureUnit);
-        }
+        //
+        //
+        //
 
         {
           const textureUnit = 0;
           gl.activeTexture(gl.TEXTURE0 + textureUnit);
-          this._shapesManager.dataTexture.syncGpuDataLength(boundShader);
-          this._shapesManager.dataTexture.syncGpuData();
-          this._shapesManager.dataTexture.setForShader(boundShader, textureUnit);
-        }
-
-        {
-          const textureUnit = 7;
-          gl.activeTexture(gl.TEXTURE0 + textureUnit);
-          this._materialsManager.dataTexture.syncGpuData();
-          this._materialsManager.dataTexture.setForShader(boundShader, textureUnit);
-        }
-
-        {
-          const textureUnit = 1;
-          gl.activeTexture(gl.TEXTURE0 + textureUnit);
-          this._spotLightsManager.dataTexture.syncGpuDataLength(boundShader);
-          this._spotLightsManager.dataTexture.syncGpuData();
-          this._spotLightsManager.dataTexture.setForShader(boundShader, textureUnit);
+          this._gpuDataTexture2d.setForShader(boundShader, textureUnit);
         }
 
         //

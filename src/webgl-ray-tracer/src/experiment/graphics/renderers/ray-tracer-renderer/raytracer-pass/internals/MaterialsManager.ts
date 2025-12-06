@@ -1,7 +1,6 @@
 
+import { GpuDataTexture2d } from './GpuDataTexture2d';
 import * as allInterfaces from '../all-interfaces';
-
-import { GpuDataTexture1d } from './GpuDataTexture1d';
 
 export interface IMaterialsManager {
   pushBasicMaterial(params: allInterfaces.IPublicBasicMaterial): void;
@@ -18,10 +17,10 @@ export class MaterialsManager {
 
   private _matAliasToIndex = new Map<number, number>();
 
-  private _dataTexture: GpuDataTexture1d;
+  private _gpuDataTexture2d: GpuDataTexture2d;
 
-  constructor(textureUniformName: string) {
-    this._dataTexture = new GpuDataTexture1d(textureUniformName)
+  constructor(gpuDataTexture2d: GpuDataTexture2d) {
+    this._gpuDataTexture2d = gpuDataTexture2d;
   }
 
   pushBasicMaterial(params: allInterfaces.IPublicBasicMaterial): void {
@@ -77,7 +76,7 @@ export class MaterialsManager {
 
   prepareBuffer() {
 
-    this._dataTexture.clear();
+    this._gpuDataTexture2d.clear();
 
     let currIndex = 0;
 
@@ -90,13 +89,13 @@ export class MaterialsManager {
 
       const matType = 0;
 
-      this._dataTexture.push(
+      this._gpuDataTexture2d.push(
         matType + 0.5, // [0] R
         (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
         currMat.reflectionFactor, // [2] B
         currMat.refractionFactor, // [3] A
       );
-      this._dataTexture.push(
+      this._gpuDataTexture2d.push(
         currMat.receiveLightEnabled ? 1 : 0, // [4] R
         currMat.color[0], // [5] G
         currMat.color[1], // [6] B
@@ -119,13 +118,13 @@ export class MaterialsManager {
 
       const matType = 1;
 
-      this._dataTexture.push(
+      this._gpuDataTexture2d.push(
         matType + 0.5, // [0] R
         (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
         subMatIndexA + 0.5, // [2] B
         subMatIndexB + 0.5, // [3] A
       );
-      this._dataTexture.push(
+      this._gpuDataTexture2d.push(
         currMat.chessboardArgs ? currMat.chessboardArgs[0] : 1.0, // [4] R
         currMat.chessboardArgs ? currMat.chessboardArgs[1] : 1.0, // [5] G
         currMat.chessboardArgs ? currMat.chessboardArgs[2] : 1.0, // [6] B
@@ -140,8 +139,8 @@ export class MaterialsManager {
     return this._matAliasToIndex.get(materialAlias);
   }
 
-  get dataTexture(): Readonly<GpuDataTexture1d> {
-    return this._dataTexture;
-  }
+  // get dataTexture(): Readonly<GpuDataTexture1d> {
+  //   return this._dataTexture;
+  // }
 
 };

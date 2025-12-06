@@ -27,19 +27,9 @@ uniform int         u_useBvh;
 
 //
 
-uniform highp sampler2D   u_sceneTextureData;
+uniform highp sampler2D   u_dataTexture;
 uniform int               u_sceneTextureSize;
-
-uniform highp sampler2D   u_materialsTextureData;
-
-//
-
-uniform highp sampler2D   u_lightsTextureData;
 uniform int               u_lightsTextureSize;
-
-//
-
-uniform highp sampler2D   u_bvhDataTexture;
 
 //
 //
@@ -55,11 +45,19 @@ const float     g_ambientLightIntensity = 0.15;
 
 const vec3      g_backgroundColor = vec3(0.1);
 
+const int       SHAPES_ROW_INDEX = 0;
+const int       MATERIALS_ROW_INDEX = 1;
+const int       LIGHTS_ROW_INDEX = 2;
+const int       BVH_ROW_INDEX = 3;
+
+
+//
+//
+//
+//
 //
 
 #include "./ray-tracer-all-interfaces.glsl.frag"
-
-#include "./ray-tracer-shapes-intersect.glsl.frag"
 
 #include "./ray-tracer-intersectScene.glsl.frag"
 
@@ -83,14 +81,8 @@ const vec3      g_backgroundColor = vec3(0.1);
 //
 //
 
-void main()
+vec3 castRay(in vec3 rayDir)
 {
-  //
-  //
-  // initial ray
-
-  vec3 rayDir = normalize(v_position - u_cameraEye); // camera direction
-  vec3 finalPixelColor = g_backgroundColor;
 
   // need a scene stack size of minimum 7 for a reflective AND refractive sphere/shapes
   const int maxSceneStackSize = 7;
@@ -155,8 +147,8 @@ void main()
 
     int materialIndex = _sceneStack[sceneStackReadIndex].result.materialIndex;
 
-    vec4 matTexel0 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 0, 0), 0);
-    vec4 matTexel1 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 1, 0), 0);
+    vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
+    vec4 matTexel1 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 1, MATERIALS_ROW_INDEX), 0);
 
     int materialType = int(matTexel0.r);
 
@@ -177,8 +169,8 @@ void main()
         subMaterialIndex = int(matTexel0.b);
       }
 
-      matTexel0 = texelFetch(u_materialsTextureData, ivec2(subMaterialIndex * 2 + 0, 0), 0);
-      matTexel1 = texelFetch(u_materialsTextureData, ivec2(subMaterialIndex * 2 + 1, 0), 0);
+      matTexel0 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
+      matTexel1 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 1, MATERIALS_ROW_INDEX), 0);
     }
 
     vec3 color = matTexel1.gba;
@@ -308,9 +300,38 @@ void main()
     }
   }
 
-  if (_sceneStack[0].result.hasHit) {
-    finalPixelColor = _sceneStack[0].result.color.xyz;
-  }
+  return _sceneStack[0].result.hasHit
+    ? _sceneStack[0].result.color.xyz
+    : g_backgroundColor;
+}
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
+void main()
+{
+  //
+  //
+  // initial ray
+
+  vec3 rayDir = normalize(v_position - u_cameraEye); // camera direction
+
+  vec3 finalPixelColor = castRay(rayDir);
 
   //
   // Final Output

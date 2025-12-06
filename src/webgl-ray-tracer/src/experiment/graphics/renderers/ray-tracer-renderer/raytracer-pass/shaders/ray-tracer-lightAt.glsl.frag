@@ -23,7 +23,7 @@ void lightAt(
   for (int lightIndex = 0; lightIndex < u_lightsTextureSize; lightIndex += 2)
   {
 
-    vec4 lightTexel0 = texelFetch(u_lightsTextureData, ivec2(lightIndex + 0, 0), 0);
+    vec4 lightTexel0 = texelFetch(u_dataTexture, ivec2(lightIndex + 0, LIGHTS_ROW_INDEX), 0);
     vec3 lightPos = lightTexel0.rgb;
     float lightRadius = lightTexel0.a;
 
@@ -40,7 +40,7 @@ void lightAt(
     // normalize lightDir
     lightDir = lightToImpactVec3 / lightToImpactDistance;
 
-    vec4 lightTexel1 = texelFetch(u_lightsTextureData, ivec2(lightIndex + 1, 0), 0);
+    vec4 lightTexel1 = texelFetch(u_dataTexture, ivec2(lightIndex + 1, LIGHTS_ROW_INDEX), 0);
     float localIntensity = lightTexel1.r;
 
     currLightIntensity = localIntensity * (1.0 - lightToImpactDistance / lightRadius);
@@ -109,8 +109,8 @@ void lightAt(
       int materialIndex = _lightStack[lightStackReadIndex].result.materialIndex;
 
       // light ray is blocked, skip this light... unless? (<- chessboard/refraction material check)
-      vec4 matTexel0 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 0, 0), 0);
-      vec4 matTexel1 = texelFetch(u_materialsTextureData, ivec2(materialIndex * 2 + 1, 0), 0);
+      vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
+      vec4 matTexel1 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 1, MATERIALS_ROW_INDEX), 0);
 
       int materialType = int(matTexel0.r);
 
@@ -130,8 +130,8 @@ void lightAt(
           subMaterialIndex = int(matTexel0.b);
         }
 
-        matTexel0 = texelFetch(u_materialsTextureData, ivec2(subMaterialIndex * 2 + 0, 0), 0);
-        matTexel1 = texelFetch(u_materialsTextureData, ivec2(subMaterialIndex * 2 + 1, 0), 0);
+        matTexel0 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
+        matTexel1 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 1, MATERIALS_ROW_INDEX), 0);
       }
 
       float refractionFactor = matTexel0.a;

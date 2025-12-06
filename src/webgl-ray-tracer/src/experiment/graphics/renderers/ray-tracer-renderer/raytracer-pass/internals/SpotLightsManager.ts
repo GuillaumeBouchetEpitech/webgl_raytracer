@@ -1,7 +1,6 @@
 
+import { GpuDataTexture2d } from './GpuDataTexture2d';
 import * as allInterfaces from '../all-interfaces';
-
-import { GpuDataTexture1d } from './GpuDataTexture1d';
 
 import * as glm from "gl-matrix"
 
@@ -12,10 +11,10 @@ export interface ISpotLightsManager {
 export class SpotLightsManager implements ISpotLightsManager {
 
   private _spotLights: allInterfaces.ISpotLight[] = [];
-  private _dataTexture: GpuDataTexture1d;
+  private _gpuDataTexture2d: GpuDataTexture2d;
 
-  constructor(textureUniformName: string, lengthUniformName: string) {
-    this._dataTexture = new GpuDataTexture1d(textureUniformName, lengthUniformName);
+  constructor(gpuDataTexture2d: GpuDataTexture2d) {
+    this._gpuDataTexture2d = gpuDataTexture2d;
   }
 
 
@@ -43,18 +42,18 @@ export class SpotLightsManager implements ISpotLightsManager {
 
   prepareBuffer() {
 
-    this._dataTexture.clear();
+    this._gpuDataTexture2d.clear();
 
     for (const spotLight of this._spotLights) {
       // add spot light
 
-      this._dataTexture.push(
+      this._gpuDataTexture2d.push(
         spotLight.position[0],
         spotLight.position[1],
         spotLight.position[2],
         spotLight.radius,
       );
-      this._dataTexture.push(
+      this._gpuDataTexture2d.push(
         spotLight.intensity,
         0,
         0,
@@ -62,10 +61,6 @@ export class SpotLightsManager implements ISpotLightsManager {
       );
     }
 
-  }
-
-  get dataTexture(): Readonly<GpuDataTexture1d> {
-    return this._dataTexture;
   }
 
   get spotLights(): ReadonlyArray<allInterfaces.ISpotLight> {

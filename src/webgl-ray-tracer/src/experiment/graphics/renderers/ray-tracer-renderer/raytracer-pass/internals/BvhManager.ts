@@ -1,15 +1,17 @@
 
+import { GpuDataTexture2d } from './GpuDataTexture2d';
 import { BvhTreeNode } from './BvhTreeNode';
-import { GpuDataTexture1d } from './GpuDataTexture1d';
 
 export class BvhManager {
 
-  private _dataTexture: GpuDataTexture1d;
+  private _gpuDataTexture2d: GpuDataTexture2d;
 
   private _allNodes: BvhTreeNode[] = [];
 
-  constructor(textureUniformName: string) {
-    this._dataTexture = new GpuDataTexture1d(textureUniformName);
+  constructor(
+    gpuDataTexture2d: GpuDataTexture2d
+  ) {
+    this._gpuDataTexture2d = gpuDataTexture2d;
   }
 
   syncRootNode(inputRootNode?: BvhTreeNode) {
@@ -39,23 +41,23 @@ export class BvhManager {
 
   prepareBuffer() {
 
-    this._dataTexture.clear();
+    this._gpuDataTexture2d.clear();
 
     for (const currNode of this._allNodes) {
 
-      this._dataTexture.push(
+      this._gpuDataTexture2d.push(
         currNode._min[0],
         currNode._min[1],
         currNode._min[2],
         currNode._max[0],
       );
-      this._dataTexture.push(
+      this._gpuDataTexture2d.push(
         currNode._max[1],
         currNode._max[2],
         (currNode._leftNode?._index ?? -2) + 0.5,
         (currNode._rightNode?._index ?? -2) + 0.5,
       );
-      this._dataTexture.push(
+      this._gpuDataTexture2d.push(
         (currNode._leftLeaf?.index ?? -2) + 0.5,
         (currNode._rightLeaf?.index ?? -2) + 0.5,
         0,
@@ -64,10 +66,6 @@ export class BvhManager {
 
     }
 
-  }
-
-  get dataTexture(): Readonly<GpuDataTexture1d> {
-    return this._dataTexture;
   }
 
 }
