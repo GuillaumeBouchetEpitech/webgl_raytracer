@@ -12,8 +12,21 @@ export class BvhTree {
 
   private _rootNode?: BvhTreeNode;
 
-  constructor() {
-  }
+  private _boxMat4_a = glm.mat4.create();
+  private _boxMat4_b = glm.mat4.create();
+  private _boxPos = glm.vec3.create();
+  private _boxCorners: ReadonlyArray<glm.vec3> = [
+    glm.vec3.create(),
+    glm.vec3.create(),
+    glm.vec3.create(),
+    glm.vec3.create(),
+    glm.vec3.create(),
+    glm.vec3.create(),
+    glm.vec3.create(),
+    glm.vec3.create(),
+  ];
+
+  constructor() {}
 
   reset() {
     this._allShapes.length = 0;
@@ -29,7 +42,7 @@ export class BvhTree {
     this.reset();
 
     // setup the generic shape list
-    let index = 0;
+    let shapeIndex = 0;
     for (const currShape of allSpheres) {
 
       const min = glm.vec3.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
@@ -47,42 +60,41 @@ export class BvhTree {
       if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
       if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
 
-      this._allShapes.push({ index: index++, type: 'sphere', shape: currShape, min, max });
+      this._allShapes.push({ index: shapeIndex++, type: 'sphere', shape: currShape, min, max });
     }
 
     for (const currShape of allBoxes) {
+
+      glm.mat4.identity(this._boxMat4_a);
+      glm.mat4.translate(this._boxMat4_a, this._boxMat4_a, currShape.position);
+      glm.mat4.fromQuat(this._boxMat4_b, currShape.orientation);
+      glm.mat4.multiply(this._boxMat4_a, this._boxMat4_a, this._boxMat4_b);
 
       const min = glm.vec3.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
       const max = glm.vec3.fromValues(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
 
       const allBoxCorners: ReadonlyArray<glm.ReadonlyVec3> = [
-        glm.vec3.fromValues(-currShape.boxSize[0], -currShape.boxSize[1], -currShape.boxSize[2]),
-        glm.vec3.fromValues(+currShape.boxSize[0], -currShape.boxSize[1], -currShape.boxSize[2]),
-        glm.vec3.fromValues(-currShape.boxSize[0], +currShape.boxSize[1], -currShape.boxSize[2]),
-        glm.vec3.fromValues(+currShape.boxSize[0], +currShape.boxSize[1], -currShape.boxSize[2]),
-        glm.vec3.fromValues(-currShape.boxSize[0], -currShape.boxSize[1], +currShape.boxSize[2]),
-        glm.vec3.fromValues(+currShape.boxSize[0], -currShape.boxSize[1], +currShape.boxSize[2]),
-        glm.vec3.fromValues(-currShape.boxSize[0], +currShape.boxSize[1], +currShape.boxSize[2]),
-        glm.vec3.fromValues(+currShape.boxSize[0], +currShape.boxSize[1], +currShape.boxSize[2]),
+        glm.vec3.set(this._boxCorners[0], -currShape.boxSize[0], -currShape.boxSize[1], -currShape.boxSize[2]),
+        glm.vec3.set(this._boxCorners[1], +currShape.boxSize[0], -currShape.boxSize[1], -currShape.boxSize[2]),
+        glm.vec3.set(this._boxCorners[2], -currShape.boxSize[0], +currShape.boxSize[1], -currShape.boxSize[2]),
+        glm.vec3.set(this._boxCorners[3], +currShape.boxSize[0], +currShape.boxSize[1], -currShape.boxSize[2]),
+        glm.vec3.set(this._boxCorners[4], -currShape.boxSize[0], -currShape.boxSize[1], +currShape.boxSize[2]),
+        glm.vec3.set(this._boxCorners[5], +currShape.boxSize[0], -currShape.boxSize[1], +currShape.boxSize[2]),
+        glm.vec3.set(this._boxCorners[6], -currShape.boxSize[0], +currShape.boxSize[1], +currShape.boxSize[2]),
+        glm.vec3.set(this._boxCorners[7], +currShape.boxSize[0], +currShape.boxSize[1], +currShape.boxSize[2]),
       ];
 
       // need to apply the box transformation to the corners (translation, then rotation)
       allBoxCorners.forEach((vertex) => {
-        const pos = glm.vec3.fromValues(0, 0, 0);
 
-        const mat4 = glm.mat4.identity(glm.mat4.create());
-        glm.mat4.translate(mat4, mat4, currShape.position);
-        const mat4b = glm.mat4.fromQuat(glm.mat4.create(), currShape.orientation);
-        glm.mat4.multiply(mat4, mat4, mat4b);
+        glm.vec3.transformMat4(this._boxPos, vertex, this._boxMat4_a);
 
-        glm.vec3.transformMat4(pos, vertex, mat4);
-
-        min[0] = Math.min(min[0], pos[0]);
-        min[1] = Math.min(min[1], pos[1]);
-        min[2] = Math.min(min[2], pos[2]);
-        max[0] = Math.max(max[0], pos[0]);
-        max[1] = Math.max(max[1], pos[1]);
-        max[2] = Math.max(max[2], pos[2]);
+        min[0] = Math.min(min[0], this._boxPos[0]);
+        min[1] = Math.min(min[1], this._boxPos[1]);
+        min[2] = Math.min(min[2], this._boxPos[2]);
+        max[0] = Math.max(max[0], this._boxPos[0]);
+        max[1] = Math.max(max[1], this._boxPos[1]);
+        max[2] = Math.max(max[2], this._boxPos[2]);
       });
 
       // here we ensure the shape is not "paper flat" on any of its axises
@@ -90,7 +102,7 @@ export class BvhTree {
       if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
       if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
 
-      this._allShapes.push({ index: index++, type: 'box', shape: currShape, min, max });
+      this._allShapes.push({ index: shapeIndex++, type: 'box', shape: currShape, min, max });
     }
 
     for (const currShape of allTriangles) {
@@ -124,7 +136,7 @@ export class BvhTree {
       if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
       if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
 
-      this._allShapes.push({ index: index++, type: 'triangle', shape: currShape, min, max });
+      this._allShapes.push({ index: shapeIndex++, type: 'triangle', shape: currShape, min, max });
     }
 
     // create root node

@@ -35,31 +35,74 @@ export class BvhTreeNode {
   _rightLeaf?: IShape;
 
   private static s_index: number = 0;
+  private static s_min = glm.vec3.create();
+  private static s_max = glm.vec3.create();
+
+  private static s_nodesPoolFree: BvhTreeNode[] = [];
+  private static s_nodesPoolUsed: BvhTreeNode[] = [];
 
   static buildBvhGraph(
-    min: glm.vec3,
-    max: glm.vec3,
+    min: glm.ReadonlyVec3,
+    max: glm.ReadonlyVec3,
     allShapes: ReadonlyArray<IShape>,
   ): BvhTreeNode {
-    BvhTreeNode.s_index = 0;
-    const rootNode = new BvhTreeNode(min, max);
-    rootNode.subDivide(allShapes);
+    this.s_index = 0;
+
+    // add the used node to the pool of free
+    for (const currNode of this.s_nodesPoolUsed) {
+      this.s_nodesPoolFree.push(currNode);
+    }
+    // clear the pool of used ones
+    this.s_nodesPoolUsed.length = 0;
+
+    const rootNode = this._makeNewNode(min, max);
+    rootNode._subDivide(allShapes);
     return rootNode;
   }
 
+  private static _makeNewNode(
+    min: glm.ReadonlyVec3,
+    max: glm.ReadonlyVec3,
+  ): BvhTreeNode {
+
+    const _getNode = (): BvhTreeNode => {
+      // try to acquire
+      if (BvhTreeNode.s_nodesPoolFree.length > 0) {
+        const newNode = BvhTreeNode.s_nodesPoolFree.pop()!;
+        newNode._init(min, max);
+        return newNode;
+      }
+      // create
+      return new BvhTreeNode(min, max);
+    }
+
+    const newNode = _getNode();
+    BvhTreeNode.s_nodesPoolUsed.push(newNode);
+    return newNode;
+  }
+
   private constructor(
-    min: glm.vec3,
-    max: glm.vec3,
+    min: glm.ReadonlyVec3,
+    max: glm.ReadonlyVec3,
+  ) {
+    this._init(min, max);
+  }
+
+  private _init(
+    min: glm.ReadonlyVec3,
+    max: glm.ReadonlyVec3,
   ) {
     this._index = BvhTreeNode.s_index;
     BvhTreeNode.s_index += 1;
     glm.vec3.copy(this._min, min);
     glm.vec3.copy(this._max, max);
+    this._leftNode = undefined;
+    this._rightNode = undefined;
+    this._leftLeaf = undefined;
+    this._rightLeaf = undefined;
   }
 
-  subDivide(
-    allShapes: ReadonlyArray<IShape>,
-  ): void {
+  private _subDivide(allShapes: ReadonlyArray<IShape>): void {
 
     if (allShapes.length <= 2) {
       this._leftLeaf = allShapes[0];
@@ -83,7 +126,8 @@ export class BvhTreeNode {
   }
 
   private _splitAcross(axis: 0 | 1 | 2, allShapes: ReadonlyArray<IShape>) {
-    const sorted = [...allShapes].sort((shapeA, shapeB) => {
+
+    const sortedShapes = [...allShapes].sort((shapeA, shapeB) => {
       const minA = shapeA.min[axis];
       const maxA = shapeA.max[axis];
 
@@ -93,45 +137,45 @@ export class BvhTreeNode {
       return (minA + maxA) / 2.0 - (minB + maxB) / 2.0;
     });
 
-    const halfIndex = Math.floor(sorted.length / 2);
-    const leftSubFaces = sorted.slice(0, halfIndex);
-    const rightSubFaces = sorted.slice(halfIndex);
+    const halfIndex = Math.floor(sortedShapes.length / 2);
+    const leftSubShapes = sortedShapes.slice(0, halfIndex);
+    const rightSubShapes = sortedShapes.slice(halfIndex);
 
-    if (leftSubFaces.length > 0) {
-      const min = glm.vec3.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
-      const max = glm.vec3.fromValues(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
-      leftSubFaces.forEach((f) => {
-        min[0] = Math.min(min[0], f.min[0]);
-        min[1] = Math.min(min[1], f.min[1]);
-        min[2] = Math.min(min[2], f.min[2]);
-        max[0] = Math.max(max[0], f.max[0]);
-        max[1] = Math.max(max[1], f.max[1]);
-        max[2] = Math.max(max[2], f.max[2]);
+    if (leftSubShapes.length > 0) {
+      glm.vec3.set(BvhTreeNode.s_min, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
+      glm.vec3.set(BvhTreeNode.s_max, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
+      leftSubShapes.forEach((f) => {
+        BvhTreeNode.s_min[0] = Math.min(BvhTreeNode.s_min[0], f.min[0]);
+        BvhTreeNode.s_min[1] = Math.min(BvhTreeNode.s_min[1], f.min[1]);
+        BvhTreeNode.s_min[2] = Math.min(BvhTreeNode.s_min[2], f.min[2]);
+        BvhTreeNode.s_max[0] = Math.max(BvhTreeNode.s_max[0], f.max[0]);
+        BvhTreeNode.s_max[1] = Math.max(BvhTreeNode.s_max[1], f.max[1]);
+        BvhTreeNode.s_max[2] = Math.max(BvhTreeNode.s_max[2], f.max[2]);
       });
 
-      this._leftNode = new BvhTreeNode(min, max);
+      this._leftNode = BvhTreeNode._makeNewNode(BvhTreeNode.s_min, BvhTreeNode.s_max);
     }
 
-    if (rightSubFaces.length > 0) {
-      const min = glm.vec3.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
-      const max = glm.vec3.fromValues(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
-      rightSubFaces.forEach((f) => {
-        min[0] = Math.min(min[0], f.min[0]);
-        min[1] = Math.min(min[1], f.min[1]);
-        min[2] = Math.min(min[2], f.min[2]);
-        max[0] = Math.max(max[0], f.max[0]);
-        max[1] = Math.max(max[1], f.max[1]);
-        max[2] = Math.max(max[2], f.max[2]);
+    if (rightSubShapes.length > 0) {
+      glm.vec3.set(BvhTreeNode.s_min, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
+      glm.vec3.set(BvhTreeNode.s_max, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
+      rightSubShapes.forEach((f) => {
+        BvhTreeNode.s_min[0] = Math.min(BvhTreeNode.s_min[0], f.min[0]);
+        BvhTreeNode.s_min[1] = Math.min(BvhTreeNode.s_min[1], f.min[1]);
+        BvhTreeNode.s_min[2] = Math.min(BvhTreeNode.s_min[2], f.min[2]);
+        BvhTreeNode.s_max[0] = Math.max(BvhTreeNode.s_max[0], f.max[0]);
+        BvhTreeNode.s_max[1] = Math.max(BvhTreeNode.s_max[1], f.max[1]);
+        BvhTreeNode.s_max[2] = Math.max(BvhTreeNode.s_max[2], f.max[2]);
       });
 
-      this._rightNode = new BvhTreeNode(min, max);
+      this._rightNode = BvhTreeNode._makeNewNode(BvhTreeNode.s_min, BvhTreeNode.s_max);
     }
 
     if (this._leftNode) {
-      this._leftNode.subDivide(leftSubFaces);
+      this._leftNode._subDivide(leftSubShapes);
     }
     if (this._rightNode) {
-      this._rightNode.subDivide(rightSubFaces);
+      this._rightNode._subDivide(rightSubShapes);
     }
   }
 
