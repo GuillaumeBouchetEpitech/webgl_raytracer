@@ -122,8 +122,6 @@ export class RayTracerPass implements IRayTracerPass {
       uniforms: [
         'u_cameraEye',
 
-        'u_useBvh',
-
         'u_dataTexture',
 
         'u_sceneTextureSize',
@@ -243,8 +241,6 @@ export class RayTracerPass implements IRayTracerPass {
           this._camera.position[1],
           this._camera.position[2]
         );
-
-        boundShader.setInteger1Uniform('u_useBvh', 1);
 
         boundShader.setInteger1Uniform('u_sceneTextureSize', sceneTextureSize);
         boundShader.setInteger1Uniform('u_lightsTextureSize', lightsTextureSize);

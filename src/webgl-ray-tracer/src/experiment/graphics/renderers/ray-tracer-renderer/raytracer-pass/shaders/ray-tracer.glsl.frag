@@ -22,8 +22,7 @@ const float Eta = Air / Glass;
 //
 //
 
-uniform vec3        u_cameraEye;
-uniform int         u_useBvh;
+uniform vec3              u_cameraEye;
 
 //
 
@@ -45,11 +44,18 @@ const float     g_ambientLightIntensity = 0.15;
 
 const vec3      g_backgroundColor = vec3(0.1);
 
+const int       g_maxLightStackSize = 5;
+
+// need a scene stack size of minimum 7 for a reflective AND refractive sphere/shapes
+const int       g_maxSceneStackSize = 7;
+
+const int       g_maxBvhStack = 16;
+int             g_bvhStack[g_maxBvhStack];
+
 const int       SHAPES_ROW_INDEX = 0;
 const int       MATERIALS_ROW_INDEX = 1;
 const int       LIGHTS_ROW_INDEX = 2;
 const int       BVH_ROW_INDEX = 3;
-
 
 //
 //
@@ -58,6 +64,15 @@ const int       BVH_ROW_INDEX = 3;
 //
 
 #include "./ray-tracer-1-all-interfaces.glsl.frag"
+
+StackData       g_sceneStack[g_maxSceneStackSize];
+LightStackData  g_lightStack[g_maxLightStackSize];
+
+//
+//
+//
+//
+//
 
 #include "./ray-tracer-2-castInitialRay.glsl.frag"
 

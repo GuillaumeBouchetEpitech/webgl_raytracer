@@ -203,6 +203,26 @@ bool rayIntersectBvhAABB(RayValues ray, vec3 bvhMin, vec3 bvhMax)
 //
 //
 
+
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
 bool intersectScene(
   RayValues ray,
   out RayResult outBestResult,
@@ -212,93 +232,89 @@ bool intersectScene(
   outBestResult.hasHit = false;
   outBestResult.distance = -1.0;
 
-  if (u_sceneTextureSize == 0)
-  {
-    return false;
+  // if (u_sceneTextureSize == 0)
+  // {
+  //   return false;
+  // }
+
+#ifndef false
+
+  // no BVH optimization -> brute force all the shapes
+  // -> no BVH makes it ~15-20% slower on the tested small-ish scenes
+  for (int shapeIndex = 0; shapeIndex < u_sceneTextureSize; shapeIndex += 3) {
+    if (shapeIndex != toIgnoreShapeIndex) {
+      intersectSceneOneShape(shapeIndex, ray, outBestResult, shadowCastingMode);
+    }
   }
 
-  if (u_useBvh == 0)
+#else
+
+  // use BVH optimization -> traverse the nodes and their associated AABB
+  // -> this should reduce the total number intersections executed
+
+  g_bvhStack[0] = 0; // BVH root node index
+  int bvhStackTopIndex = 0;
+
+  while (bvhStackTopIndex >= 0)
   {
 
-    // no BVH optimization -> brute force all the shapes
-    // -> no BVH makes it ~15-20% slower on the tested small-ish scenes
-    for (int shapeIndex = 0; shapeIndex < u_sceneTextureSize; shapeIndex += 3) {
-      if (shapeIndex != toIgnoreShapeIndex) {
-        intersectSceneOneShape(shapeIndex, ray, outBestResult, shadowCastingMode);
-      }
+    // pop bvh stack
+    int nodeIndex = g_bvhStack[bvhStackTopIndex];
+    bvhStackTopIndex -= 1;
+
+    vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(nodeIndex * 3 + 0, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(nodeIndex * 3 + 1, BVH_ROW_INDEX), 0);
+
+    vec3 aabbMin = rootNodeTexel0.rgb;
+    vec3 aabbMax = vec3(rootNodeTexel0.a, rootNodeTexel1.r, rootNodeTexel1.g);
+
+    if (!rayIntersectBvhAABB(ray, aabbMin, aabbMax)) {
+      continue;
     }
 
-  }
-  else
-  {
+    //
 
-    // use BVH optimization -> traverse the nodes and their associated AABB
-    // -> this should reduce the total number intersections execute
-
-    const int maxBvhStack = 16;
-    int bvhStack[maxBvhStack];
-
-    bvhStack[0] = 0; // BVH root node index
-    int top = 0;
-
-    while (top >= 0)
-    {
-
-      // pop stack
-      int bv_idx = bvhStack[top];
-      top -= 1;
-
-      vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(bv_idx * 3 + 0, BVH_ROW_INDEX), 0);
-      vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(bv_idx * 3 + 1, BVH_ROW_INDEX), 0);
-
-      vec3 aabbMin = rootNodeTexel0.rgb;
-      vec3 aabbMax = vec3(rootNodeTexel0.a, rootNodeTexel1.r, rootNodeTexel1.g);
-
-      if (!rayIntersectBvhAABB(ray, aabbMin, aabbMax)) {
-        continue;
-      }
-
-      //
-
-      int leftNodeIndex = int(rootNodeTexel1.b);
-      if (leftNodeIndex >= 0) {
-        // push left bvh node index on to the stack
-        top += 1;
-        bvhStack[top] = leftNodeIndex;
-      }
-
-      int rightNodeIndex = int(rootNodeTexel1.a);
-      if (rightNodeIndex >= 0) {
-        // push right bvh node index on to the stack
-        top += 1;
-        bvhStack[top] = rightNodeIndex;
-      }
-
-      //
-
-      vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(bv_idx * 3 + 2, BVH_ROW_INDEX), 0);
-
-      int leftLEafShapeIndex = int(rootNodeTexel2.r);
-      if (
-        leftLEafShapeIndex >= 0 &&
-        leftLEafShapeIndex != toIgnoreShapeIndex
-      ) {
-        intersectSceneOneShape(leftLEafShapeIndex * 3, ray, outBestResult, shadowCastingMode);
-      }
-
-      int rightLeafShapeIndex = int(rootNodeTexel2.g);
-      if (
-        rightLeafShapeIndex >= 0 &&
-        rightLeafShapeIndex != toIgnoreShapeIndex
-      ) {
-        intersectSceneOneShape(rightLeafShapeIndex * 3, ray, outBestResult, shadowCastingMode);
-      }
-
-      //
-
+    int leftNodeIndex = int(rootNodeTexel1.b);
+    if (leftNodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
+      // push left bvh node index on to the stack
+      bvhStackTopIndex += 1;
+      g_bvhStack[bvhStackTopIndex] = leftNodeIndex;
     }
 
+    int rightNodeIndex = int(rootNodeTexel1.a);
+    if (rightNodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
+      // push right bvh node index on to the stack
+      bvhStackTopIndex += 1;
+      g_bvhStack[bvhStackTopIndex] = rightNodeIndex;
+    }
+
+    //
+
+    vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(nodeIndex * 3 + 2, BVH_ROW_INDEX), 0);
+
+    int leftLeafShapeIndex = int(rootNodeTexel2.r);
+    if (
+      // has shape
+      leftLeafShapeIndex >= 0 &&
+      leftLeafShapeIndex != toIgnoreShapeIndex
+    ) {
+      intersectSceneOneShape(leftLeafShapeIndex * 3, ray, outBestResult, shadowCastingMode);
+    }
+
+    int rightLeafShapeIndex = int(rootNodeTexel2.g);
+    if (
+      // has shape
+      rightLeafShapeIndex >= 0 &&
+      rightLeafShapeIndex != toIgnoreShapeIndex
+    ) {
+      intersectSceneOneShape(rightLeafShapeIndex * 3, ray, outBestResult, shadowCastingMode);
+    }
+
+    //
+
   }
+
+#endif
 
   return outBestResult.hasHit;
 }

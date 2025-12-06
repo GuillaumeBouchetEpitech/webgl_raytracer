@@ -12,31 +12,27 @@
 vec3 castInitialRay(in vec3 rayDir)
 {
 
-  // need a scene stack size of minimum 7 for a reflective AND refractive sphere/shapes
-  const int maxSceneStackSize = 7;
-  StackData _sceneStack[maxSceneStackSize];
-
   // initialize stack
-  for (int ii = 0; ii < maxSceneStackSize; ++ii)
+  for (int ii = 0; ii < g_maxSceneStackSize; ++ii)
   {
-    _sceneStack[ii].used = false;
-    _sceneStack[ii].result.reflectionFactor = 0.0;
-    _sceneStack[ii].result.refractionFactor = 0.0;
-    _sceneStack[ii].result.materialIndex = -1;
-    _sceneStack[ii].result.lightEnabled = false;
-    _sceneStack[ii].reflectionIndex = -1;
-    _sceneStack[ii].refractionIndex = -1;
+    g_sceneStack[ii].used = false;
+    g_sceneStack[ii].result.reflectionFactor = 0.0;
+    g_sceneStack[ii].result.refractionFactor = 0.0;
+    g_sceneStack[ii].result.materialIndex = -1;
+    g_sceneStack[ii].result.lightEnabled = false;
+    g_sceneStack[ii].reflectionIndex = -1;
+    g_sceneStack[ii].refractionIndex = -1;
   }
 
   // initialize first stack element
-  _sceneStack[0].used = true;
-  _sceneStack[0].ray = RayValues(u_cameraEye, rayDir);
-  _sceneStack[0].result.position = u_cameraEye;
-  _sceneStack[0].result.reflectionFactor = 1.0;
-  _sceneStack[0].result.refractionFactor = 1.0;
-  _sceneStack[0].result.lightEnabled = true;
-  _sceneStack[0].reflectionIndex = -1;
-  _sceneStack[0].refractionIndex = -1;
+  g_sceneStack[0].used = true;
+  g_sceneStack[0].ray = RayValues(u_cameraEye, rayDir);
+  g_sceneStack[0].result.position = u_cameraEye;
+  g_sceneStack[0].result.reflectionFactor = 1.0;
+  g_sceneStack[0].result.refractionFactor = 1.0;
+  g_sceneStack[0].result.lightEnabled = true;
+  g_sceneStack[0].reflectionIndex = -1;
+  g_sceneStack[0].refractionIndex = -1;
 
   int sceneStackWriteIndex = 0;
 
@@ -45,13 +41,13 @@ vec3 castInitialRay(in vec3 rayDir)
   //
 
   int sceneStackReadIndex = 0;
-  for (; sceneStackReadIndex < maxSceneStackSize; ++sceneStackReadIndex)
+  for (; sceneStackReadIndex < g_maxSceneStackSize; ++sceneStackReadIndex)
   {
     // intersect object
     // if reflection/refraction push to stack & set index
     // repeat
 
-    if (!_sceneStack[sceneStackReadIndex].used)
+    if (!g_sceneStack[sceneStackReadIndex].used)
     {
       // nothing to process anymore
       break;
@@ -59,14 +55,14 @@ vec3 castInitialRay(in vec3 rayDir)
 
     const bool shadowCastingMode = false;
 
-    _sceneStack[sceneStackReadIndex].result.hasHit = intersectScene(
-      _sceneStack[sceneStackReadIndex].ray,
-      _sceneStack[sceneStackReadIndex].result,
+    g_sceneStack[sceneStackReadIndex].result.hasHit = intersectScene(
+      g_sceneStack[sceneStackReadIndex].ray,
+      g_sceneStack[sceneStackReadIndex].result,
       shadowCastingMode,
       -1
     );
 
-    if (!_sceneStack[sceneStackReadIndex].result.hasHit)
+    if (!g_sceneStack[sceneStackReadIndex].result.hasHit)
     {
       continue;
     }
@@ -75,20 +71,20 @@ vec3 castInitialRay(in vec3 rayDir)
     // material handling
     //
 
-    int materialIndex = _sceneStack[sceneStackReadIndex].result.materialIndex;
+    int materialIndex = g_sceneStack[sceneStackReadIndex].result.materialIndex;
 
     vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
     vec4 matTexel1 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 1, MATERIALS_ROW_INDEX), 0);
 
     int materialType = int(matTexel0.r);
 
-    _sceneStack[sceneStackReadIndex].result.hasHit = true;
+    g_sceneStack[sceneStackReadIndex].result.hasHit = true;
 
     if (materialType == 1)
     {
       int subMaterialIndex = 0;
 
-      vec3 txPos = _sceneStack[sceneStackReadIndex].result.txPos;
+      vec3 txPos = g_sceneStack[sceneStackReadIndex].result.txPos;
       if (
         (fract(txPos.x * matTexel1.r) > 0.5)
         == (fract(txPos.y * matTexel1.g) > 0.5)
@@ -107,12 +103,12 @@ vec3 castInitialRay(in vec3 rayDir)
     float reflectionFactor = matTexel0.b;
     float refractionFactor = matTexel0.a;
 
-    _sceneStack[sceneStackReadIndex].result.color = vec4(color, 0.5);
-    _sceneStack[sceneStackReadIndex].result.reflectionFactor = reflectionFactor;
-    _sceneStack[sceneStackReadIndex].result.refractionFactor = refractionFactor;
+    g_sceneStack[sceneStackReadIndex].result.color = vec4(color, 0.5);
+    g_sceneStack[sceneStackReadIndex].result.reflectionFactor = reflectionFactor;
+    g_sceneStack[sceneStackReadIndex].result.refractionFactor = refractionFactor;
 
     bool lightEnabled = (matTexel1.r != 0.0);
-    _sceneStack[sceneStackReadIndex].result.lightEnabled = lightEnabled;
+    g_sceneStack[sceneStackReadIndex].result.lightEnabled = lightEnabled;
 
     //
     // Light handling
@@ -122,12 +118,12 @@ vec3 castInitialRay(in vec3 rayDir)
     lightResult.intensity = 1.0;
     lightResult.color = vec3(1.0);
 
-    if (_sceneStack[sceneStackReadIndex].result.lightEnabled)
+    if (g_sceneStack[sceneStackReadIndex].result.lightEnabled)
     {
       lightAt(
-        _sceneStack[sceneStackReadIndex].result.position,
-        _sceneStack[sceneStackReadIndex].result.normal,
-        -_sceneStack[sceneStackReadIndex].ray.direction,
+        g_sceneStack[sceneStackReadIndex].result.position,
+        g_sceneStack[sceneStackReadIndex].result.normal,
+        -g_sceneStack[sceneStackReadIndex].ray.direction,
         lightResult
       );
     }
@@ -136,10 +132,10 @@ vec3 castInitialRay(in vec3 rayDir)
     // -> this is to handle the refracted/transparent shape's shadows
     // -> this will iterate over multiple potential refracted/transparent shapes
     // ---> ex1: a yellow then red refracted/transparent shape -> red shadow
-    _sceneStack[sceneStackReadIndex].result.color.xyz *= lightResult.color * lightResult.intensity;
+    g_sceneStack[sceneStackReadIndex].result.color.xyz *= lightResult.color * lightResult.intensity;
 
     if (
-      _sceneStack[sceneStackReadIndex].result.lightEnabled &&
+      g_sceneStack[sceneStackReadIndex].result.lightEnabled &&
       lightResult.intensity <= 0.0
     ) {
       // not lit -> skip refraction/reflection
@@ -156,23 +152,23 @@ vec3 castInitialRay(in vec3 rayDir)
 
     if (
       // first check if more stack space is left
-      sceneStackWriteIndex + 1 < maxSceneStackSize &&
-      _sceneStack[sceneStackReadIndex].result.refractionFactor > 0.0
+      sceneStackWriteIndex + 1 < g_maxSceneStackSize &&
+      g_sceneStack[sceneStackReadIndex].result.refractionFactor > 0.0
     ) {
       // push new refraction iteration to the stack
       sceneStackWriteIndex += 1;
 
-      _sceneStack[sceneStackWriteIndex].used = true;
-      _sceneStack[sceneStackWriteIndex].ray.origin = _sceneStack[sceneStackReadIndex].result.position;
-      _sceneStack[sceneStackWriteIndex].ray.direction = refract(_sceneStack[sceneStackReadIndex].ray.direction, _sceneStack[sceneStackReadIndex].result.normal, Eta);
+      g_sceneStack[sceneStackWriteIndex].used = true;
+      g_sceneStack[sceneStackWriteIndex].ray.origin = g_sceneStack[sceneStackReadIndex].result.position;
+      g_sceneStack[sceneStackWriteIndex].ray.direction = refract(g_sceneStack[sceneStackReadIndex].ray.direction, g_sceneStack[sceneStackReadIndex].result.normal, Eta);
 
       // here add 0.01 of the normal to the new origin
       // -> this get properly "inside" the intersected shape
       // ---> this avoid intersecting twice the "same shape" at the "same spot"
-      _sceneStack[sceneStackWriteIndex].ray.origin += _sceneStack[sceneStackReadIndex].ray.direction * 0.01;
+      g_sceneStack[sceneStackWriteIndex].ray.origin += g_sceneStack[sceneStackReadIndex].ray.direction * 0.01;
 
       // set the new "child stack element" to its "parent stack element"
-      _sceneStack[sceneStackReadIndex].refractionIndex = sceneStackWriteIndex;
+      g_sceneStack[sceneStackReadIndex].refractionIndex = sceneStackWriteIndex;
     }
 
     //
@@ -181,18 +177,18 @@ vec3 castInitialRay(in vec3 rayDir)
 
     if (
       // first check if more stack space is left
-      sceneStackWriteIndex + 1 < maxSceneStackSize &&
-      _sceneStack[sceneStackReadIndex].result.reflectionFactor > 0.0
+      sceneStackWriteIndex + 1 < g_maxSceneStackSize &&
+      g_sceneStack[sceneStackReadIndex].result.reflectionFactor > 0.0
     ) {
       // push new reflection iteration to the stack
       sceneStackWriteIndex += 1;
 
-      _sceneStack[sceneStackWriteIndex].used = true;
-      _sceneStack[sceneStackWriteIndex].ray.origin = _sceneStack[sceneStackReadIndex].result.position;
-      _sceneStack[sceneStackWriteIndex].ray.direction = reflect(_sceneStack[sceneStackReadIndex].ray.direction, _sceneStack[sceneStackReadIndex].result.normal);
+      g_sceneStack[sceneStackWriteIndex].used = true;
+      g_sceneStack[sceneStackWriteIndex].ray.origin = g_sceneStack[sceneStackReadIndex].result.position;
+      g_sceneStack[sceneStackWriteIndex].ray.direction = reflect(g_sceneStack[sceneStackReadIndex].ray.direction, g_sceneStack[sceneStackReadIndex].result.normal);
 
       // set the new "child stack element" to its "parent stack element"
-      _sceneStack[sceneStackReadIndex].reflectionIndex = sceneStackWriteIndex;
+      g_sceneStack[sceneStackReadIndex].reflectionIndex = sceneStackWriteIndex;
     }
 
   }
@@ -205,32 +201,32 @@ vec3 castInitialRay(in vec3 rayDir)
   // -> from last element to first element
   // -> here we start from where we stopped during the accumulation phase
   for (sceneStackReadIndex = sceneStackWriteIndex; sceneStackReadIndex >= 0; --sceneStackReadIndex)
-  // for (sceneStackReadIndex = maxSceneStackSize - 1; sceneStackReadIndex >= 0; --sceneStackReadIndex)
+  // for (sceneStackReadIndex = g_maxSceneStackSize - 1; sceneStackReadIndex >= 0; --sceneStackReadIndex)
   {
-    // if (!_sceneStack[sceneStackReadIndex].used) {
+    // if (!g_sceneStack[sceneStackReadIndex].used) {
     //   continue;
     // }
 
     // handle any connected reflection
-    int reflectionIndex = _sceneStack[sceneStackReadIndex].reflectionIndex;
+    int reflectionIndex = g_sceneStack[sceneStackReadIndex].reflectionIndex;
     if (reflectionIndex != -1)
     {
-      _sceneStack[sceneStackReadIndex].result.color.xyz =
-        _sceneStack[sceneStackReadIndex].result.color.xyz * (1.0 - _sceneStack[sceneStackReadIndex].result.reflectionFactor) +
-        _sceneStack[reflectionIndex].result.color.xyz * _sceneStack[sceneStackReadIndex].result.reflectionFactor;
+      g_sceneStack[sceneStackReadIndex].result.color.xyz =
+        g_sceneStack[sceneStackReadIndex].result.color.xyz * (1.0 - g_sceneStack[sceneStackReadIndex].result.reflectionFactor) +
+        g_sceneStack[reflectionIndex].result.color.xyz * g_sceneStack[sceneStackReadIndex].result.reflectionFactor;
     }
 
     // handle any connected refraction
-    int refractionIndex = _sceneStack[sceneStackReadIndex].refractionIndex;
+    int refractionIndex = g_sceneStack[sceneStackReadIndex].refractionIndex;
     if (refractionIndex != -1)
     {
-      _sceneStack[sceneStackReadIndex].result.color.xyz =
-        _sceneStack[sceneStackReadIndex].result.color.xyz * (1.0 - _sceneStack[sceneStackReadIndex].result.refractionFactor) +
-        _sceneStack[refractionIndex].result.color.xyz * _sceneStack[sceneStackReadIndex].result.refractionFactor;
+      g_sceneStack[sceneStackReadIndex].result.color.xyz =
+        g_sceneStack[sceneStackReadIndex].result.color.xyz * (1.0 - g_sceneStack[sceneStackReadIndex].result.refractionFactor) +
+        g_sceneStack[refractionIndex].result.color.xyz * g_sceneStack[sceneStackReadIndex].result.refractionFactor;
     }
   }
 
-  return _sceneStack[0].result.hasHit
-    ? _sceneStack[0].result.color.xyz
+  return g_sceneStack[0].result.hasHit
+    ? g_sceneStack[0].result.color.xyz
     : g_backgroundColor;
 }

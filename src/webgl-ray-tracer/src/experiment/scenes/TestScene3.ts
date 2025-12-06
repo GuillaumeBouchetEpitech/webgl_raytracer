@@ -806,7 +806,6 @@ export class TestScene3 {
           // actual spot light inside the sphere
           renderer.rayTracerRenderer.rayTracerPass.spotLightsManager.pushSpotLight({
             position: position,
-            // intensity: 0.1 + 3.9 * lightCoef,
             intensity: 0.1 + 3.9 * lightCoef,
             radius: 10,
           });

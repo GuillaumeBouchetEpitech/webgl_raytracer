@@ -1,4 +1,7 @@
 
+
+
+
 void lightAt(
   vec3 impactPosition,
   vec3 impactNormal,
@@ -12,9 +15,6 @@ void lightAt(
   //
   // handle spot lights
   //
-
-  const int maxLightStackSize = 5;
-  LightStackData _lightStack[maxLightStackSize];
 
   vec3 lightDir = vec3(1.0);
   float currLightIntensity = 1.0;
@@ -42,26 +42,27 @@ void lightAt(
 
     vec4 lightTexel1 = texelFetch(u_dataTexture, ivec2(lightIndex + 1, LIGHTS_ROW_INDEX), 0);
     float localIntensity = lightTexel1.r;
+    // float localIntensity = 1.0;
 
     currLightIntensity = localIntensity * (1.0 - lightToImpactDistance / lightRadius);
 
     // initialize stack
-    for (int ii = 0; ii < maxLightStackSize; ++ii)
+    for (int ii = 0; ii < g_maxLightStackSize; ++ii)
     {
-      _lightStack[ii].used = false;
-      _lightStack[ii].ray.direction = lightDir;
-      _lightStack[ii].result.color = vec4(1.0);
-      _lightStack[ii].result.reflectionFactor = 1.0;
-      _lightStack[ii].result.refractionFactor = 1.0;
-      _lightStack[ii].result.materialIndex = -1;
-      _lightStack[ii].result.lightEnabled = false;
-      _lightStack[ii].lightResult.intensity = 1.0;
-      _lightStack[ii].lightResult.color = vec3(1.0);
+      g_lightStack[ii].used = false;
+      g_lightStack[ii].ray.direction = lightDir;
+      g_lightStack[ii].result.color = vec4(1.0);
+      g_lightStack[ii].result.reflectionFactor = 1.0;
+      g_lightStack[ii].result.refractionFactor = 1.0;
+      g_lightStack[ii].result.materialIndex = -1;
+      g_lightStack[ii].result.lightEnabled = false;
+      g_lightStack[ii].lightResult.intensity = 1.0;
+      g_lightStack[ii].lightResult.color = vec3(1.0);
     }
 
     // initialize first stack element
-    _lightStack[0].used = true;
-    _lightStack[0].ray.origin = impactPosition;
+    g_lightStack[0].used = true;
+    g_lightStack[0].ray.origin = impactPosition;
 
     int previousShapeIndex = -1;
 
@@ -74,13 +75,13 @@ void lightAt(
     //
 
     int lightStackReadIndex = 0;
-    for (; lightStackReadIndex < maxLightStackSize; ++lightStackReadIndex)
+    for (; lightStackReadIndex < g_maxLightStackSize; ++lightStackReadIndex)
     {
       // intersect object
       // if reflection/refraction push to stack
       // repeat
 
-      if (!_lightStack[lightStackReadIndex].used)
+      if (!g_lightStack[lightStackReadIndex].used)
       {
         // nothing to process anymore
         break;
@@ -88,27 +89,27 @@ void lightAt(
 
       const bool shadowCastingMode = true;
 
-      _lightStack[lightStackReadIndex].result.hasHit = intersectScene(
-        _lightStack[lightStackReadIndex].ray,
-        _lightStack[lightStackReadIndex].result,
+      g_lightStack[lightStackReadIndex].result.hasHit = intersectScene(
+        g_lightStack[lightStackReadIndex].ray,
+        g_lightStack[lightStackReadIndex].result,
         shadowCastingMode,
         previousShapeIndex
       );
 
       if (
         // we got no collision -> light not blocked
-        !_lightStack[lightStackReadIndex].result.hasHit ||
+        !g_lightStack[lightStackReadIndex].result.hasHit ||
         // we got collision -> checking if the impact is behind the light
-        _lightStack[lightStackReadIndex].result.distance > distance(_lightStack[lightStackReadIndex].ray.origin, lightPos)
+        g_lightStack[lightStackReadIndex].result.distance > distance(g_lightStack[lightStackReadIndex].ray.origin, lightPos)
       ) {
         // ignore the light
         lightIsBlocked = false;
         break;
       }
 
-      previousShapeIndex = _lightStack[lightStackReadIndex].result.shapeIndex;
+      previousShapeIndex = g_lightStack[lightStackReadIndex].result.shapeIndex;
 
-      int materialIndex = _lightStack[lightStackReadIndex].result.materialIndex;
+      int materialIndex = g_lightStack[lightStackReadIndex].result.materialIndex;
 
       // light ray is blocked, skip this light... unless? (<- chessboard/refraction material check)
       vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
@@ -121,7 +122,7 @@ void lightAt(
       {
         int subMaterialIndex = 0;
 
-        vec3 txPos = _lightStack[lightStackReadIndex].result.txPos;
+        vec3 txPos = g_lightStack[lightStackReadIndex].result.txPos;
         if (
           (fract(txPos.x * matTexel1.t) > 0.5)
           != (fract(txPos.y * matTexel1.g) > 0.5)
@@ -147,14 +148,14 @@ void lightAt(
 
       vec3 shapeColor = matTexel1.gba;
 
-      _lightStack[lightStackReadIndex].lightResult.intensity = refractionFactor;
-      _lightStack[lightStackReadIndex].lightResult.color = shapeColor.xyz;
+      g_lightStack[lightStackReadIndex].lightResult.intensity = refractionFactor;
+      g_lightStack[lightStackReadIndex].lightResult.color = shapeColor.xyz;
 
       //
       // handle refraction/transparency
       //
 
-      if (lightStackWriteIndex + 1 >= maxLightStackSize)
+      if (lightStackWriteIndex + 1 >= g_maxLightStackSize)
       {
         // no more stack space left -> stop now
         break;
@@ -162,10 +163,10 @@ void lightAt(
 
       lightStackWriteIndex += 1;
 
-      _lightStack[lightStackWriteIndex].used = true;
-      _lightStack[lightStackWriteIndex].ray.origin = _lightStack[lightStackReadIndex].result.position;
+      g_lightStack[lightStackWriteIndex].used = true;
+      g_lightStack[lightStackWriteIndex].ray.origin = g_lightStack[lightStackReadIndex].result.position;
 
-    } // for (int ii = 0; ii < maxLightStackSize; ++ii)
+    } // for (int ii = 0; ii < g_maxLightStackSize; ++ii)
 
     if (lightIsBlocked)
     {
@@ -180,17 +181,17 @@ void lightAt(
     // combine all light(s) color
     // -> from last element to first element
     // -> here we start from where we stopped during the accumulation phase
-    // for (lightStackReadIndex = lightStackWriteIndex; lightStackReadIndex >= 0; --lightStackReadIndex)
-    for (lightStackReadIndex = maxLightStackSize - 1; lightStackReadIndex >= 0; --lightStackReadIndex)
+    for (lightStackReadIndex = lightStackWriteIndex; lightStackReadIndex >= 0; --lightStackReadIndex)
+    // for (lightStackReadIndex = g_maxLightStackSize - 1; lightStackReadIndex >= 0; --lightStackReadIndex)
     {
-      if (_lightStack[lightStackReadIndex].used == false)
-      {
-        continue;
-      }
+      // if (g_lightStack[lightStackReadIndex].used == false)
+      // {
+      //   continue;
+      // }
 
       // used stack element
-      currLightColor *= _lightStack[lightStackReadIndex].lightResult.color.xyz;
-      currLightIntensity *= _lightStack[lightStackReadIndex].lightResult.intensity;
+      currLightColor *= g_lightStack[lightStackReadIndex].lightResult.color.xyz;
+      currLightIntensity *= g_lightStack[lightStackReadIndex].lightResult.intensity;
     }
 
     //
