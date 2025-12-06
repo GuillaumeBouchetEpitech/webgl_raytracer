@@ -12,7 +12,7 @@ const g_address  = process.argv[2] || '127.0.0.1';
 const g_port  = parseInt(process.argv[3] || 10000, 10);
 
 const worker_port = g_port;
-const thread_port = g_port + 1;
+// const thread_port = g_port + 1;
 
 const async_sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
