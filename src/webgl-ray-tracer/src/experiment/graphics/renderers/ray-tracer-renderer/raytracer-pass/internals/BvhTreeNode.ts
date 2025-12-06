@@ -3,7 +3,7 @@ import * as glm from 'gl-matrix';
 import { IInternalBox, IInternalSphere, IInternalTriangle } from '../all-interfaces';
 
 export interface IGenericShape {
-  index: number;
+  shapeIndex: number;
   min: glm.ReadonlyVec3;
   max: glm.ReadonlyVec3;
 };

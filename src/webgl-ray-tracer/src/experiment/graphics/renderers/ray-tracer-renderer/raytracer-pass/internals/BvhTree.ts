@@ -60,9 +60,10 @@ export class BvhTree {
       if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
       if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
 
-      this._allShapes.push({ index: shapeIndex++, type: 'sphere', shape: currShape, min, max });
+      this._allShapes.push({ shapeIndex: shapeIndex++, type: 'sphere', shape: currShape, min, max });
     }
 
+    shapeIndex = 1000;
     for (const currShape of allBoxes) {
 
       glm.mat4.identity(this._boxMat4_a);
@@ -102,9 +103,10 @@ export class BvhTree {
       if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
       if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
 
-      this._allShapes.push({ index: shapeIndex++, type: 'box', shape: currShape, min, max });
+      this._allShapes.push({ shapeIndex: shapeIndex++, type: 'box', shape: currShape, min, max });
     }
 
+    shapeIndex = 2000;
     for (const currShape of allTriangles) {
 
       const min = glm.vec3.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
@@ -136,7 +138,7 @@ export class BvhTree {
       if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
       if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
 
-      this._allShapes.push({ index: shapeIndex++, type: 'triangle', shape: currShape, min, max });
+      this._allShapes.push({ shapeIndex: shapeIndex++, type: 'triangle', shape: currShape, min, max });
     }
 
     // create root node

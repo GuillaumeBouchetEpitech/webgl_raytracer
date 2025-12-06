@@ -27,7 +27,7 @@ uniform vec3              u_cameraEye;
 //
 
 uniform highp sampler2D   u_dataTexture;
-uniform int               u_sceneTextureSize;
+// uniform int               u_sceneTextureSize;
 uniform int               u_lightsTextureSize;
 
 //
@@ -40,7 +40,7 @@ out vec4 o_color;
 
 //
 
-const float     g_ambientLightIntensity = 0.15;
+const float     g_ambientLightIntensity = 0.05;
 
 const vec3      g_backgroundColor = vec3(0.1);
 
@@ -49,10 +49,12 @@ const vec3      g_backgroundColor = vec3(0.1);
 const int       g_maxBvhStack = 16;
 int             g_bvhStack[g_maxBvhStack];
 
-const int       SHAPES_ROW_INDEX = 0;
-const int       MATERIALS_ROW_INDEX = 1;
-const int       LIGHTS_ROW_INDEX = 2;
-const int       BVH_ROW_INDEX = 3;
+const int       MATERIALS_ROW_INDEX = 0;
+const int       SPHERE_SHAPES_ROW_INDEX = 1;
+const int       BOX_SHAPES_ROW_INDEX = 2;
+const int       TRIANGLE_SHAPES_ROW_INDEX = 3;
+const int       LIGHTS_ROW_INDEX = 4;
+const int       BVH_ROW_INDEX = 5;
 
 //
 //

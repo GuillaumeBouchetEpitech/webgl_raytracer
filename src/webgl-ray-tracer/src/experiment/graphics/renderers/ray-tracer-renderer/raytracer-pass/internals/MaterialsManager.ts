@@ -64,6 +64,13 @@ export class MaterialsManager {
     );
   }
 
+  canCastShadow(materialAlias: number): boolean {
+    return (
+      this._basicMaterialsPerAliases.get(materialAlias)?.castShadowEnabled === true ||
+      this._chessboardMaterialsPerAliases.get(materialAlias)?.castShadowEnabled === true
+    );
+  }
+
   clear() {
     this._chessboardMaterialsPerAliases.clear();
     this._allBasicMaterials.length = 0;
@@ -91,7 +98,8 @@ export class MaterialsManager {
 
       this._gpuDataTexture2d.push(
         matType + 0.5, // [0] R
-        (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
+        // (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
+        0,
         currMat.reflectionFactor, // [2] B
         currMat.refractionFactor, // [3] A
       );
@@ -120,7 +128,8 @@ export class MaterialsManager {
 
       this._gpuDataTexture2d.push(
         matType + 0.5, // [0] R
-        (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
+        // (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
+        0,
         subMatIndexA + 0.5, // [2] B
         subMatIndexB + 0.5, // [3] A
       );

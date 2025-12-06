@@ -15,7 +15,7 @@ export class GpuDataTexture2d {
   constructor(textureUniformName: string) {
     this._textureUniformName = textureUniformName;
     this._dataTexture = new graphics.webgl2.DataTexture2dVec4f32();
-    this._dataTexture.initialize(2048, 4);
+    this._dataTexture.initialize(2048, 6);
   }
 
   push(r: number, g: number, b: number, a: number) {

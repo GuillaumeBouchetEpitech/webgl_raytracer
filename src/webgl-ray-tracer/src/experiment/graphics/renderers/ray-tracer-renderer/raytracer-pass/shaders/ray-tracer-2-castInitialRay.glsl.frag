@@ -133,7 +133,7 @@ vec3 castInitialRay(in vec3 rayDir)
     g_sceneStack[sceneStackReadIndex].result.reflectionFactor = reflectionFactor;
     g_sceneStack[sceneStackReadIndex].result.refractionFactor = refractionFactor;
 
-    bool lightEnabled = (matTexel1.r != 0.0);
+    bool canReceiveLight = (matTexel1.r != 0.0);
 
     //
     // Light handling
@@ -143,7 +143,7 @@ vec3 castInitialRay(in vec3 rayDir)
     lightResult.intensity = 1.0;
     lightResult.color = vec3(1.0);
 
-    if (lightEnabled)
+    if (canReceiveLight)
     {
       lightAt(
         g_sceneStack[sceneStackReadIndex].result.position,
@@ -159,7 +159,7 @@ vec3 castInitialRay(in vec3 rayDir)
     // ---> ex1: a yellow then red refracted/transparent shape -> red shadow
     g_sceneStack[sceneStackReadIndex].color.xyz *= lightResult.color * lightResult.intensity;
 
-    if (lightEnabled && lightResult.intensity <= 0.0)
+    if (canReceiveLight && lightResult.intensity <= 0.0)
     {
       // not lit -> skip refraction/reflection
       continue;

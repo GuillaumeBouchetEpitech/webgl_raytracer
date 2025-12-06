@@ -8,9 +8,7 @@ export class BvhManager {
 
   private _allNodes: BvhTreeNode[] = [];
 
-  constructor(
-    gpuDataTexture2d: GpuDataTexture2d
-  ) {
+  constructor(gpuDataTexture2d: GpuDataTexture2d) {
     this._gpuDataTexture2d = gpuDataTexture2d;
   }
 
@@ -58,8 +56,8 @@ export class BvhManager {
         (currNode._rightNode?._index ?? -2) + 0.5,
       );
       this._gpuDataTexture2d.push(
-        (currNode._leftLeaf?.index ?? -2) + 0.5,
-        (currNode._rightLeaf?.index ?? -2) + 0.5,
+        (currNode._leftLeaf?.shapeIndex ?? -2) + 0.5,
+        (currNode._rightLeaf?.shapeIndex ?? -2) + 0.5,
         0,
         0,
       );

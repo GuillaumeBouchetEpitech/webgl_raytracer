@@ -16,6 +16,7 @@ export interface IShapesManager {
 
 interface IMaterialsManager {
   has(materialAlias: number): boolean;
+  canCastShadow(materialAlias: number): boolean;
   getIndexFromAlias(materialAlias: number): number | undefined;
 }
 
@@ -106,9 +107,8 @@ export class ShapesManager implements IShapesManager {
     this._triangles.length = 0;
   }
 
-  prepareBuffer() {
+  prepareBufferSpheres() {
 
-    // this._dataTexture.clear();
     this._gpuDataTexture2d.clear();
 
     {
@@ -122,10 +122,10 @@ export class ShapesManager implements IShapesManager {
           throw new Error(`sphere materialAlias not found ${sphere.materialAlias}`);
         }
 
-        const shapeType = 1;
+        const canCastShadow = this._materialsManager.canCastShadow(sphere.materialAlias)!;
 
         this._gpuDataTexture2d.push(
-          shapeType + 0.5, // [0] R
+          canCastShadow ? 1 : 0 + 0.5, // [0] R
           currMatIndex + 0.5, // [1] G
           sphere.position[0], // [2] B
           sphere.position[1], // [3] A
@@ -147,6 +147,12 @@ export class ShapesManager implements IShapesManager {
 
     } // spheres
 
+  }
+
+  prepareBufferBoxes() {
+
+    this._gpuDataTexture2d.clear();
+
     {
       // boxes
 
@@ -158,10 +164,10 @@ export class ShapesManager implements IShapesManager {
           throw new Error(`box materialAlias not found ${box.materialAlias}`);
         }
 
-        const shapeType = 2;
+        const canCastShadow = this._materialsManager.canCastShadow(box.materialAlias)!;
 
         this._gpuDataTexture2d.push(
-          shapeType + 0.5,
+          canCastShadow ? 1 : 0 + 0.5, // [0] R
           currMatIndex + 0.5, // [10]
           box.position[0], // [0]
           box.position[1], // [1]
@@ -183,6 +189,12 @@ export class ShapesManager implements IShapesManager {
 
     } // boxes
 
+  }
+
+  prepareBufferTriangles() {
+
+    this._gpuDataTexture2d.clear();
+
     {
       // triangles
 
@@ -194,10 +206,10 @@ export class ShapesManager implements IShapesManager {
           throw new Error(`triangle materialAlias not found ${triangle.materialAlias}`);
         }
 
-        const shapeType = 3;
+        const canCastShadow = this._materialsManager.canCastShadow(triangle.materialAlias)!;
 
         this._gpuDataTexture2d.push(
-          shapeType + 0.5,
+          canCastShadow ? 1 : 0 + 0.5, // [0] R
           currMatIndex + 0.5, // [0]
           triangle.v0[0], // [1]
           triangle.v0[1], // [2]

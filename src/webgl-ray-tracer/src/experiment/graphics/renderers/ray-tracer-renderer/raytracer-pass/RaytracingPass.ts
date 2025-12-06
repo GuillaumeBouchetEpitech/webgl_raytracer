@@ -124,7 +124,7 @@ export class RayTracerPass implements IRayTracerPass {
 
         'u_dataTexture',
 
-        'u_sceneTextureSize',
+        // 'u_sceneTextureSize',
         'u_lightsTextureSize',
       ]
     });
@@ -210,21 +210,27 @@ export class RayTracerPass implements IRayTracerPass {
     const farCorners = this._computeCameraFarCornersBufferGeometry();
     this._rayTracerGeometry.allocateBuffer(1, farCorners, farCorners.length);
 
+    this._materialsManager.prepareBuffer();
+    this._gpuDataTexture2d.uploadGpuDataAsRow(0);
+
+    this._shapesManager.prepareBufferSpheres();
+    this._gpuDataTexture2d.uploadGpuDataAsRow(1);
+
+    this._shapesManager.prepareBufferBoxes();
+    this._gpuDataTexture2d.uploadGpuDataAsRow(2);
+
+    this._shapesManager.prepareBufferTriangles();
+    this._gpuDataTexture2d.uploadGpuDataAsRow(3);
+
+
+    this._spotLightsManager.prepareBuffer();
+    this._gpuDataTexture2d.uploadGpuDataAsRow(4);
+    const lightsTextureSize = this._gpuDataTexture2d.getCurrentIndex();
+
     this._bvhTree.synchronize(this._shapesManager.spheres, this._shapesManager.boxes, this._shapesManager.triangles);
     this._bvhManager.syncRootNode(this._bvhTree.getRootNode());
     this._bvhManager.prepareBuffer();
-    this._gpuDataTexture2d.uploadGpuDataAsRow(3);
-
-    this._materialsManager.prepareBuffer();
-    this._gpuDataTexture2d.uploadGpuDataAsRow(1);
-
-    this._shapesManager.prepareBuffer();
-    this._gpuDataTexture2d.uploadGpuDataAsRow(0);
-    const sceneTextureSize = this._gpuDataTexture2d.getCurrentIndex();
-
-    this._spotLightsManager.prepareBuffer();
-    this._gpuDataTexture2d.uploadGpuDataAsRow(2);
-    const lightsTextureSize = this._gpuDataTexture2d.getCurrentIndex();
+    this._gpuDataTexture2d.uploadGpuDataAsRow(5);
 
     gl.viewport(0, 0, this._renderWidth, this._renderHeight);
     gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
@@ -242,7 +248,7 @@ export class RayTracerPass implements IRayTracerPass {
           this._camera.position[2]
         );
 
-        boundShader.setInteger1Uniform('u_sceneTextureSize', sceneTextureSize);
+        // boundShader.setInteger1Uniform('u_sceneTextureSize', sceneTextureSize);
         boundShader.setInteger1Uniform('u_lightsTextureSize', lightsTextureSize);
 
         //
