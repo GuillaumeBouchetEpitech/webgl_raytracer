@@ -86,10 +86,12 @@ void lightAt(
         break;
       }
 
+      const bool shadowCastingMode = true;
+
       _lightStack[lightStackReadIndex].result.hasHit = intersectScene(
         _lightStack[lightStackReadIndex].ray,
         _lightStack[lightStackReadIndex].result,
-        true,
+        shadowCastingMode,
         previousShapeIndex
       );
 

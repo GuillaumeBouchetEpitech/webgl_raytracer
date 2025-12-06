@@ -1,15 +1,15 @@
 
 
-#include "./ray-tracer-intersectScene-quat-utils.glsl.frag"
+#include "./ray-tracer-2.1.1-intersectScene-quat-utils.glsl.frag"
 
-#include "./ray-tracer-intersectScene-shapes.glsl.frag"
+#include "./ray-tracer-2.1.2-intersectScene-shapes.glsl.frag"
 
 
 void intersectSceneOneShape(
   int shapeIndex,
   RayValues ray,
   inout RayResult outBestResult,
-  bool shadowMode
+  bool shadowCastingMode
 ) {
   RayValues tmpRay;
   vec3 normal;
@@ -19,7 +19,7 @@ void intersectSceneOneShape(
 
   int materialIndex = int(shTexel0.g);
 
-  if (shadowMode == true)
+  if (shadowCastingMode == true)
   {
     vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
 
@@ -206,7 +206,7 @@ bool rayIntersectBvhAABB(RayValues ray, vec3 bvhMin, vec3 bvhMax)
 bool intersectScene(
   RayValues ray,
   out RayResult outBestResult,
-  bool shadowMode,
+  bool shadowCastingMode,
   int toIgnoreShapeIndex
 ) {
   outBestResult.hasHit = false;
@@ -224,7 +224,7 @@ bool intersectScene(
     // -> no BVH makes it ~15-20% slower on the tested small-ish scenes
     for (int shapeIndex = 0; shapeIndex < u_sceneTextureSize; shapeIndex += 3) {
       if (shapeIndex != toIgnoreShapeIndex) {
-        intersectSceneOneShape(shapeIndex, ray, outBestResult, shadowMode);
+        intersectSceneOneShape(shapeIndex, ray, outBestResult, shadowCastingMode);
       }
     }
 
@@ -283,7 +283,7 @@ bool intersectScene(
         leftLEafShapeIndex >= 0 &&
         leftLEafShapeIndex != toIgnoreShapeIndex
       ) {
-        intersectSceneOneShape(leftLEafShapeIndex * 3, ray, outBestResult, shadowMode);
+        intersectSceneOneShape(leftLEafShapeIndex * 3, ray, outBestResult, shadowCastingMode);
       }
 
       int rightLeafShapeIndex = int(rootNodeTexel2.g);
@@ -291,7 +291,7 @@ bool intersectScene(
         rightLeafShapeIndex >= 0 &&
         rightLeafShapeIndex != toIgnoreShapeIndex
       ) {
-        intersectSceneOneShape(rightLeafShapeIndex * 3, ray, outBestResult, shadowMode);
+        intersectSceneOneShape(rightLeafShapeIndex * 3, ray, outBestResult, shadowCastingMode);
       }
 
       //
