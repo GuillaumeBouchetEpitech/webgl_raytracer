@@ -322,19 +322,6 @@ bool intersectScene(
   int toIgnoreShapeIndex
 ) {
 
-// // #define D_NO_BVH
-// #if defined(D_NO_BVH)
-
-//   // no BVH optimization -> brute force all the shapes
-//   // -> no BVH makes it ~15-20% slower on the tested small-ish scenes
-//   for (int shapeIndex = 0; shapeIndex < u_sceneTextureSize; shapeIndex += 3) {
-//     if (shapeIndex != toIgnoreShapeIndex) {
-//       intersectSceneOneShape(shapeIndex, ray, outBestResult, shadowCastingMode);
-//     }
-//   }
-
-// #else
-
   // use BVH optimization -> traverse the nodes and their associated AABB
   // -> this should reduce the total number intersections executed
 
@@ -412,8 +399,6 @@ bool intersectScene(
     //
 
   }
-
-// #endif
 
   return outBestResult.hasHit;
 }

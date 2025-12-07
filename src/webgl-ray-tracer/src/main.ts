@@ -239,13 +239,10 @@ const onPageLoad = async () => {
       mainDemo.setShowBvhDebugModeEnabled(bvh_debug_mode_enabled.checked);
     })
 
-    logger.log('[SETUP] Demo: initializing');
-
-    await mainDemo.init();
-
-    logger.log('[SETUP] Demo: initialized');
+    logger.log('[SETUP] Demo: started');
 
     mainDemo.start();
+    // mainDemo.start();
 
     logger.log('[SETUP] Demo: running');
 

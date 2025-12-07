@@ -46,16 +46,14 @@ export class Experiment {
 
   private _renderer: Renderer;
 
-  private _physicWorld?: physics.PhysicWorld;
+  private _physicWorld: physics.PhysicWorld;
 
   private _running: number = 0;
-  private _errorGraphicContext: boolean;
+  private _errorGraphicContext: boolean = false;
 
   private _lastFrameTime: number = Date.now();
   private _currFrameMsecTime: number = Date.now();
   private _frameProfiler = new system.metrics.FrameProfiler();
-
-  // private _continuousSecTime = 0;
 
   private _perfAutoScalingEnabled = true;
   private _framesUntilNextCheck = k_maxFramesUntilNextCheck;
@@ -65,7 +63,6 @@ export class Experiment {
   private _scene = new scenes.TestScene3();
 
   constructor(inDef: ExperimentDef) {
-    // this._canvasElement = inDef.canvasElement;
     this._def = inDef;
 
     this._freeFlyController = new FreeFlyController({
@@ -139,8 +136,8 @@ export class Experiment {
     //
     //
 
-    this._running = 0;
-    this._errorGraphicContext = false;
+    // this._running = 0;
+    // this._errorGraphicContext = false;
 
     // this._renderer.setOnContextLost(() => {
     //   this._def.logger.log('on_context_lost');
@@ -160,10 +157,7 @@ export class Experiment {
     //
     //
 
-  }
-
-  async init() {
-    await this._renderer.initialize();
+    // this._renderer.initialize();
 
     this._physicWorld = new physics.PhysicWorld();
     this._physicWorld.setGravity(0,-10,0);
@@ -193,6 +187,8 @@ export class Experiment {
       );
 
     });
+
+    this._scene.ensureSceneData(this._physicWorld);
 
     // // dynamic falling sphere
     // const fallingSphereBody = this._physicWorld.createRigidBody({
@@ -230,28 +226,6 @@ export class Experiment {
 
   }
 
-  // resize(inWidth: number, inHeight: number, inIsFullScreen: boolean) {
-  //   let currentWidth = inWidth;
-  //   let currentHeight = inHeight;
-
-  //   if (inIsFullScreen) {
-  //     this._canvasElement.style.position = 'absolute';
-  //     currentWidth = window.innerWidth;
-  //     currentHeight = window.innerHeight;
-  //   } else {
-  //     this._canvasElement.style.position = 'relative';
-  //   }
-
-  //   this._canvasElement.style.left = '0px';
-  //   this._canvasElement.style.top = '0px';
-  //   this._canvasElement.style.width = `${currentWidth}px`;
-  //   this._canvasElement.style.height = `${currentHeight}px`;
-  //   this._canvasElement.width = currentWidth;
-  //   this._canvasElement.height = currentHeight;
-
-  //   this._renderer.resize(currentWidth, currentHeight);
-  // }
-
   start() {
     if (this.isRunning()) {
       return;
@@ -276,16 +250,10 @@ export class Experiment {
   }
 
   updateCanvasOnce() {
-    if (!this._physicWorld) {
-      return;
+    if (this._running >= 0) {
+      this._running = 1;
     }
-    this._running = 2;
-    // this._mainLoop();
     this._tick();
-
-    // this._scene.run(0.001, this._renderer, this._physicWorld);
-    // this._renderScene();
-    // this._renderHud();
   }
 
   isRunning() {
@@ -359,11 +327,9 @@ export class Experiment {
     this._currFrameMsecTime = currentMsecTime;
 
     // this make sure the time sensitive logic isn't "jumping" in case of slow down
-    const safeDelta = Math.min(deltaMsecTime, 100);
+    const safeDelta = Math.min(deltaMsecTime, 40); // 40ms is 25fps
 
     const deltaSecTime = (safeDelta / 1000);
-
-    // this._continuousSecTime += deltaSecTime;
 
     this._freeFlyController.update(deltaSecTime);
 
@@ -372,8 +338,6 @@ export class Experiment {
 
     //
     //
-
-    // this._continuousSecTime += deltaSecTime;
 
     if (this._physicWorld) {
 
