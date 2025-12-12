@@ -1,17 +1,36 @@
 
 import * as glm from 'gl-matrix';
-import { IInternalBox, IInternalSphere, IInternalTriangle, IStackRenderer } from '../all-interfaces';
+import { IInternalBox, IInternalSphere, IInternalTriangle } from '../../all-interfaces';
 
-import { BvhTreeNode, IShape } from './BvhTreeNode';
+import { BvhTreeNode, IBvhEntry } from './BvhTreeNode';
+import { BvhTree } from './BvhTree';
 
 const k_minDelta = 0.01;
 
-export class BvhTree {
+export interface ISphereShape extends IBvhEntry {
+  shapeIndex: number;
+  type: 'sphere';
+  shape: IInternalSphere;
+};
+export interface IBoxShape extends IBvhEntry {
+  shapeIndex: number;
+  type: 'box';
+  shape: IInternalBox;
+};
+export interface ITriangleShape extends IBvhEntry {
+  shapeIndex: number;
+  type: 'triangle';
+  shape: IInternalTriangle;
+};
+export type IShape = ISphereShape | IBoxShape | ITriangleShape;
 
-  private _allShapes: IShape[] = [];
+export type ShapesBvhTreeNode = BvhTreeNode<IShape>;
 
-  private _rootNode?: BvhTreeNode;
+export class ShapesBvhTree {
 
+  private _bvhTree = new BvhTree<IShape>();
+
+  // some heavily reused memory
   private _boxMat4_a = glm.mat4.create();
   private _boxMat4_b = glm.mat4.create();
   private _boxPos = glm.vec3.create();
@@ -25,12 +44,12 @@ export class BvhTree {
     glm.vec3.create(),
     glm.vec3.create(),
   ];
+  // some heavily reused memory
 
   constructor() {}
 
   reset() {
-    this._allShapes.length = 0;
-    this._rootNode = undefined;
+    this._bvhTree.reset();
   }
 
   synchronize(
@@ -40,6 +59,8 @@ export class BvhTree {
   ) {
 
     this.reset();
+
+    const allEntries: IShape[] = [];
 
     // setup the generic shape list
     let shapeIndex = 0;
@@ -60,7 +81,7 @@ export class BvhTree {
       if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
       if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
 
-      this._allShapes.push({ shapeIndex: shapeIndex++, type: 'sphere', shape: currShape, min, max });
+      allEntries.push({ shapeIndex: shapeIndex++, type: 'sphere', shape: currShape, min, max });
     }
 
     shapeIndex = 1000;
@@ -103,7 +124,7 @@ export class BvhTree {
       if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
       if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
 
-      this._allShapes.push({ shapeIndex: shapeIndex++, type: 'box', shape: currShape, min, max });
+      allEntries.push({ shapeIndex: shapeIndex++, type: 'box', shape: currShape, min, max });
     }
 
     shapeIndex = 2000;
@@ -138,27 +159,17 @@ export class BvhTree {
       if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
       if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
 
-      this._allShapes.push({ shapeIndex: shapeIndex++, type: 'triangle', shape: currShape, min, max });
+      allEntries.push({ shapeIndex: shapeIndex++, type: 'triangle', shape: currShape, min, max });
     }
 
-    // create root node
-    const min = glm.vec3.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
-    const max = glm.vec3.fromValues(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
-    for (const currShape of this._allShapes) {
+    this._bvhTree.synchronize(allEntries);
 
-      min[0] = Math.min(min[0], currShape.min[0]);
-      min[1] = Math.min(min[1], currShape.min[1]);
-      min[2] = Math.min(min[2], currShape.min[2]);
-      max[0] = Math.max(max[0], currShape.max[0]);
-      max[1] = Math.max(max[1], currShape.max[1]);
-      max[2] = Math.max(max[2], currShape.max[2]);
-    }
-
-    this._rootNode = BvhTreeNode.buildBvhGraph(min, max, this._allShapes);
+    // this._rootNode = BvhTreeNode.buildBvhGraph(allEntries);
   }
 
-  getRootNode(): BvhTreeNode | undefined {
-    return this._rootNode;
+  getRootNode(): ShapesBvhTreeNode | undefined {
+    // return this._rootNode;
+    return this._bvhTree.getRootNode();
   }
 
 };

@@ -4,6 +4,343 @@
 
 #include "./ray-tracer-2.1.2-intersect-shapes.glsl.frag"
 
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
+void _intersectSphereShape(
+  int rawShapeIndex,
+  RayValues ray,
+  inout RayResult outBestResult,
+  bool shadowCastingMode
+) {
+
+  //
+  // Sphere shape
+  //
+
+  // start at index 0
+  int shapeIndex = rawShapeIndex;
+
+  // sphere-shape-texel[0]:R: can cast shadow
+  // sphere-shape-texel[0]:G: material index
+  // sphere-shape-texel[0]:B: center.x
+  // sphere-shape-texel[0]:A: center.y
+  // sphere-shape-texel[1]:R: center.z
+  // sphere-shape-texel[1]:G: quat.x
+  // sphere-shape-texel[1]:B: quat.y
+  // sphere-shape-texel[1]:A: quat.z
+  // sphere-shape-texel[2]:R: quat.w
+  // sphere-shape-texel[2]:G: radius
+  // sphere-shape-texel[2]:B: <unused>
+  // sphere-shape-texel[2]:A: <unused>
+
+  vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, SPHERE_SHAPES_ROW_INDEX), 0);
+
+  if (
+    shadowCastingMode == true &&
+    (int(shTexel0.r) == 0) // canCastShadows is false
+  ) {
+    // not casting shadow while in shadow casting mode? -> skip the shape
+    return;
+  }
+
+  vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 1, SPHERE_SHAPES_ROW_INDEX), 0);
+  vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 2, SPHERE_SHAPES_ROW_INDEX), 0);
+
+  vec3 center = vec3(shTexel0.b, shTexel0.a, shTexel1.r);
+  float radius = shTexel2.g;
+
+  vec4 orientation = vec4(
+    shTexel1.g,
+    shTexel1.b,
+    shTexel1.a,
+    shTexel2.r
+  );
+  mat3 normalMatrix = quat_to_mat3(orientation);
+  mat3 inverseNormalMatrix = inverse(normalMatrix);
+
+  // convert ray from world space to sphere space
+  RayValues sphereSpaceRay;
+  sphereSpaceRay.origin = (inverseNormalMatrix * (ray.origin - center));
+  sphereSpaceRay.direction = (inverseNormalMatrix * ray.direction);
+
+  vec3 normal;
+  float currDistance = 0.0;
+
+  if (
+    // false if not hit
+    !intersectSphere(sphereSpaceRay, radius, currDistance, normal) ||
+    // false if hit but not the closest shape
+    (outBestResult.distance > 0.0 && currDistance > outBestResult.distance)
+  ) {
+    return;
+  }
+
+  // convert normal from box space to world space
+  normal = normalMatrix * normal;
+
+  outBestResult.position = ray.origin + currDistance * ray.direction;
+
+  // the multiplication by 0.999 will remove graphic artifact
+  // vec3 txPos = (inverseNormalMatrix * 0.999) * (center - outBestResult.position);
+  vec3 txPos = inverseNormalMatrix * (center - outBestResult.position);
+  outBestResult.txPos = txPos;
+
+  outBestResult.hasHit = true;
+
+  // used here to tell if the intersected shape is any closer than any previous one
+  // -> also used to tell if a shadow ray from a light is "too far" behind the spot light
+  outBestResult.distance = currDistance;
+
+  outBestResult.normal = normal;
+
+  // this is used by the spot lights to handle the transparency/refraction
+
+  // outBestResult.shapeIndex = shapeIndex;
+  outBestResult.shapeIndex = rawShapeIndex;
+
+  // this is used by the spot lights to handle the transparency/refraction
+  outBestResult.materialIndex = int(shTexel0.g);
+}
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
+void _intersectBoxShape(
+  int rawShapeIndex,
+  RayValues ray,
+  inout RayResult outBestResult,
+  bool shadowCastingMode
+) {
+
+  //
+  // Box shape
+  //
+
+  // start at index 1000
+  int shapeIndex = rawShapeIndex - 1000;
+
+  // box-shape-texel[0]:R: can cast shadow
+  // box-shape-texel[0]:G: material index
+  // box-shape-texel[0]:B: center.x
+  // box-shape-texel[0]:A: center.y
+  // box-shape-texel[1]:R: center.z
+  // box-shape-texel[1]:G: quat.x
+  // box-shape-texel[1]:B: quat.y
+  // box-shape-texel[1]:A: quat.z
+  // box-shape-texel[2]:R: quat.w
+  // box-shape-texel[2]:G: boxSize.x
+  // box-shape-texel[2]:B: boxSize.y
+  // box-shape-texel[2]:A: boxSize.z
+  vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, BOX_SHAPES_ROW_INDEX), 0);
+
+  if (
+    shadowCastingMode == true &&
+    (int(shTexel0.r) == 0) // canCastShadows is false
+  ) {
+    // not casting shadow while in shadow casting mode? -> skip the shape
+    return;
+  }
+
+  vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 1, BOX_SHAPES_ROW_INDEX), 0);
+  vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 2, BOX_SHAPES_ROW_INDEX), 0);
+
+
+  vec3 center = vec3(shTexel0.b, shTexel0.a, shTexel1.r);
+  vec3 boxSize = shTexel2.gba;
+
+  vec4 orientation = vec4(
+    shTexel1.g,
+    shTexel1.b,
+    shTexel1.a,
+    shTexel2.r
+  );
+  mat3 normalMatrix = quat_to_mat3(orientation);
+  mat3 inverseNormalMatrix = inverse(normalMatrix);
+
+  // convert ray from world space to box space
+  RayValues boxSpaceRay;
+  boxSpaceRay.origin = (inverseNormalMatrix * (ray.origin - center));
+  boxSpaceRay.direction = (inverseNormalMatrix * ray.direction);
+
+  vec3 normal;
+  float currDistance = 0.0;
+
+  if (
+    // false if not hit
+    !intersectBox(boxSpaceRay, boxSize, currDistance, normal) ||
+    // false if hit but not the closest shape
+    (outBestResult.distance > 0.0 && currDistance > outBestResult.distance)
+  ) {
+    return;
+  }
+
+  // convert normal from box space to world space
+  normal = normalMatrix * normal;
+
+  outBestResult.position = ray.origin + currDistance * ray.direction;
+
+  // the multiplication by 0.999 will remove unwanted graphic artifact
+  vec3 txPos = (inverseNormalMatrix * 0.999) * (center - outBestResult.position);
+  outBestResult.txPos = txPos;
+
+  outBestResult.hasHit = true;
+
+  // used here to tell if the intersected shape is any closer than any previous one
+  // -> also used to tell if a shadow ray from a light is "too far" behind the spot light
+  outBestResult.distance = currDistance;
+
+  outBestResult.normal = normal;
+
+  // this is used by the spot lights to handle the transparency/refraction
+
+  // outBestResult.shapeIndex = shapeIndex;
+  outBestResult.shapeIndex = rawShapeIndex;
+
+  // this is used by the spot lights to handle the transparency/refraction
+  outBestResult.materialIndex = int(shTexel0.g);
+}
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
+void _intersectTriangleShape(
+  int rawShapeIndex,
+  RayValues ray,
+  inout RayResult outBestResult,
+  bool shadowCastingMode
+) {
+  //
+  // Triangle shape
+  //
+
+  // start at index 2000
+  int shapeIndex = rawShapeIndex - 2000;
+
+  // triangle-shape-texel[0]:R: can cast shadow
+  // triangle-shape-texel[0]:G: material index
+  // triangle-shape-texel[0]:B: triangle0.x
+  // triangle-shape-texel[0]:A: triangle0.y
+  // triangle-shape-texel[1]:R: triangle0.z
+  // triangle-shape-texel[1]:G: triangle1.x
+  // triangle-shape-texel[1]:B: triangle1.y
+  // triangle-shape-texel[1]:A: triangle1.z
+  // triangle-shape-texel[2]:R: triangle2.x
+  // triangle-shape-texel[2]:G: triangle2.y
+  // triangle-shape-texel[2]:B: triangle2.z
+  // triangle-shape-texel[2]:A: <unused>
+  vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, TRIANGLE_SHAPES_ROW_INDEX), 0);
+
+  if (
+    shadowCastingMode == true &&
+    (int(shTexel0.r) == 0) // canCastShadows is false
+  ) {
+    // not casting shadow while in shadow casting mode? -> skip the shape
+    return;
+  }
+
+  vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 1, TRIANGLE_SHAPES_ROW_INDEX), 0);
+  vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 2, TRIANGLE_SHAPES_ROW_INDEX), 0);
+
+  vec3 v0 = vec3(shTexel0.b, shTexel0.a, shTexel1.r);
+  vec3 v1 = shTexel1.gba;
+  vec3 v2 = shTexel2.rgb;
+
+  vec3 normal;
+  float currDistance = 0.0;
+
+  if (
+    // false if not hit
+    !intersectTriangle(ray, v0, v1, v2, currDistance, normal) ||
+    // false if hit but not the closest shape
+    (outBestResult.distance > 0.0 && currDistance > outBestResult.distance)
+  ) {
+    return;
+  }
+
+  outBestResult.position = ray.origin + currDistance * ray.direction;
+
+  // outBestResult.txPos = vec3(0.0); // TODO?
+
+  outBestResult.hasHit = true;
+
+  // used here to tell if the intersected shape is any closer than any previous one
+  // -> also used to tell if a shadow ray from a light is "too far" behind the spot light
+  outBestResult.distance = currDistance;
+
+  outBestResult.normal = normal;
+
+  // this is used by the spot lights to handle the transparency/refraction
+
+  // outBestResult.shapeIndex = shapeIndex;
+  outBestResult.shapeIndex = rawShapeIndex;
+
+  // this is used by the spot lights to handle the transparency/refraction
+  outBestResult.materialIndex = int(shTexel0.g);
+}
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
 
 void intersectSceneOneShape(
   int rawShapeIndex,
@@ -14,252 +351,30 @@ void intersectSceneOneShape(
 
   if (rawShapeIndex < 1000)
   {
-    //
-    // Sphere shape
-    //
-
-    // start at index 0
-    int shapeIndex = rawShapeIndex;
-
-    // sphere-shape-texel[0]:R: can cast shadow
-    // sphere-shape-texel[0]:G: material index
-    // sphere-shape-texel[0]:B: center.x
-    // sphere-shape-texel[0]:A: center.y
-    // sphere-shape-texel[1]:R: center.z
-    // sphere-shape-texel[1]:G: quat.x
-    // sphere-shape-texel[1]:B: quat.y
-    // sphere-shape-texel[1]:A: quat.z
-    // sphere-shape-texel[2]:R: quat.w
-    // sphere-shape-texel[2]:G: radius
-    // sphere-shape-texel[2]:B: <unused>
-    // sphere-shape-texel[2]:A: <unused>
-
-    vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, SPHERE_SHAPES_ROW_INDEX), 0);
-
-    if (
-      shadowCastingMode == true &&
-      (int(shTexel0.r) == 0) // canCastShadows is false
-    ) {
-      // not casting shadow while in shadow casting mode? -> skip the shape
-      return;
-    }
-
-    vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 1, SPHERE_SHAPES_ROW_INDEX), 0);
-    vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 2, SPHERE_SHAPES_ROW_INDEX), 0);
-
-    vec3 center = vec3(shTexel0.b, shTexel0.a, shTexel1.r);
-    float radius = shTexel2.g;
-
-    vec4 orientation = vec4(
-      shTexel1.g,
-      shTexel1.b,
-      shTexel1.a,
-      shTexel2.r
+    _intersectSphereShape(
+      rawShapeIndex,
+      ray,
+      outBestResult,
+      shadowCastingMode
     );
-    mat3 normalMatrix = quat_to_mat3(orientation);
-    mat3 inverseNormalMatrix = inverse(normalMatrix);
-
-    // convert ray from world space to sphere space
-    RayValues sphereSpaceRay;
-    sphereSpaceRay.origin = (inverseNormalMatrix * (ray.origin - center));
-    sphereSpaceRay.direction = (inverseNormalMatrix * ray.direction);
-
-    vec3 normal;
-    float currDistance = 0.0;
-
-    if (
-      // false if not hit
-      !intersectSphere(sphereSpaceRay, radius, currDistance, normal) ||
-      // false if hit but not the closest shape
-      (outBestResult.distance > 0.0 && currDistance > outBestResult.distance)
-    ) {
-      return;
-    }
-
-    // convert normal from box space to world space
-    normal = normalMatrix * normal;
-
-    outBestResult.position = ray.origin + currDistance * ray.direction;
-
-    // the multiplication by 0.999 will remove graphic artifact
-    // vec3 txPos = (inverseNormalMatrix * 0.999) * (center - outBestResult.position);
-    vec3 txPos = inverseNormalMatrix * (center - outBestResult.position);
-    outBestResult.txPos = txPos;
-
-    outBestResult.hasHit = true;
-
-    // used here to tell if the intersected shape is any closer than any previous one
-    // -> also used to tell if a shadow ray from a light is "too far" behind the spot light
-    outBestResult.distance = currDistance;
-
-    outBestResult.normal = normal;
-
-    // this is used by the spot lights to handle the transparency/refraction
-
-    // outBestResult.shapeIndex = shapeIndex;
-    outBestResult.shapeIndex = rawShapeIndex;
-
-    // this is used by the spot lights to handle the transparency/refraction
-    outBestResult.materialIndex = int(shTexel0.g);
   }
   else if (rawShapeIndex < 2000)
   {
-    //
-    // Box shape
-    //
-
-    // start at index 1000
-    int shapeIndex = rawShapeIndex - 1000;
-
-    // box-shape-texel[0]:R: can cast shadow
-    // box-shape-texel[0]:G: material index
-    // box-shape-texel[0]:B: center.x
-    // box-shape-texel[0]:A: center.y
-    // box-shape-texel[1]:R: center.z
-    // box-shape-texel[1]:G: quat.x
-    // box-shape-texel[1]:B: quat.y
-    // box-shape-texel[1]:A: quat.z
-    // box-shape-texel[2]:R: quat.w
-    // box-shape-texel[2]:G: boxSize.x
-    // box-shape-texel[2]:B: boxSize.y
-    // box-shape-texel[2]:A: boxSize.z
-    vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, BOX_SHAPES_ROW_INDEX), 0);
-
-    if (
-      shadowCastingMode == true &&
-      (int(shTexel0.r) == 0) // canCastShadows is false
-    ) {
-      // not casting shadow while in shadow casting mode? -> skip the shape
-      return;
-    }
-
-    vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 1, BOX_SHAPES_ROW_INDEX), 0);
-    vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 2, BOX_SHAPES_ROW_INDEX), 0);
-
-
-    vec3 center = vec3(shTexel0.b, shTexel0.a, shTexel1.r);
-    vec3 boxSize = shTexel2.gba;
-
-    vec4 orientation = vec4(
-      shTexel1.g,
-      shTexel1.b,
-      shTexel1.a,
-      shTexel2.r
+    _intersectBoxShape(
+      rawShapeIndex,
+      ray,
+      outBestResult,
+      shadowCastingMode
     );
-    mat3 normalMatrix = quat_to_mat3(orientation);
-    mat3 inverseNormalMatrix = inverse(normalMatrix);
-
-    // convert ray from world space to box space
-    RayValues boxSpaceRay;
-    boxSpaceRay.origin = (inverseNormalMatrix * (ray.origin - center));
-    boxSpaceRay.direction = (inverseNormalMatrix * ray.direction);
-
-    vec3 normal;
-    float currDistance = 0.0;
-
-    if (
-      // false if not hit
-      !intersectBox(boxSpaceRay, boxSize, currDistance, normal) ||
-      // false if hit but not the closest shape
-      (outBestResult.distance > 0.0 && currDistance > outBestResult.distance)
-    ) {
-      return;
-    }
-
-    // convert normal from box space to world space
-    normal = normalMatrix * normal;
-
-    outBestResult.position = ray.origin + currDistance * ray.direction;
-
-    // the multiplication by 0.999 will remove unwanted graphic artifact
-    vec3 txPos = (inverseNormalMatrix * 0.999) * (center - outBestResult.position);
-    outBestResult.txPos = txPos;
-
-    outBestResult.hasHit = true;
-
-    // used here to tell if the intersected shape is any closer than any previous one
-    // -> also used to tell if a shadow ray from a light is "too far" behind the spot light
-    outBestResult.distance = currDistance;
-
-    outBestResult.normal = normal;
-
-    // this is used by the spot lights to handle the transparency/refraction
-
-    // outBestResult.shapeIndex = shapeIndex;
-    outBestResult.shapeIndex = rawShapeIndex;
-
-    // this is used by the spot lights to handle the transparency/refraction
-    outBestResult.materialIndex = int(shTexel0.g);
   }
   else if (rawShapeIndex < 3000)
   {
-    //
-    // Triangle shape
-    //
-
-    // start at index 2000
-    int shapeIndex = rawShapeIndex - 2000;
-
-    // triangle-shape-texel[0]:R: can cast shadow
-    // triangle-shape-texel[0]:G: material index
-    // triangle-shape-texel[0]:B: triangle0.x
-    // triangle-shape-texel[0]:A: triangle0.y
-    // triangle-shape-texel[1]:R: triangle0.z
-    // triangle-shape-texel[1]:G: triangle1.x
-    // triangle-shape-texel[1]:B: triangle1.y
-    // triangle-shape-texel[1]:A: triangle1.z
-    // triangle-shape-texel[2]:R: triangle2.x
-    // triangle-shape-texel[2]:G: triangle2.y
-    // triangle-shape-texel[2]:B: triangle2.z
-    // triangle-shape-texel[2]:A: <unused>
-    vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, TRIANGLE_SHAPES_ROW_INDEX), 0);
-
-    if (
-      shadowCastingMode == true &&
-      (int(shTexel0.r) == 0) // canCastShadows is false
-    ) {
-      // not casting shadow while in shadow casting mode? -> skip the shape
-      return;
-    }
-
-    vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 1, TRIANGLE_SHAPES_ROW_INDEX), 0);
-    vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 2, TRIANGLE_SHAPES_ROW_INDEX), 0);
-
-    vec3 v0 = vec3(shTexel0.b, shTexel0.a, shTexel1.r);
-    vec3 v1 = shTexel1.gba;
-    vec3 v2 = shTexel2.rgb;
-
-    vec3 normal;
-    float currDistance = 0.0;
-
-    if (
-      // false if not hit
-      !intersectTriangle(ray, v0, v1, v2, currDistance, normal) ||
-      // false if hit but not the closest shape
-      (outBestResult.distance > 0.0 && currDistance > outBestResult.distance)
-    ) {
-      return;
-    }
-
-    outBestResult.position = ray.origin + currDistance * ray.direction;
-
-    // outBestResult.txPos = vec3(0.0); // TODO?
-
-    outBestResult.hasHit = true;
-
-    // used here to tell if the intersected shape is any closer than any previous one
-    // -> also used to tell if a shadow ray from a light is "too far" behind the spot light
-    outBestResult.distance = currDistance;
-
-    outBestResult.normal = normal;
-
-    // this is used by the spot lights to handle the transparency/refraction
-
-    // outBestResult.shapeIndex = shapeIndex;
-    outBestResult.shapeIndex = rawShapeIndex;
-
-    // this is used by the spot lights to handle the transparency/refraction
-    outBestResult.materialIndex = int(shTexel0.g);
+    _intersectTriangleShape(
+      rawShapeIndex,
+      ray,
+      outBestResult,
+      shadowCastingMode
+    );
   }
   else {
     return;

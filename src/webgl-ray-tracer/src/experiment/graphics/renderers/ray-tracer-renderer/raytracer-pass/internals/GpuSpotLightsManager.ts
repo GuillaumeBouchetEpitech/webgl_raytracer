@@ -4,11 +4,11 @@ import * as allInterfaces from '../all-interfaces';
 
 import * as glm from "gl-matrix"
 
-export interface ISpotLightsManager {
+export interface IGpuSpotLightsManager {
   pushSpotLight({ position, intensity, radius }: allInterfaces.ISpotLight): void;
 }
 
-export class SpotLightsManager implements ISpotLightsManager {
+export class GpuSpotLightsManager implements IGpuSpotLightsManager {
 
   private _spotLights: allInterfaces.ISpotLight[] = [];
   private _gpuDataTexture2d: GpuDataTexture2d;

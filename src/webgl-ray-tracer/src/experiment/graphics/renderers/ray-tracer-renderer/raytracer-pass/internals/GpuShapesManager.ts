@@ -4,7 +4,7 @@ import * as allInterfaces from '../all-interfaces';
 
 import * as glm from "gl-matrix"
 
-export interface IShapesManager {
+export interface IGpuShapesManager {
   pushSphere({ position, orientation, radius, materialAlias }: allInterfaces.IPublicSphere): void;
   pushBox({ position, orientation, boxSize, materialAlias }: allInterfaces.IPublicBox): void;
   pushTriangle({ v0, v1, v2, materialAlias }: allInterfaces.IPublicTriangle): void;
@@ -20,7 +20,7 @@ interface IMaterialsManager {
   getIndexFromAlias(materialAlias: number): number | undefined;
 }
 
-export class ShapesManager implements IShapesManager {
+export class GpuShapesManager implements IGpuShapesManager {
 
   private _materialsManager: IMaterialsManager;
 
@@ -232,11 +232,6 @@ export class ShapesManager implements IShapesManager {
     } // triangles
 
   }
-
-
-  // get dataTexture(): Readonly<GpuDataTexture2d> {
-  //   return this._gpuDataTexture2d;
-  // }
 
   get spheres(): ReadonlyArray<allInterfaces.IInternalSphere> {
     return this._spheres;

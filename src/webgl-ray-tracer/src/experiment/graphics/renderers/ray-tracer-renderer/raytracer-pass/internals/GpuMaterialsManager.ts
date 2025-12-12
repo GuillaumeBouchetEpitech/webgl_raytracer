@@ -2,12 +2,12 @@
 import { GpuDataTexture2d } from './GpuDataTexture2d';
 import * as allInterfaces from '../all-interfaces';
 
-export interface IMaterialsManager {
-  pushBasicMaterial(params: allInterfaces.IPublicBasicMaterial): void;
-  pushChessboardMaterial(params: allInterfaces.IPublicChessboardMaterial): void;
+export interface IGpuMaterialsManager {
+  pushBasicMaterial(params: allInterfaces.IPublicBasicMaterial): number;
+  pushChessboardMaterial(params: allInterfaces.IPublicChessboardMaterial): number;
 };
 
-export class MaterialsManager {
+export class GpuMaterialsManager {
 
   private _basicMaterialsPerAliases = new Map<number, allInterfaces.IInternalBasicMaterial>();
   private _allBasicMaterials: allInterfaces.IInternalBasicMaterial[] = []
@@ -23,7 +23,7 @@ export class MaterialsManager {
     this._gpuDataTexture2d = gpuDataTexture2d;
   }
 
-  pushBasicMaterial(params: allInterfaces.IPublicBasicMaterial): void {
+  pushBasicMaterial(params: allInterfaces.IPublicBasicMaterial): number {
 
     if (this._basicMaterialsPerAliases.has(params.materialAlias)) {
       throw new Error(`duplicated basic material alias -> "${params.materialAlias}"`);
@@ -38,9 +38,10 @@ export class MaterialsManager {
     const newMat: allInterfaces.IInternalBasicMaterial = { ...params, materialType: 0 };
     this._allBasicMaterials.push(newMat);
     this._basicMaterialsPerAliases.set(newMat.materialAlias, newMat);
+    return newMat.materialAlias;
   }
 
-  pushChessboardMaterial(params: allInterfaces.IPublicChessboardMaterial): void {
+  pushChessboardMaterial(params: allInterfaces.IPublicChessboardMaterial): number {
 
     if (this._chessboardMaterialsPerAliases.has(params.materialAlias)) {
       throw new Error(`duplicated chessboard material alias -> "${params.materialAlias}"`);
@@ -55,6 +56,7 @@ export class MaterialsManager {
     const newMat: allInterfaces.IInternalChessboardMaterial = { ...params, materialType: 0 };
     this._allChessboardMaterials.push(newMat);
     this._chessboardMaterialsPerAliases.set(newMat.materialAlias, newMat);
+    return newMat.materialAlias;
   }
 
   has(materialAlias: number): boolean {
@@ -147,9 +149,5 @@ export class MaterialsManager {
   getIndexFromAlias(materialAlias: number): number | undefined {
     return this._matAliasToIndex.get(materialAlias);
   }
-
-  // get dataTexture(): Readonly<GpuDataTexture1d> {
-  //   return this._dataTexture;
-  // }
 
 };

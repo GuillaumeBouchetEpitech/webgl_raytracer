@@ -8,13 +8,13 @@ import rayTracerFragment from './shaders/ray-tracer.glsl.frag';
 
 import * as glm from 'gl-matrix';
 
-import { BvhTree } from './internals/BvhTree';
+import { ShapesBvhTree } from './internals/utils/ShapesBvhTree';
+import { BvhDebug } from './internals/utils/BvhDebug';
 
-import { BvhManager } from './internals/BvhManager';
-import { BvhDebug } from './internals/BvhDebug';
-import { IMaterialsManager, MaterialsManager } from './internals/MaterialsManager';
-import { ISpotLightsManager, SpotLightsManager } from './internals/SpotLightsManager';
-import { IShapesManager, ShapesManager } from './internals/ShapesManager';
+import { GpuBvhManager } from './internals/GpuBvhManager';
+import { IGpuMaterialsManager, GpuMaterialsManager } from './internals/GpuMaterialsManager';
+import { IGpuSpotLightsManager, GpuSpotLightsManager } from './internals/GpuSpotLightsManager';
+import { IGpuShapesManager, GpuShapesManager } from './internals/GpuShapesManager';
 import { GpuDataTexture2d } from './internals/GpuDataTexture2d';
 
 const {
@@ -83,9 +83,9 @@ export interface IRayTracerPass {
   renderWidth: number;
   renderHeight: number;
 
-  materialsManager: Readonly<IMaterialsManager>;
-  shapesManager: Readonly<IShapesManager>;
-  spotLightsManager: Readonly<ISpotLightsManager>;
+  gpuMaterialsManager: Readonly<IGpuMaterialsManager>;
+  gpuShapesManager: Readonly<IGpuShapesManager>;
+  gpuSpotLightsManager: Readonly<IGpuSpotLightsManager>;
 };
 
 export class RayTracerPass implements IRayTracerPass {
@@ -98,16 +98,16 @@ export class RayTracerPass implements IRayTracerPass {
 
   private _rayTracerGeometry: graphics.webgl2.GeometryWrapper.Geometry;
 
-  private _bvhTree = new BvhTree();
+  private _bvhTree = new ShapesBvhTree();
 
   private _camera: ICamera;
 
   private _gpuDataTexture2d = new GpuDataTexture2d("u_dataTexture");
 
-  private _bvhManager: BvhManager;
-  private _materialsManager: MaterialsManager;
-  private _shapesManager: ShapesManager;
-  private _spotLightsManager: SpotLightsManager;
+  private _gpuBvhManager: GpuBvhManager;
+  private _gpuMaterialsManager: GpuMaterialsManager;
+  private _gpuShapesManager: GpuShapesManager;
+  private _gpuSpotLightsManager: GpuSpotLightsManager;
 
   constructor(inDef: IDefinition) {
     this._cameraFovy = inDef.fovy;
@@ -164,14 +164,14 @@ export class RayTracerPass implements IRayTracerPass {
     //
     //
 
-    this._bvhManager = new BvhManager(this._gpuDataTexture2d);
+    this._gpuBvhManager = new GpuBvhManager(this._gpuDataTexture2d);
 
-    this._materialsManager = new MaterialsManager(this._gpuDataTexture2d);
-    this._shapesManager = new ShapesManager(
+    this._gpuMaterialsManager = new GpuMaterialsManager(this._gpuDataTexture2d);
+    this._gpuShapesManager = new GpuShapesManager(
       this._gpuDataTexture2d,
-      this._materialsManager,
+      this._gpuMaterialsManager,
     );
-    this._spotLightsManager = new SpotLightsManager(this._gpuDataTexture2d);
+    this._gpuSpotLightsManager = new GpuSpotLightsManager(this._gpuDataTexture2d);
 
     this._camera = {
       position: glm.vec3.fromValues(0, 0, 0),
@@ -210,26 +210,26 @@ export class RayTracerPass implements IRayTracerPass {
     const farCorners = this._computeCameraFarCornersBufferGeometry();
     this._rayTracerGeometry.allocateBuffer(1, farCorners, farCorners.length);
 
-    this._materialsManager.prepareBuffer();
+    this._gpuMaterialsManager.prepareBuffer();
     this._gpuDataTexture2d.uploadGpuDataAsRow(0);
 
-    this._shapesManager.prepareBufferSpheres();
+    this._gpuShapesManager.prepareBufferSpheres();
     this._gpuDataTexture2d.uploadGpuDataAsRow(1);
 
-    this._shapesManager.prepareBufferBoxes();
+    this._gpuShapesManager.prepareBufferBoxes();
     this._gpuDataTexture2d.uploadGpuDataAsRow(2);
 
-    this._shapesManager.prepareBufferTriangles();
+    this._gpuShapesManager.prepareBufferTriangles();
     this._gpuDataTexture2d.uploadGpuDataAsRow(3);
 
 
-    this._spotLightsManager.prepareBuffer();
+    this._gpuSpotLightsManager.prepareBuffer();
     this._gpuDataTexture2d.uploadGpuDataAsRow(4);
     const lightsTextureSize = this._gpuDataTexture2d.getCurrentIndex();
 
-    this._bvhTree.synchronize(this._shapesManager.spheres, this._shapesManager.boxes, this._shapesManager.triangles);
-    this._bvhManager.syncRootNode(this._bvhTree.getRootNode());
-    this._bvhManager.prepareBuffer();
+    this._bvhTree.synchronize(this._gpuShapesManager.spheres, this._gpuShapesManager.boxes, this._gpuShapesManager.triangles);
+    this._gpuBvhManager.syncRootNode(this._bvhTree.getRootNode());
+    this._gpuBvhManager.prepareBuffer();
     this._gpuDataTexture2d.uploadGpuDataAsRow(5);
 
     gl.viewport(0, 0, this._renderWidth, this._renderHeight);
@@ -273,9 +273,9 @@ export class RayTracerPass implements IRayTracerPass {
 // #endregion RENDER
 
   reset(): void {
-    this._spotLightsManager.clear();
-    this._materialsManager.clear();
-    this._shapesManager.clear();
+    this._gpuSpotLightsManager.clear();
+    this._gpuMaterialsManager.clear();
+    this._gpuShapesManager.clear();
   }
 
   bvhRenderDebugWireframe(renderer: IStackRenderer) {
@@ -306,16 +306,16 @@ export class RayTracerPass implements IRayTracerPass {
     return this._camera;
   }
 
-  get materialsManager(): Readonly<IMaterialsManager> {
-    return this._materialsManager;
+  get gpuMaterialsManager(): Readonly<IGpuMaterialsManager> {
+    return this._gpuMaterialsManager;
   }
 
-  get shapesManager(): Readonly<IShapesManager> {
-    return this._shapesManager;
+  get gpuShapesManager(): Readonly<IGpuShapesManager> {
+    return this._gpuShapesManager;
   }
 
-  get spotLightsManager(): Readonly<ISpotLightsManager> {
-    return this._spotLightsManager;
+  get gpuSpotLightsManager(): Readonly<IGpuSpotLightsManager> {
+    return this._gpuSpotLightsManager;
   }
 
 

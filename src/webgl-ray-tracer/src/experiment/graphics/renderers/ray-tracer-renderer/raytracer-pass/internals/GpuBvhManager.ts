@@ -1,18 +1,18 @@
 
 import { GpuDataTexture2d } from './GpuDataTexture2d';
-import { BvhTreeNode } from './BvhTreeNode';
+import { ShapesBvhTreeNode } from './utils/ShapesBvhTree';
 
-export class BvhManager {
+export class GpuBvhManager {
 
   private _gpuDataTexture2d: GpuDataTexture2d;
 
-  private _allNodes: BvhTreeNode[] = [];
+  private _allNodes: ShapesBvhTreeNode[] = [];
 
   constructor(gpuDataTexture2d: GpuDataTexture2d) {
     this._gpuDataTexture2d = gpuDataTexture2d;
   }
 
-  syncRootNode(inputRootNode?: BvhTreeNode) {
+  syncRootNode(inputRootNode?: ShapesBvhTreeNode) {
 
     this._allNodes.length = 0;
 
@@ -20,7 +20,7 @@ export class BvhManager {
       return;
     }
 
-    const _recFunc = (currNode: BvhTreeNode) => {
+    const _recFunc = (currNode: ShapesBvhTreeNode) => {
 
       this._allNodes.push(currNode);
 
@@ -44,14 +44,14 @@ export class BvhManager {
     for (const currNode of this._allNodes) {
 
       this._gpuDataTexture2d.push(
-        currNode._min[0],
-        currNode._min[1],
-        currNode._min[2],
-        currNode._max[0],
+        currNode.min[0],
+        currNode.min[1],
+        currNode.min[2],
+        currNode.max[0],
       );
       this._gpuDataTexture2d.push(
-        currNode._max[1],
-        currNode._max[2],
+        currNode.max[1],
+        currNode.max[2],
         (currNode._leftNode?._index ?? -2) + 0.5,
         (currNode._rightNode?._index ?? -2) + 0.5,
       );
