@@ -298,13 +298,13 @@ export class Renderer {
     this._rayTracerRenderer.rayTracerPass.bvhRenderDebugWireframe(this._stackRenderers);
 
     const defaultColor: glm.ReadonlyVec3 = [1,1,1];
-    this._rayTracerRenderer.rayTracerPass.shapesManager.spheres.forEach((sphere) => {
+    this._rayTracerRenderer.rayTracerPass.gpuShapesManager.spheres.forEach((sphere) => {
       this._pushWireFrameSphere(sphere, defaultColor);
     });
-    this._rayTracerRenderer.rayTracerPass.shapesManager.boxes.forEach((box) => {
+    this._rayTracerRenderer.rayTracerPass.gpuShapesManager.boxes.forEach((box) => {
       this._pushWireFrameBox(box, defaultColor);
     });
-    this._rayTracerRenderer.rayTracerPass.shapesManager.triangles.forEach((triangle) => {
+    this._rayTracerRenderer.rayTracerPass.gpuShapesManager.triangles.forEach((triangle) => {
       this._pushWireFrameTriangle(triangle, defaultColor);
     });
 
