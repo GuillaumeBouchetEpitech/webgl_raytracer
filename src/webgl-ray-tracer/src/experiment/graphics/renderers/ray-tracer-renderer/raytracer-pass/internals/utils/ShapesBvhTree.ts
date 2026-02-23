@@ -163,12 +163,9 @@ export class ShapesBvhTree {
     }
 
     this._bvhTree.synchronize(allEntries);
-
-    // this._rootNode = BvhTreeNode.buildBvhGraph(allEntries);
   }
 
   getRootNode(): ShapesBvhTreeNode | undefined {
-    // return this._rootNode;
     return this._bvhTree.getRootNode();
   }
 

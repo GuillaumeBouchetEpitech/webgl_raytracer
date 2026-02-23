@@ -52,6 +52,7 @@ void lightAt(
     vec4 lightTexel1 = texelFetch(u_dataTexture, ivec2(lightIndex + 1, LIGHTS_ROW_INDEX), 0);
     float localIntensity = lightTexel1.r;
 
+    // attenuation
     currLightIntensity = localIntensity * (1.0 - lightToImpactDistance / lightRadius);
 
     // initialize stack
@@ -169,6 +170,7 @@ void lightAt(
         }
 
         // as a basic material
+        // replace the original matTexel0/matTexel1 with the new sub-material
 
         // basic-material-texel[0]:R: material type (0=basic or 1=chessboard)
         // basic-material-texel[0]:G: can cast shadows (0 or 1)
@@ -239,6 +241,8 @@ void lightAt(
       currLightColor *= g_lightStack[lightStackReadIndex].lightResult.color.xyz;
       currLightIntensity *= g_lightStack[lightStackReadIndex].lightResult.intensity;
     }
+
+    // currLightColor = clamp(currLightColor, vec3(0.0), vec3(1.0));
 
     //
     //
