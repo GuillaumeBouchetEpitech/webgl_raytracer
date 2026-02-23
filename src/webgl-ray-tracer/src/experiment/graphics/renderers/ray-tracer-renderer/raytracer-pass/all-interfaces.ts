@@ -61,7 +61,7 @@ export type IInternalTriangle = IPublicTriangle;
 //
 //
 
-export interface ISpotLight {
+export interface IPointLight {
   position: glm.ReadonlyVec3;
   intensity: number;
   radius: number;

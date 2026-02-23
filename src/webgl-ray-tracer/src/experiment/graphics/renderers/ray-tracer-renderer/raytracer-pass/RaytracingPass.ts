@@ -13,7 +13,7 @@ import { BvhDebug } from './internals/utils/BvhDebug';
 
 import { GpuBvhManager } from './internals/GpuBvhManager';
 import { IGpuMaterialsManager, GpuMaterialsManager } from './internals/GpuMaterialsManager';
-import { IGpuSpotLightsManager, GpuSpotLightsManager } from './internals/GpuSpotLightsManager';
+import { IGpuPointLightsManager, GpuPointLightsManager } from './internals/GpuPointLightsManager';
 import { IGpuShapesManager, GpuShapesManager } from './internals/GpuShapesManager';
 import { GpuDataTexture2d } from './internals/GpuDataTexture2d';
 
@@ -85,7 +85,7 @@ export interface IRayTracerPass {
 
   gpuMaterialsManager: Readonly<IGpuMaterialsManager>;
   gpuShapesManager: Readonly<IGpuShapesManager>;
-  gpuSpotLightsManager: Readonly<IGpuSpotLightsManager>;
+  gpuPointLightsManager: Readonly<IGpuPointLightsManager>;
 };
 
 export class RayTracerPass implements IRayTracerPass {
@@ -107,7 +107,7 @@ export class RayTracerPass implements IRayTracerPass {
   private _gpuBvhManager: GpuBvhManager;
   private _gpuMaterialsManager: GpuMaterialsManager;
   private _gpuShapesManager: GpuShapesManager;
-  private _gpuSpotLightsManager: GpuSpotLightsManager;
+  private _gpuPointLightsManager: GpuPointLightsManager;
 
   constructor(inDef: IDefinition) {
     this._cameraFovy = inDef.fovy;
@@ -171,7 +171,7 @@ export class RayTracerPass implements IRayTracerPass {
       this._gpuDataTexture2d,
       this._gpuMaterialsManager,
     );
-    this._gpuSpotLightsManager = new GpuSpotLightsManager(this._gpuDataTexture2d);
+    this._gpuPointLightsManager = new GpuPointLightsManager(this._gpuDataTexture2d);
 
     this._camera = {
       position: glm.vec3.fromValues(0, 0, 0),
@@ -223,7 +223,7 @@ export class RayTracerPass implements IRayTracerPass {
     this._gpuDataTexture2d.uploadGpuDataAsRow(3);
 
 
-    this._gpuSpotLightsManager.prepareBuffer();
+    this._gpuPointLightsManager.prepareBuffer();
     this._gpuDataTexture2d.uploadGpuDataAsRow(4);
     const lightsTextureSize = this._gpuDataTexture2d.getCurrentIndex();
 
@@ -273,7 +273,7 @@ export class RayTracerPass implements IRayTracerPass {
 // #endregion RENDER
 
   reset(): void {
-    this._gpuSpotLightsManager.clear();
+    this._gpuPointLightsManager.clear();
     this._gpuMaterialsManager.clear();
     this._gpuShapesManager.clear();
   }
@@ -314,8 +314,8 @@ export class RayTracerPass implements IRayTracerPass {
     return this._gpuShapesManager;
   }
 
-  get gpuSpotLightsManager(): Readonly<IGpuSpotLightsManager> {
-    return this._gpuSpotLightsManager;
+  get gpuPointLightsManager(): Readonly<IGpuPointLightsManager> {
+    return this._gpuPointLightsManager;
   }
 
 

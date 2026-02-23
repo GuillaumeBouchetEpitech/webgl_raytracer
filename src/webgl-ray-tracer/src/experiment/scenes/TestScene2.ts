@@ -59,7 +59,7 @@
 //       // moving spot lights
 
 //       // actual spot lights
-//       renderer.rayTracerRenderer.pushSpotLight({
+//       renderer.rayTracerRenderer.pushPointLight({
 //         position: [0, 10, 10],
 //         intensity: 2,
 //         radius: 20
@@ -78,7 +78,7 @@
 //       });
 
 //       // actual spot lights
-//       renderer.rayTracerRenderer.pushSpotLight({
+//       renderer.rayTracerRenderer.pushPointLight({
 //         position: lightPos,
 //         intensity: 2,
 //         radius: 10

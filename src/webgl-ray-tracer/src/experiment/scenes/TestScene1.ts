@@ -224,7 +224,7 @@
 //       //   castShadowEnabled: false
 //       // });
 //       // actual spot lights
-//       renderer.rayTracerRenderer.pushSpotLight({
+//       renderer.rayTracerRenderer.pushPointLight({
 //         position: mypos,
 //         intensity: 5,
 //         radius: 10
@@ -358,12 +358,12 @@
 //         });
 
 //         // actual spot lights
-//         renderer.rayTracerRenderer.pushSpotLight({
+//         renderer.rayTracerRenderer.pushPointLight({
 //           position: posA,
 //           intensity: 5,
 //           radius: 10
 //         });
-//         renderer.rayTracerRenderer.pushSpotLight({
+//         renderer.rayTracerRenderer.pushPointLight({
 //           position: posB,
 //           intensity: 5,
 //           radius: 10
@@ -461,7 +461,7 @@
 //               });
 
 //               // actual spot light
-//               renderer.rayTracerRenderer.pushSpotLight({
+//               renderer.rayTracerRenderer.pushPointLight({
 //                 position: flashParticles[ii].pos,
 //                 intensity: intensity * 5,
 //                 radius: radius * 5

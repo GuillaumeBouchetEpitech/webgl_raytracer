@@ -4,13 +4,13 @@ import * as allInterfaces from '../all-interfaces';
 
 import * as glm from "gl-matrix"
 
-export interface IGpuSpotLightsManager {
-  pushSpotLight({ position, intensity, radius }: allInterfaces.ISpotLight): void;
+export interface IGpuPointLightsManager {
+  pushPointLight({ position, intensity, radius }: allInterfaces.IPointLight): void;
 }
 
-export class GpuSpotLightsManager implements IGpuSpotLightsManager {
+export class GpuPointLightsManager implements IGpuPointLightsManager {
 
-  private _spotLights: allInterfaces.ISpotLight[] = [];
+  private _pointLights: allInterfaces.IPointLight[] = [];
   private _gpuDataTexture2d: GpuDataTexture2d;
 
   constructor(gpuDataTexture2d: GpuDataTexture2d) {
@@ -18,7 +18,7 @@ export class GpuSpotLightsManager implements IGpuSpotLightsManager {
   }
 
 
-  pushSpotLight({ position, intensity, radius }: allInterfaces.ISpotLight): void {
+  pushPointLight({ position, intensity, radius }: allInterfaces.IPointLight): void {
     // add spot light
 
     if (intensity <= 0) {
@@ -28,7 +28,7 @@ export class GpuSpotLightsManager implements IGpuSpotLightsManager {
       throw new Error('radius cannot be <= 0');
     }
 
-    this._spotLights.push({
+    this._pointLights.push({
       position: glm.vec3.clone(position),
       intensity,
       radius
@@ -37,24 +37,24 @@ export class GpuSpotLightsManager implements IGpuSpotLightsManager {
 
 
   clear() {
-    this._spotLights.length = 0;
+    this._pointLights.length = 0;
   }
 
   prepareBuffer() {
 
     this._gpuDataTexture2d.clear();
 
-    for (const spotLight of this._spotLights) {
+    for (const pointLight of this._pointLights) {
       // add spot light
 
       this._gpuDataTexture2d.push(
-        spotLight.position[0],
-        spotLight.position[1],
-        spotLight.position[2],
-        spotLight.radius,
+        pointLight.position[0],
+        pointLight.position[1],
+        pointLight.position[2],
+        pointLight.radius,
       );
       this._gpuDataTexture2d.push(
-        spotLight.intensity,
+        pointLight.intensity,
         0,
         0,
         0,
@@ -63,8 +63,8 @@ export class GpuSpotLightsManager implements IGpuSpotLightsManager {
 
   }
 
-  get spotLights(): ReadonlyArray<allInterfaces.ISpotLight> {
-    return this._spotLights;
+  get pointLights(): ReadonlyArray<allInterfaces.IPointLight> {
+    return this._pointLights;
   }
 
 }

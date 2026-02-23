@@ -535,7 +535,7 @@ export class TestScene3 {
         });
 
         // actual spot light
-        renderer.rayTracerRenderer.rayTracerPass.gpuSpotLightsManager.pushSpotLight({
+        renderer.rayTracerRenderer.rayTracerPass.gpuPointLightsManager.pushPointLight({
           position: g_lightPos,
           intensity: 1,
           radius: 15
@@ -780,7 +780,7 @@ export class TestScene3 {
         });
 
         // actual spot light inside the sphere
-        renderer.rayTracerRenderer.rayTracerPass.gpuSpotLightsManager.pushSpotLight({
+        renderer.rayTracerRenderer.rayTracerPass.gpuPointLightsManager.pushPointLight({
           position: position,
           intensity: 0.1 + 3.9 * lightCoef,
           radius: 10,
@@ -890,7 +890,7 @@ export class TestScene3 {
       //   });
 
       //   // actual spot light inside the sphere
-      //   renderer.rayTracerRenderer.rayTracerPass.gpuSpotLightsManager.pushSpotLight({
+      //   renderer.rayTracerRenderer.rayTracerPass.gpuPointLightsManager.pushPointLight({
       //     position: position,
       //     intensity: 4,
       //     radius: 15
@@ -1131,7 +1131,7 @@ export class TestScene3 {
         // }
 
         // // actual spot light inside the sphere
-        // renderer.rayTracerRenderer.rayTracerPass.pushSpotLight({
+        // renderer.rayTracerRenderer.rayTracerPass.pushPointLight({
         //   position: center,
         //   intensity: 1,
         //   radius: 15
