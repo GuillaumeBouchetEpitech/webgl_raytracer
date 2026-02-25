@@ -19,7 +19,7 @@ export class GpuPointLightsManager implements IGpuPointLightsManager {
 
 
   pushPointLight({ position, intensity, radius }: allInterfaces.IPointLight): void {
-    // add spot light
+    // add point light
 
     if (intensity <= 0) {
       throw new Error('intensity cannot be <= 0');
@@ -45,7 +45,7 @@ export class GpuPointLightsManager implements IGpuPointLightsManager {
     this._gpuDataTexture2d.clear();
 
     for (const pointLight of this._pointLights) {
-      // add spot light
+      // add point light
 
       this._gpuDataTexture2d.push(
         pointLight.position[0],

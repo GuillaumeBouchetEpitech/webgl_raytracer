@@ -518,7 +518,7 @@ export class TestScene3 {
 
       {
 
-        // graphical presentation of the spot light
+        // graphical presentation of the point light
         renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
           materialAlias: 666,
           color: [1, 1, 0],
@@ -534,7 +534,7 @@ export class TestScene3 {
           materialAlias: 666,
         });
 
-        // actual spot light
+        // actual point light
         renderer.rayTracerRenderer.rayTracerPass.gpuPointLightsManager.pushPointLight({
           position: g_lightPos,
           intensity: 1,
@@ -761,7 +761,7 @@ export class TestScene3 {
 
 
 
-        // graphical presentation of the spot lights
+        // graphical presentation of the point lights
         renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
           materialAlias: 668,
           // color: [blinkColor, blinkColor, 0],
@@ -779,7 +779,7 @@ export class TestScene3 {
           materialAlias: 668,
         });
 
-        // actual spot light inside the sphere
+        // actual point light inside the sphere
         renderer.rayTracerRenderer.rayTracerPass.gpuPointLightsManager.pushPointLight({
           position: position,
           intensity: 0.1 + 3.9 * lightCoef,
@@ -889,7 +889,7 @@ export class TestScene3 {
       //     materialAlias: materialAlias_sphere_made_of_triangles + 2,
       //   });
 
-      //   // actual spot light inside the sphere
+      //   // actual point light inside the sphere
       //   renderer.rayTracerRenderer.rayTracerPass.gpuPointLightsManager.pushPointLight({
       //     position: position,
       //     intensity: 4,
@@ -1130,7 +1130,7 @@ export class TestScene3 {
 
         // }
 
-        // // actual spot light inside the sphere
+        // // actual point light inside the sphere
         // renderer.rayTracerRenderer.rayTracerPass.pushPointLight({
         //   position: center,
         //   intensity: 1,

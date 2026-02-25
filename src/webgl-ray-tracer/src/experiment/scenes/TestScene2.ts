@@ -56,15 +56,15 @@
 //     // });
 
 //     {
-//       // moving spot lights
+//       // moving point lights
 
-//       // actual spot lights
+//       // actual point lights
 //       renderer.rayTracerRenderer.pushPointLight({
 //         position: [0, 10, 10],
 //         intensity: 2,
 //         radius: 20
 //       });
-//       // graphical presentation of the spot lights
+//       // graphical presentation of the point lights
 //       renderer.rayTracerRenderer.pushSphere({
 //         position: [0, 10, 10],
 //         orientation: [0,0,1,0],
@@ -77,14 +77,14 @@
 //         castShadowEnabled: false
 //       });
 
-//       // actual spot lights
+//       // actual point lights
 //       renderer.rayTracerRenderer.pushPointLight({
 //         position: lightPos,
 //         intensity: 2,
 //         radius: 10
 //       });
 
-//       // graphical presentation of the spot lights
+//       // graphical presentation of the point lights
 //       renderer.rayTracerRenderer.pushSphere({
 //         position: lightPos,
 //         orientation: [0,0,1,0],
@@ -246,6 +246,6 @@
 //           });
 //         });
 //       }
-//     } // moving spot lights
+//     } // moving point lights
 //   }
 // }

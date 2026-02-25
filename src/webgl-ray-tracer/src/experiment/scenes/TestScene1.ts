@@ -212,7 +212,7 @@
 //       ];
 
 
-//       // // graphical presentation of the spot lights
+//       // // graphical presentation of the point lights
 //       // renderer.rayTracerRenderer.pushSphere({
 //       //   position: [15, 0, 15],
 //       //   radius: 0.5,
@@ -223,7 +223,7 @@
 //       //   receiveLightEnabled: false,
 //       //   castShadowEnabled: false
 //       // });
-//       // actual spot lights
+//       // actual point lights
 //       renderer.rayTracerRenderer.pushPointLight({
 //         position: mypos,
 //         intensity: 5,
@@ -317,7 +317,7 @@
 //       // });
 
 //       {
-//         // moving spot lights
+//         // moving point lights
 
 //         const angle = continuousTime * -0.5;
 
@@ -333,7 +333,7 @@
 //           Math.cos(angle + Math.PI * 0.5) * 7
 //         ];
 
-//         // graphical presentation of the spot lights
+//         // graphical presentation of the point lights
 //         renderer.rayTracerRenderer.pushSphere({
 //           position: posA,
 //           orientation: glm.quat.identity(glm.quat.create()),
@@ -357,7 +357,7 @@
 //           castShadowEnabled: false
 //         });
 
-//         // actual spot lights
+//         // actual point lights
 //         renderer.rayTracerRenderer.pushPointLight({
 //           position: posA,
 //           intensity: 5,
@@ -368,7 +368,7 @@
 //           intensity: 5,
 //           radius: 10
 //         });
-//       } // moving spot lights
+//       } // moving point lights
 
 //       if (false) {
 //         // particle handling
@@ -381,7 +381,7 @@
 //           if (explosionCooldown <= 0) {
 //             explosionCooldown = 3;
 
-//             // push one flash particle (timed spot light)
+//             // push one flash particle (timed point light)
 //             flashParticles.push({
 //               pos: [-8, 0, -5],
 //               vel: [0, 0, 0],
@@ -427,7 +427,7 @@
 //         } // explosion
 
 //         {
-//           // flash particle (timed spot light)
+//           // flash particle (timed point light)
 
 //           for (let ii = 0; ii < flashParticles.length; ) {
 //             flashParticles[ii].life -= elapsedTime;
@@ -447,7 +447,7 @@
 //               const intensity = value * 2;
 //               const radius = value * 2;
 
-//               // white sphere for grahic representation of the spot light
+//               // white sphere for grahic representation of the point light
 //               renderer.rayTracerRenderer.pushSphere({
 //                 position: flashParticles[ii].pos,
 //                 orientation: glm.quat.identity(glm.quat.create()),
@@ -460,7 +460,7 @@
 //                 castShadowEnabled: false
 //               });
 
-//               // actual spot light
+//               // actual point light
 //               renderer.rayTracerRenderer.pushPointLight({
 //                 position: flashParticles[ii].pos,
 //                 intensity: intensity * 5,
@@ -471,7 +471,7 @@
 //             // increment here (not done in the loop)
 //             ++ii;
 //           }
-//         } // flash particle (timed spot light)
+//         } // flash particle (timed point light)
 
 //         {
 //           // smoke particles (timed spot spheres)

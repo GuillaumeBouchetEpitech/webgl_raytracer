@@ -104,17 +104,17 @@ void _intersectSphereShape(
   outBestResult.hasHit = true;
 
   // used here to tell if the intersected shape is any closer than any previous one
-  // -> also used to tell if a shadow ray from a light is "too far" behind the spot light
+  // -> also used to tell if a shadow ray from a light is "too far" behind the point light
   outBestResult.distance = currDistance;
 
   outBestResult.normal = normal;
 
-  // this is used by the spot lights to handle the transparency/refraction
+  // this is used by the point lights to handle the transparency/refraction
 
   // outBestResult.shapeIndex = shapeIndex;
   outBestResult.shapeIndex = rawShapeIndex;
 
-  // this is used by the spot lights to handle the transparency/refraction
+  // this is used by the point lights to handle the transparency/refraction
   outBestResult.materialIndex = int(shTexel0.g);
 }
 
@@ -217,17 +217,17 @@ void _intersectBoxShape(
   outBestResult.hasHit = true;
 
   // used here to tell if the intersected shape is any closer than any previous one
-  // -> also used to tell if a shadow ray from a light is "too far" behind the spot light
+  // -> also used to tell if a shadow ray from a light is "too far" behind the point light
   outBestResult.distance = currDistance;
 
   outBestResult.normal = normal;
 
-  // this is used by the spot lights to handle the transparency/refraction
+  // this is used by the point lights to handle the transparency/refraction
 
   // outBestResult.shapeIndex = shapeIndex;
   outBestResult.shapeIndex = rawShapeIndex;
 
-  // this is used by the spot lights to handle the transparency/refraction
+  // this is used by the point lights to handle the transparency/refraction
   outBestResult.materialIndex = int(shTexel0.g);
 }
 
@@ -310,17 +310,17 @@ void _intersectTriangleShape(
   outBestResult.hasHit = true;
 
   // used here to tell if the intersected shape is any closer than any previous one
-  // -> also used to tell if a shadow ray from a light is "too far" behind the spot light
+  // -> also used to tell if a shadow ray from a light is "too far" behind the point light
   outBestResult.distance = currDistance;
 
   outBestResult.normal = normal;
 
-  // this is used by the spot lights to handle the transparency/refraction
+  // this is used by the point lights to handle the transparency/refraction
 
   // outBestResult.shapeIndex = shapeIndex;
   outBestResult.shapeIndex = rawShapeIndex;
 
-  // this is used by the spot lights to handle the transparency/refraction
+  // this is used by the point lights to handle the transparency/refraction
   outBestResult.materialIndex = int(shTexel0.g);
 }
 

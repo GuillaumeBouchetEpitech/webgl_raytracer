@@ -13,7 +13,7 @@ void lightAt(
   lightResult.color = vec3(1.0);
 
   //
-  // handle spot lights
+  // handle point lights
   //
 
   vec3 lightDir = vec3(1.0);
@@ -23,14 +23,14 @@ void lightAt(
   for (int lightIndex = 0; lightIndex < u_lightsTextureSize; lightIndex += 2)
   {
 
-    // spot-light-texel[0]:R: spot light position.x
-    // spot-light-texel[0]:G: spot light position.y
-    // spot-light-texel[0]:B: spot light position.z
-    // spot-light-texel[0]:A: spot light radius
-    // spot-light-texel[1]:R: spot light intensity
-    // spot-light-texel[1]:G: <unused>
-    // spot-light-texel[1]:B: <unused>
-    // spot-light-texel[1]:A: <unused>
+    // point-light-texel[0]:R: point light position.x
+    // point-light-texel[0]:G: point light position.y
+    // point-light-texel[0]:B: point light position.z
+    // point-light-texel[0]:A: point light radius
+    // point-light-texel[1]:R: point light intensity
+    // point-light-texel[1]:G: <unused>
+    // point-light-texel[1]:B: <unused>
+    // point-light-texel[1]:A: <unused>
 
     vec4 lightTexel0 = texelFetch(u_dataTexture, ivec2(lightIndex + 0, LIGHTS_ROW_INDEX), 0);
     vec3 lightPos = lightTexel0.rgb;
@@ -38,7 +38,7 @@ void lightAt(
 
     vec3 lightToImpactVec3 = lightPos - impactPosition;
 
-    // is it out of the spot light effect radius?
+    // is it out of the point light effect radius?
     float lightToImpactDistance = length(lightToImpactVec3);
     if (lightToImpactDistance > lightRadius)
     {
@@ -120,7 +120,7 @@ void lightAt(
         break;
       }
 
-      // if we're here, the "shadow ray" has hit a shape, and normally this spot light should be skipped
+      // if we're here, the "shadow ray" has hit a shape, and normally this point light should be skipped
       // -> but we actually need to check for any refractive/transparent material associated to the shape hit
 
       // save it now, in case we must loop again
