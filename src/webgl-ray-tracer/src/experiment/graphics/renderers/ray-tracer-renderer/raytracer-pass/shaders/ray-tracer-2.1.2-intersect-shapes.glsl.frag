@@ -5,6 +5,7 @@
 //
 //
 
+// MARK: intersectSphere
 bool intersectSphere(RayValues ray, float radius, out float outDistance, out vec3 normal)
 {
   float nearValue = 0.001; // TODO: hardcoded
@@ -38,6 +39,7 @@ bool intersectSphere(RayValues ray, float radius, out float outDistance, out vec
   return false;
 }
 
+// MARK: intersectBox
 bool intersectBox(RayValues ray, vec3 boxSize, out float outDistance, out vec3 normal)
 {
   float nearValue = 0.001; // TODO: hardcoded
@@ -90,6 +92,7 @@ bool intersectBox(RayValues ray, vec3 boxSize, out float outDistance, out vec3 n
   return false;
 }
 
+// MARK: intersectTriangle
 bool intersectTriangle(RayValues ray, vec3 v0, vec3 v1, vec3 v2, out float outDistance, out vec3 normal)
 {
   float nearValue = 0.001; // TODO: hardcoded

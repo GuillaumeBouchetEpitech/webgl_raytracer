@@ -22,6 +22,7 @@
 //
 //
 
+// MARK: _intersectSphereShape
 void _intersectSphereShape(
   int rawShapeIndex,
   RayValues ray,
@@ -136,6 +137,7 @@ void _intersectSphereShape(
 //
 //
 
+// MARK: _intersectBoxShape
 void _intersectBoxShape(
   int rawShapeIndex,
   RayValues ray,
@@ -249,6 +251,7 @@ void _intersectBoxShape(
 //
 //
 
+// MARK: _intersectTriangleShape
 void _intersectTriangleShape(
   int rawShapeIndex,
   RayValues ray,
@@ -342,6 +345,7 @@ void _intersectTriangleShape(
 //
 //
 
+// MARK: intersectSceneOneShape
 void intersectSceneOneShape(
   int rawShapeIndex,
   RayValues ray,
@@ -399,6 +403,7 @@ void intersectSceneOneShape(
 //
 //
 
+// MARK: rayIntersectBvhAABB
 bool rayIntersectBvhAABB(RayValues ray, vec3 bvhMin, vec3 bvhMax)
 {
   vec3 valA = (bvhMin - ray.origin) / ray.direction;
@@ -430,6 +435,7 @@ bool rayIntersectBvhAABB(RayValues ray, vec3 bvhMin, vec3 bvhMax)
 //
 //
 
+// MARK: intersectScene
 bool intersectScene(
   RayValues ray,
   out RayResult outBestResult,
