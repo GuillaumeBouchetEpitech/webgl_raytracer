@@ -259,7 +259,7 @@ export class Experiment {
   isRunning() {
     return this._running !== 0 && !this.isCrashed();
   }
-  isPaused() {
+  isStopped() {
     return this._running === 0 && !this.isCrashed();
   }
   isCrashed() {
@@ -269,11 +269,14 @@ export class Experiment {
   setTimeRatio(timeRatio: number): void {
     this._timeRatio = system.math.clamp(timeRatio, 0, 4);
   }
+  getTimeRatio(): number {
+    return this._timeRatio;
+  }
 
   setHudVisibility(hudVisible: boolean) {
     this._hudVisible = hudVisible;
 
-    if (this.isPaused()) {
+    if (this.isStopped()) {
       this.updateCanvasOnce();
     }
   }
@@ -486,7 +489,7 @@ export class Experiment {
     const newCoef = 1 / newValue; // [0..1]
     this._renderer.rayTracerRenderer.setResolutionCoef(newCoef);
 
-    if (this.isPaused()) {
+    if (this.isStopped()) {
       this.updateCanvasOnce();
     }
   }
@@ -500,29 +503,29 @@ export class Experiment {
   setPhysicDebugModeEnabled(isEnabled: boolean) {
     this._physicDebugModeEnabled = isEnabled;
 
-    if (this.isPaused()) {
+    if (this.isStopped()) {
       this.updateCanvasOnce();
     }
   }
   setShowBvhDebugModeEnabled(isEnabled: boolean) {
     this._showBvhDebugModeEnabled = isEnabled;
 
-    if (this.isPaused()) {
+    if (this.isStopped()) {
       this.updateCanvasOnce();
     }
   }
 
-  setAntiAliasing(isEnabled: boolean) {
-    this._renderer.rayTracerRenderer.setAntiAliasing(isEnabled);
+  // setAntiAliasing(isEnabled: boolean) {
+  //   this._renderer.rayTracerRenderer.setAntiAliasing(isEnabled);
 
-    this._def.logger.log(
-      `Anti aliasing change: ${isEnabled === true ? 'enabled' : 'disabled'}`
-    );
+  //   this._def.logger.log(
+  //     `Anti aliasing change: ${isEnabled === true ? 'enabled' : 'disabled'}`
+  //   );
 
-    if (this.isPaused()) {
-      this.updateCanvasOnce();
-    }
-  }
+  //   if (this.isStopped()) {
+  //     this.updateCanvasOnce();
+  //   }
+  // }
 
   logResolution() {
     const rayTracerRenderer = this._renderer.rayTracerRenderer;

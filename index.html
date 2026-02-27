@@ -137,6 +137,54 @@
                 margin: 0px;
                 color: #ff6666;
             }
+
+            .new-button {
+                width: 2em;
+                height: 2em;
+                background-color: black;
+                border: 1px solid #aaaaaa;
+            }
+            .new-button:hover {
+                background-color: grey;
+            }
+            .new-disabled-button {
+                width: 2em;
+                height: 2em;
+                /* background-color: black;
+                border: 1px solid #aaaaaa; */
+            /* }
+            a.new-button:disabled,
+            a.new-button[disabled] { */
+                /* color: black; */
+                /* background-color: red; */
+                background-color: #e0e0e0;
+                color: black;
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+            #new-play-button {
+                content: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgd2lkdGg9IjgwMHB4IiBoZWlnaHQ9IjgwMHB4IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4NCiAgICA8cGF0aCBkPSJNNTkgNjEuOTIyYzAtOS43NjggMTMuMDE2LTE1LjQzMiAyMi4zNTItMTEuNjE1IDEwLjY5NSA3LjAxNyAxMDEuNjQzIDU4LjIzOCAxMDkuODY5IDY1LjA3NiA4LjIyNiA2LjgzOCAxMC41ODUgMTcuNjk1LS41NTkgMjUuNzctMTEuMTQzIDguMDc0LTk5LjcxMiA2MC4yMDMtMTA5LjMxIDY0LjczLTkuNiA0LjUyNi0yMS45NTItMS42MzItMjIuMzUyLTEzLjA4OC0uNC0xMS40NTYgMC0xMjEuMTA2IDAtMTMwLjg3M3ptMTMuNDM3IDguNDhjMCAyLjQ5NC0uMDc2IDExMi44NTItLjIxNiAxMTUuMTIyLS4yMyAzLjcyMyAzIDcuNDY0IDcuNSA1LjI0NSA0LjUtMi4yMiA5Ny41MjItNTcuNzA0IDEwMS4yMTYtNTkuMTQxIDMuNjk1LTEuNDM4IDMuNDUtNS4xIDAtNy4zODhDMTc3LjQ4OCAxMjEuOTUyIDgyLjc3IDY3Ljc2IDgwIDY1LjM4Yy0yLjc3LTIuMzgxLTcuNTYzIDEuMTkzLTcuNTYzIDUuMDIzeiIgZmlsbD0iI2FhYWFhYSIvPg0KPC9zdmc+DQo=");
+            }
+            /* #new-play-button:disabled {
+                background-color: #e0e0e0;
+                color: #888;
+                opacity: 0.6;
+                cursor: not-allowed;
+            } */
+
+            #new-pause-button {
+                content: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgd2lkdGg9IjgwMHB4IiBoZWlnaHQ9IjgwMHB4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+DQo8cGF0aCBkPSJNMTQgMTlMMTQgNUMxNCAzLjg5NTQzIDE0Ljg5NTQgMyAxNiAzTDE3IDNDMTguMTA0NiAzIDE5IDMuODk1NDMgMTkgNUwxOSAxOUMxOSAyMC4xMDQ2IDE4LjEwNDYgMjEgMTcgMjFMMTYgMjFDMTQuODk1NCAyMSAxNCAyMC4xMDQ2IDE0IDE5WiIgc3Ryb2tlPSIjYWFhYWFhIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4NCjxwYXRoIGQ9Ik0xMCAxOUwxMCA1QzEwIDMuODk1NDMgOS4xMDQ1NyAzIDggM0w3IDNDNS44OTU0MyAzIDUgMy44OTU0MyA1IDVMNSAxOUM1IDIwLjEwNDYgNS44OTU0MyAyMSA3IDIxTDggMjFDOS4xMDQ1NyAyMSAxMCAyMC4xMDQ2IDEwIDE5WiIgc3Ryb2tlPSIjYWFhYWFhIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4NCjwvc3ZnPg0K");
+            }
+
+            #new-stop-button {
+                content: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPg0KPHN2ZyBmaWxsPSIjYWFhYWFhIiB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNTYgMjU2IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPg0KICAgIDxwYXRoIGQ9Ik00OC4yMjcgNjUuNDczYzAtOS4xODMgNy4wOTYtMTYuOTk3IDE2Ljc2Mi0xNy41MSA5LjY2Ni0uNTEzIDExNi44ODctLjQ4NyAxMjUuMDk0LS40ODcgOC4yMDcgMCAxNy45MTcgOS4yMTIgMTcuOTE3IDE3LjcxIDAgOC40OTkuOTggMTE3LjkzNi40OSAxMjYuNjA5LS40OSA4LjY3My05LjYzNSAxNS45OTUtMTcuMDExIDE1Ljk5NS03LjM3NyAwLTExNy4xMjctLjMyNy0xMjYuMzQxLS4zMjctOS4yMTQgMC0xNy40NzItNy43OTMtMTcuMTkyLTE2LjEuMjgtOC4zMDYuMjgtMTE2LjcwOC4yOC0xMjUuODl6bTE1Ljk1MSA0LjY4NGMtLjE1MyAzLjk1MyAwIDExMi42NjUgMCAxMTYuMTkgMCAzLjUyNCAzLjExNSA1Ljk1OSA3LjIzNiA2LjE1NiA0LjEyLjE5OCAxMTIuMTY1LjI4OCAxMTQuODUyIDAgMi42ODYtLjI4NyA1LjgxMS0yLjA3MyA1LjkzMi01LjQ1Ni4xMi0zLjM4My0uNjA5LTExMy44NjUtLjYwOS0xMTYuODkgMC0zLjAyNS0zLjM1OC01Ljg0LTYuMDItNS45MjQtMi42NjItLjA4NS0xMTAuNTAzIDAtMTE0LjE1NSAwLTMuNjUyIDAtNy4wODMgMS45NzItNy4yMzYgNS45MjR6Ii8+DQo8L3N2Zz4NCg==");
+            }
+
+            #new-hud-button {
+                content: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPg0KPHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4NCjxwYXRoIGQ9Ik05LjAwMDAyIDMuOTk5OThINC4wMDAwNEw0IDlNMjAgOC45OTk5OVY0TDE1IDMuOTk5OTdNMTUgMjBIMjBMMjAgMTVNNCAxNUw0IDIwTDkuMDAwMDIgMjAiIHN0cm9rZT0iI2FhYWFhYSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+DQo8L3N2Zz4NCg==");
+            }
+
         </style>
 
     </head>
@@ -162,10 +210,14 @@
                     <table>
                         <tr>
                             <td colspan="2">
-                                <button id="play-button">Play</button>
+                                <a id="new-play-button" class="new-disabled-button"></a>
+                                <a id="new-pause-button" class="new-disabled-button"></a>
+                                <a id="new-stop-button" class="new-disabled-button"></a>
+                                <a id="new-hud-button" class="new-disabled-button"></a>
+                                <!-- <button id="play-button">Play</button>
                                 <button id="pause-button">Pause</button>
                                 <button id="stop-button">Stop</button>
-                                <button id="toggle-button">HUD</button>
+                                <button id="toggle-button">HUD</button> -->
                             </td>
                         </tr>
                         <tr>
@@ -176,10 +228,13 @@
                             <td>Resolution</td>
                             <td><input id="resolution" type="range" min="0" max="9" value="7"></td>
                         </tr>
+
+                        <!--
                         <tr>
                             <td><span style="text-decoration: line-through;">AntiAliasing</span></td>
                             <td><input id="anti-aliasing-enabled" type="checkbox" disabled></td>
                         </tr>
+                        -->
 
                         <tr>
                             <td>Show Physic Debug</td>

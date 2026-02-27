@@ -27,7 +27,6 @@ uniform vec3              u_cameraEye;
 //
 
 uniform highp sampler2D   u_dataTexture;
-// uniform int               u_sceneTextureSize;
 uniform int               u_lightsTextureSize;
 
 //

@@ -85,17 +85,21 @@ const onPageLoad = async () => {
       system.browser.GlobalVisibilityManager.deactivate();
     });
 
-    const playButton = _queryDomElement<HTMLButtonElement>('#play-button');
-    const pauseButton = _queryDomElement<HTMLButtonElement>('#pause-button');
-    const stopButton = _queryDomElement<HTMLButtonElement>('#stop-button');
-    const toggleHudButton = _queryDomElement<HTMLButtonElement>('#toggle-button');
+    // const playButton = _queryDomElement<HTMLButtonElement>('#play-button');
+    // const pauseButton = _queryDomElement<HTMLButtonElement>('#pause-button');
+    // const stopButton = _queryDomElement<HTMLButtonElement>('#stop-button');
+    // const toggleHudButton = _queryDomElement<HTMLButtonElement>('#toggle-button');
+    const playButton = _queryDomElement<HTMLLinkElement>('#new-play-button');
+    const pauseButton = _queryDomElement<HTMLLinkElement>('#new-pause-button');
+    const stopButton = _queryDomElement<HTMLLinkElement>('#new-stop-button');
+    const toggleHudButton = _queryDomElement<HTMLLinkElement>('#new-hud-button');
     const perfAutoScaling = _queryDomElement<HTMLInputElement>(
       '#auto-scaling-enabled'
     );
     const resolution = _queryDomElement<HTMLInputElement>('#resolution');
-    const anti_aliasing_enabled = _queryDomElement<HTMLInputElement>(
-      '#anti-aliasing-enabled'
-    );
+    // const anti_aliasing_enabled = _queryDomElement<HTMLInputElement>(
+    //   '#anti-aliasing-enabled'
+    // );
     const physic_debug_mode_enabled = _queryDomElement<HTMLInputElement>(
       '#debug-mode-enabled'
     );
@@ -119,9 +123,10 @@ const onPageLoad = async () => {
       playButton.disabled = true;
       pauseButton.disabled = true;
       stopButton.disabled = true;
+      toggleHudButton.disabled = true;
       perfAutoScaling.disabled = true;
       resolution.min = resolution.max = resolution.value = 0 as unknown as string;
-      anti_aliasing_enabled.disabled = true;
+      // anti_aliasing_enabled.disabled = true;
       physic_debug_mode_enabled.disabled = true;
       bvh_debug_mode_enabled.disabled = true;
 
@@ -169,14 +174,53 @@ const onPageLoad = async () => {
         return;
       }
       resolution.value = mainDemo.getResolution() as unknown as string;
-    })
+    });
 
-    playButton.addEventListener('click', () => {
+    const _refreshButtons = () => {
+
+      playButton.classList.remove("new-button");
+      playButton.classList.remove("new-disabled-button");
+      pauseButton.classList.remove("new-button");
+      pauseButton.classList.remove("new-disabled-button");
+      stopButton.classList.remove("new-button");
+      stopButton.classList.remove("new-disabled-button");
+      toggleHudButton.classList.remove("new-button");
+      toggleHudButton.classList.remove("new-disabled-button");
+      toggleHudButton.classList.add("new-button");
+
       if (!mainDemo) {
+        return;
+      }
+
+      if (!mainDemo.isStopped() && mainDemo.getTimeRatio() !== 0) {
+        playButton.classList.add("new-disabled-button");
+      } else {
+        playButton.classList.add("new-button");
+      }
+
+      if (!mainDemo.isStopped() && mainDemo.getTimeRatio() === 0) {
+        pauseButton.classList.add("new-disabled-button");
+      } else {
+        pauseButton.classList.add("new-button");
+      }
+
+      if (mainDemo.isStopped()) {
+        stopButton.classList.add("new-disabled-button");
+      } else {
+        stopButton.classList.add("new-button");
+      }
+
+    };
+
+    // playButton.disabled = true;
+    playButton.addEventListener('click', () => {
+      if (!mainDemo || playButton.disabled) {
         return;
       }
       mainDemo.setTimeRatio(1);
       mainDemo.start();
+      playButton.blur(); // ensure it's not focused anymore (space-bar issues)
+      _refreshButtons();
     });
     pauseButton.addEventListener('click', () => {
       if (!mainDemo) {
@@ -184,21 +228,24 @@ const onPageLoad = async () => {
       }
       mainDemo.setTimeRatio(0);
       mainDemo.start();
+      pauseButton.blur(); // ensure it's not focused anymore (space-bar issues)
+      _refreshButtons();
     });
     stopButton.addEventListener('click', () => {
       if (!mainDemo) {
         return;
       }
       mainDemo.stop();
+      stopButton.blur(); // ensure it's not focused anymore (space-bar issues)
+      _refreshButtons();
     });
     toggleHudButton.addEventListener('click', () => {
       if (!mainDemo) {
         return;
       }
       mainDemo.setHudVisibility(!mainDemo.getHudVisibility());
+      toggleHudButton.blur(); // ensure it's not focused anymore (space-bar issues)
     });
-
-    //refresh button?
 
     // performance auto-scaling
     perfAutoScaling.addEventListener('input', () => {
@@ -206,6 +253,7 @@ const onPageLoad = async () => {
         return;
       }
       mainDemo.setPerformanceAutoScaling(perfAutoScaling.checked);
+      perfAutoScaling.blur(); // ensure it's not focused anymore (space-bar issues)
     });
 
     resolution.addEventListener('input', (event) => {
@@ -215,34 +263,40 @@ const onPageLoad = async () => {
       const newValue = resolution.value as unknown as number;
       mainDemo.setResolution(newValue);
       mainDemo.logResolution();
+      resolution.blur(); // ensure it's not focused anymore (space-bar issues)
     });
 
-    anti_aliasing_enabled.addEventListener('click', () => {
-      if (!mainDemo || !logger) {
-        return;
-      }
-      const newValue = anti_aliasing_enabled.checked === true;
+    // anti_aliasing_enabled.addEventListener('click', () => {
+    //   if (!mainDemo || !logger) {
+    //     return;
+    //   }
+    //   const newValue = anti_aliasing_enabled.checked === true;
 
-      mainDemo.setAntiAliasing(newValue);
-    });
+    //   mainDemo.setAntiAliasing(newValue);
+    //   anti_aliasing_enabled.blur();
+    // });
 
     physic_debug_mode_enabled.addEventListener('click', () => {
       if (!mainDemo) {
         return;
       }
       mainDemo.setPhysicDebugModeEnabled(physic_debug_mode_enabled.checked);
-    })
+      physic_debug_mode_enabled.blur(); // ensure it's not focused anymore (space-bar issues)
+    });
     bvh_debug_mode_enabled.addEventListener('click', () => {
       if (!mainDemo) {
         return;
       }
       mainDemo.setShowBvhDebugModeEnabled(bvh_debug_mode_enabled.checked);
-    })
+      bvh_debug_mode_enabled.blur(); // ensure it's not focused anymore (space-bar issues)
+    });
 
     logger.log('[SETUP] Demo: started');
 
     mainDemo.start();
     // mainDemo.start();
+
+    _refreshButtons();
 
     logger.log('[SETUP] Demo: running');
 

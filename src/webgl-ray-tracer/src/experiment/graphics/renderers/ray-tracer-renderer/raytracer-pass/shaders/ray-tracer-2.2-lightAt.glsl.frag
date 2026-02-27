@@ -211,11 +211,11 @@ void lightAt(
   vec3 impactPosition,
   vec3 impactNormal,
   vec3 viewer,
-  out LightResult lightResult
+  out LightResult finalResult
 ) {
 
-  lightResult.intensity = g_ambientLightIntensity;
-  lightResult.color = vec3(1.0);
+  finalResult.intensity = g_ambientLightIntensity;
+  finalResult.color = vec3(1.0);
 
   //
   // handle point lights
@@ -239,17 +239,17 @@ void lightAt(
 
     vec4 lightTexel0 = texelFetch(u_dataTexture, ivec2(lightIndex + 0, LIGHTS_ROW_INDEX), 0);
     vec3 lightPos = lightTexel0.rgb;
-    float lightRadius = lightTexel0.a;
+    float lightRadius = max(0.001, lightTexel0.a);
 
     vec3 lightToImpactVec3 = lightPos - impactPosition;
 
     // is it out of the point light effect radius?
     float lightToImpactDistance = length(lightToImpactVec3);
-    if (lightToImpactDistance > lightRadius)
-    {
-      // out of range, do not apply this light
-      continue;
-    }
+    // if (lightToImpactDistance > lightRadius)
+    // {
+    //   // out of range, do not apply this light
+    //   continue;
+    // }
 
     // normalize lightDir
     lightDir = lightToImpactVec3 / lightToImpactDistance;
@@ -290,29 +290,29 @@ void lightAt(
     // ---> Blinn-Phong?
     //
 
-    float finalIntensity = 0.0;
+    float currentIntensity = 0.0;
 
     // diffuse light
-    finalIntensity += dot(lightDir, impactNormal);
+    currentIntensity += dot(lightDir, impactNormal);
 
     // specular light
     vec3 reflectionFactor = reflect(-lightDir, impactNormal);
-    finalIntensity += pow(max(dot(reflectionFactor, viewer), 0.0), 20.0);
+    currentIntensity += pow(max(dot(reflectionFactor, viewer), 0.0), 20.0);
 
-    finalIntensity *= localResult.lightIntensity;
+    currentIntensity *= localResult.lightIntensity;
 
     //
     // blend with the current result
     //
 
-    float maxIntensity = max(lightResult.intensity, finalIntensity);
+    float maxIntensity = max(finalResult.intensity, currentIntensity);
     float normalizedRatio = 1.0 / maxIntensity;
 
-    float oldBlendRatio = normalizedRatio * max(lightResult.intensity, g_ambientLightIntensity);
-    float newBlendRatio = normalizedRatio * max(finalIntensity, g_ambientLightIntensity);
+    float oldBlendRatio = normalizedRatio * max(finalResult.intensity, g_ambientLightIntensity);
+    float newBlendRatio = normalizedRatio * max(currentIntensity, g_ambientLightIntensity);
 
-    lightResult.color = lightResult.color * oldBlendRatio + localResult.lightColor * newBlendRatio;
-    lightResult.intensity = maxIntensity;
+    finalResult.color = finalResult.color * oldBlendRatio + localResult.lightColor * newBlendRatio;
+    finalResult.intensity = maxIntensity;
 
   } // for (int index = 0; index < u_lightsTextureSize; index += 2)
 }

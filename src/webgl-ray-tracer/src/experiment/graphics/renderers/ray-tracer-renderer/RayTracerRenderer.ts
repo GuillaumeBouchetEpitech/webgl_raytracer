@@ -24,8 +24,8 @@ export interface IRayTracerRenderer {
   setResolutionCoef(inResolutionCoef: number): void;
   getResolutionCoef(): number;
 
-  setAntiAliasing(enabled: boolean): void;
-  getAntiAliasing(): boolean;
+  // setAntiAliasing(enabled: boolean): void;
+  // getAntiAliasing(): boolean;
 
   rayTracerPass: Readonly<IRayTracerPass>;
 }
@@ -35,7 +35,7 @@ export class RayTracerRenderer implements IRayTracerRenderer {
   private _canvasWidth: number;
   private _canvasHeight: number;
   private _resolutionCoef: number = 1;
-  private _antiAliasing: boolean = false;
+  // private _antiAliasing: boolean = false;
 
   private _rayTracerPass: RayTracerPass;
   private _postProcessPass: PostProcessPass;
@@ -71,21 +71,21 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     gl.viewport(0, 0, this._canvasWidth, this._canvasHeight);
     gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
 
-    this._postProcessPass.setAntiAliasing(this._antiAliasing);
+    // this._postProcessPass.setAntiAliasing(this._antiAliasing);
     this._postProcessPass.render(
       this._rayTracerPass.renderWidth,
       this._rayTracerPass.renderHeight
     );
   }
 
-  private _renderAsciiArtTexturePass() {
-    const gl = WebGLContext.getContext();
+  // private _renderAsciiArtTexturePass() {
+  //   const gl = WebGLContext.getContext();
 
-    gl.viewport(0, 0, this._canvasWidth, this._canvasHeight);
-    gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
+  //   gl.viewport(0, 0, this._canvasWidth, this._canvasHeight);
+  //   gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
 
-    this._postProcessPass.renderAsciiArt();
-  }
+  //   this._postProcessPass.renderAsciiArt();
+  // }
 
   renderRayTracingPass() {
     this._postProcessPass.capture(() => {
@@ -119,13 +119,13 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     return this._resolutionCoef;
   }
 
-  setAntiAliasing(enabled: boolean) {
-    this._antiAliasing = enabled;
-  }
+  // setAntiAliasing(enabled: boolean) {
+  //   this._antiAliasing = enabled;
+  // }
 
-  getAntiAliasing(): boolean {
-    return this._antiAliasing;
-  }
+  // getAntiAliasing(): boolean {
+  //   return this._antiAliasing;
+  // }
 
   getCurrentSize(): glm.ReadonlyVec2 {
     return this._rayTracerPass.getCurrentSize();

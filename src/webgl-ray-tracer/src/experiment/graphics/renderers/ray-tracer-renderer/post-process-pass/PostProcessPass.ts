@@ -13,10 +13,10 @@ import textureVertex from './shaders/texture.glsl.vert';
 // @ts-ignore
 import textureFragment from './shaders/texture.glsl.frag';
 
-// @ts-ignore
-import asciiArtVertex from './shaders/ascii-art.glsl.vert';
-// @ts-ignore
-import asciiArtFragment from './shaders/ascii-art.glsl.frag';
+// // @ts-ignore
+// import asciiArtVertex from './shaders/ascii-art.glsl.vert';
+// // @ts-ignore
+// import asciiArtFragment from './shaders/ascii-art.glsl.frag';
 
 export interface IDefinition {
   width: number;
@@ -26,24 +26,24 @@ export interface IDefinition {
 export interface IPostProcessPass {
 
   render(renderedWidth: number, renderedHeight: number): void;
-  renderAsciiArt(): void;
+  // renderAsciiArt(): void;
 
-  setAntiAliasing(enabled: boolean): void;
-  getAntiAliasing(): boolean;
+  // setAntiAliasing(enabled: boolean): void;
+  // getAntiAliasing(): boolean;
 }
 
 export class PostProcessPass implements IPostProcessPass {
 
   private _width: number;
   private _height: number;
-  private _resolutionCoef: number = 1;
-  private _antiAliasing: boolean = false;
+  // private _resolutionCoef: number = 1;
+  // private _antiAliasing: boolean = false;
 
   private _textureShaderProgram: graphics.webgl2.IUnboundShader;
-  private _asciiArtShaderProgram: graphics.webgl2.IUnboundShader;
+  // private _asciiArtShaderProgram: graphics.webgl2.IUnboundShader;
 
   private _screenGeometry: graphics.webgl2.GeometryWrapper.Geometry;
-  private _asciiArtScreenGeometry: graphics.webgl2.GeometryWrapper.Geometry;
+  // private _asciiArtScreenGeometry: graphics.webgl2.GeometryWrapper.Geometry;
 
   private _finalTexture: graphics.webgl2.IUnboundTexture;
   private _frameBuffer: graphics.webgl2.IUnboundFrameBuffer;
@@ -62,17 +62,17 @@ export class PostProcessPass implements IPostProcessPass {
       ],
       uniforms: [
         'u_texture',
-        'u_renderedSize',
-        'u_gridSize'
+        // 'u_renderedSize',
+        // 'u_gridSize'
       ]
     });
 
-    this._asciiArtShaderProgram = new ShaderProgram('RayTracerRenderer-ascii-art', {
-      vertexSrc: asciiArtVertex,
-      fragmentSrc: asciiArtFragment,
-      attributes: ['a_vertexPosition', 'a_vertexTextureCoord'],
-      uniforms: ['u_texture']
-    });
+    // this._asciiArtShaderProgram = new ShaderProgram('RayTracerRenderer-ascii-art', {
+    //   vertexSrc: asciiArtVertex,
+    //   fragmentSrc: asciiArtFragment,
+    //   attributes: ['a_vertexPosition', 'a_vertexTextureCoord'],
+    //   uniforms: ['u_texture']
+    // });
 
     this._finalTexture = new Texture();
     this._frameBuffer = new FrameBuffer();
@@ -112,7 +112,7 @@ export class PostProcessPass implements IPostProcessPass {
     //
 
     this._screenGeometry = new GeometryWrapper.Geometry(
-      this._asciiArtShaderProgram,
+      this._textureShaderProgram,
       geoBuilder.getDef()
     );
 
@@ -126,18 +126,18 @@ export class PostProcessPass implements IPostProcessPass {
 
     //
 
-    this._asciiArtScreenGeometry = new GeometryWrapper.Geometry(
-      this._asciiArtShaderProgram,
-      geoBuilder.getDef()
-    );
+    // this._asciiArtScreenGeometry = new GeometryWrapper.Geometry(
+    //   this._asciiArtShaderProgram,
+    //   geoBuilder.getDef()
+    // );
 
-    this._asciiArtScreenGeometry.allocateBuffer(
-      0,
-      screenVertices,
-      screenVertices.length
-    );
-    this._asciiArtScreenGeometry.setPrimitiveStart(0);
-    this._asciiArtScreenGeometry.setPrimitiveCount(4);
+    // this._asciiArtScreenGeometry.allocateBuffer(
+    //   0,
+    //   screenVertices,
+    //   screenVertices.length
+    // );
+    // this._asciiArtScreenGeometry.setPrimitiveStart(0);
+    // this._asciiArtScreenGeometry.setPrimitiveCount(4);
   }
 
   render(renderedWidth: number, renderedHeight: number) {
@@ -151,34 +151,34 @@ export class PostProcessPass implements IPostProcessPass {
     shader.bind((boundShader) => {
       boundShader.setTextureUniform('u_texture', this._finalTexture, 0);
 
-      boundShader.setFloat2Uniform('u_renderedSize', renderedWidth, renderedHeight);
+      // boundShader.setFloat2Uniform('u_renderedSize', renderedWidth, renderedHeight);
 
       // anti aliasing setup
 
-      if (this._antiAliasing) {
-        boundShader.setFloat1Uniform('u_gridSize', 1);
-      } else {
-        boundShader.setFloat1Uniform('u_gridSize', 0);
-      }
+      // if (this._antiAliasing) {
+      //   boundShader.setFloat1Uniform('u_gridSize', 1);
+      // } else {
+      //   boundShader.setFloat1Uniform('u_gridSize', 0);
+      // }
 
       this._screenGeometry.render();
     });
   }
 
-  renderAsciiArt() {
-    const gl = WebGLContext.getContext();
+  // renderAsciiArt() {
+  //   const gl = WebGLContext.getContext();
 
-    gl.viewport(0, 0, this._width, this._height);
-    gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
+  //   gl.viewport(0, 0, this._width, this._height);
+  //   gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
 
-    const shader = this._asciiArtShaderProgram;
+  //   const shader = this._asciiArtShaderProgram;
 
-    shader.bind((boundShader) => {
-      boundShader.setTextureUniform('u_texture', this._finalTexture, 0);
+  //   shader.bind((boundShader) => {
+  //     boundShader.setTextureUniform('u_texture', this._finalTexture, 0);
 
-      this._asciiArtScreenGeometry.render();
-    });
-  }
+  //     this._asciiArtScreenGeometry.render();
+  //   });
+  // }
 
   setRenderSize(width: number, height: number): void {
 
@@ -201,17 +201,17 @@ export class PostProcessPass implements IPostProcessPass {
     gl.viewport(0, 0, this._width, this._height);
   }
 
-  getResolutionCoef(): number {
-    return this._resolutionCoef;
-  }
+  // getResolutionCoef(): number {
+  //   return this._resolutionCoef;
+  // }
 
-  setAntiAliasing(enabled: boolean) {
-    this._antiAliasing = enabled;
-  }
+  // setAntiAliasing(enabled: boolean) {
+  //   this._antiAliasing = enabled;
+  // }
 
-  getAntiAliasing(): boolean {
-    return this._antiAliasing;
-  }
+  // getAntiAliasing(): boolean {
+  //   return this._antiAliasing;
+  // }
 
   get canvasWidth() {
     return this._width;
