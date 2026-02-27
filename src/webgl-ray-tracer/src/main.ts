@@ -167,7 +167,7 @@ const onPageLoad = async () => {
       logger,
     });
 
-    mainDemo.setResolution(7);
+    mainDemo.setResolution(8);
 
     mainDemo.setOnResolutionChange(() => {
       if (!mainDemo) {
