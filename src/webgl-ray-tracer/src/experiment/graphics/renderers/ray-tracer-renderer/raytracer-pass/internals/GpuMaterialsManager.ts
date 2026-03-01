@@ -5,6 +5,7 @@ import * as allInterfaces from '../all-interfaces';
 export interface IGpuMaterialsManager {
   pushBasicMaterial(params: allInterfaces.IPublicBasicMaterial): number;
   pushChessboardMaterial(params: allInterfaces.IPublicChessboardMaterial): number;
+  canCastShadow(materialAlias: number): boolean;
 };
 
 export class GpuMaterialsManager {

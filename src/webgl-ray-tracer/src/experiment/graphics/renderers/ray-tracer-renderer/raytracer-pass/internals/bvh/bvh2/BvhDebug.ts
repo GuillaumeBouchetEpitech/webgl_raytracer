@@ -1,6 +1,6 @@
 
 import * as glm from 'gl-matrix';
-import { IStackRenderer } from '../../all-interfaces';
+import { IStackRenderer } from '../../../all-interfaces';
 
 import { ShapesBvhTreeNode } from './ShapesBvhTree';
 

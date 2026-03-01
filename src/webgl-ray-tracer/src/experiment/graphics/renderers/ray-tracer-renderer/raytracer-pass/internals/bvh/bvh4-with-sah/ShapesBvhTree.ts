@@ -1,24 +1,27 @@
 
 import * as glm from 'gl-matrix';
-import { IInternalBox, IInternalSphere, IInternalTriangle } from '../../all-interfaces';
+import { IInternalBox, IInternalSphere, IInternalTriangle } from '../../../all-interfaces';
 
 import { BvhTreeNode, IBvhEntry } from './BvhTreeNode';
 import { BvhTree } from './BvhTree';
 
-const k_minDelta = 0.01;
+const k_minDelta = 0.05;
 
 export interface ISphereShape extends IBvhEntry {
   shapeIndex: number;
+  // canCastShadow: boolean;
   type: 'sphere';
   shape: IInternalSphere;
 };
 export interface IBoxShape extends IBvhEntry {
   shapeIndex: number;
+  // canCastShadow: boolean;
   type: 'box';
   shape: IInternalBox;
 };
 export interface ITriangleShape extends IBvhEntry {
   shapeIndex: number;
+  // canCastShadow: boolean;
   type: 'triangle';
   shape: IInternalTriangle;
 };
@@ -56,6 +59,7 @@ export class ShapesBvhTree {
     allSpheres: ReadonlyArray<IInternalSphere>,
     allBoxes: ReadonlyArray<IInternalBox>,
     allTriangles: ReadonlyArray<IInternalTriangle>,
+    // materialsManager: { canCastShadow: (materialAlias: number) => boolean },
   ) {
 
     this.reset();
@@ -81,7 +85,14 @@ export class ShapesBvhTree {
       if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
       if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
 
-      allEntries.push({ shapeIndex: shapeIndex++, type: 'sphere', shape: currShape, min, max });
+      allEntries.push({
+        shapeIndex: shapeIndex++,
+        // canCastShadow: materialsManager.canCastShadow(currShape.materialAlias),
+        type: 'sphere',
+        shape: currShape,
+        min,
+        max
+      });
     }
 
     shapeIndex = 1000;
@@ -124,7 +135,14 @@ export class ShapesBvhTree {
       if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
       if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
 
-      allEntries.push({ shapeIndex: shapeIndex++, type: 'box', shape: currShape, min, max });
+      allEntries.push({
+        shapeIndex: shapeIndex++,
+        // canCastShadow: materialsManager.canCastShadow(currShape.materialAlias),
+        type: 'box',
+        shape: currShape,
+        min,
+        max
+      });
     }
 
     shapeIndex = 2000;
@@ -159,7 +177,14 @@ export class ShapesBvhTree {
       if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
       if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
 
-      allEntries.push({ shapeIndex: shapeIndex++, type: 'triangle', shape: currShape, min, max });
+      allEntries.push({
+        shapeIndex: shapeIndex++,
+        // canCastShadow: materialsManager.canCastShadow(currShape.materialAlias),
+        type: 'triangle',
+        shape: currShape,
+        min,
+        max
+      });
     }
 
     this._bvhTree.synchronize(allEntries);

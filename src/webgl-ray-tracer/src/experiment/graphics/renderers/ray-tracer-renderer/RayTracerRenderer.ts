@@ -17,6 +17,7 @@ export interface IDefinition {
 
 export interface IRayTracerRenderer {
 
+  synchronizeBvh(): void;
   renderRayTracingPass(): void;
   renderTexturePass(): void;
   // renderAsciiArt(): void;
@@ -86,6 +87,10 @@ export class RayTracerRenderer implements IRayTracerRenderer {
 
   //   this._postProcessPass.renderAsciiArt();
   // }
+
+  synchronizeBvh() {
+    this._rayTracerPass.synchronizeBvh();
+  }
 
   renderRayTracingPass() {
     this._postProcessPass.capture(() => {

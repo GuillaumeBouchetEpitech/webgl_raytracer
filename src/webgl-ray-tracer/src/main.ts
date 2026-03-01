@@ -100,12 +100,10 @@ const onPageLoad = async () => {
     // const anti_aliasing_enabled = _queryDomElement<HTMLInputElement>(
     //   '#anti-aliasing-enabled'
     // );
-    const physic_debug_mode_enabled = _queryDomElement<HTMLInputElement>(
-      '#debug-mode-enabled'
-    );
-    const bvh_debug_mode_enabled = _queryDomElement<HTMLInputElement>(
-      '#bvh-debug-mode-enabled'
-    );
+    const physic_debug_mode_enabled = _queryDomElement<HTMLInputElement>('#debug-mode-enabled');
+    const bvh_debug_mode_enabled = _queryDomElement<HTMLInputElement>('#bvh-debug-mode-enabled');
+    const raytracing_disabled = _queryDomElement<HTMLInputElement>('#raytracing-disabled');
+
     const errorText = _queryDomElement<HTMLParagraphElement>('#error-text')!;
 
     // add to error handlers
@@ -289,6 +287,13 @@ const onPageLoad = async () => {
       }
       mainDemo.setShowBvhDebugModeEnabled(bvh_debug_mode_enabled.checked);
       bvh_debug_mode_enabled.blur(); // ensure it's not focused anymore (space-bar issues)
+    });
+    raytracing_disabled.addEventListener('click', () => {
+      if (!mainDemo) {
+        return;
+      }
+      mainDemo.setRaytracingEnabled(!raytracing_disabled.checked);
+      raytracing_disabled.blur(); // ensure it's not focused anymore (space-bar issues)
     });
 
     logger.log('[SETUP] Demo: started');

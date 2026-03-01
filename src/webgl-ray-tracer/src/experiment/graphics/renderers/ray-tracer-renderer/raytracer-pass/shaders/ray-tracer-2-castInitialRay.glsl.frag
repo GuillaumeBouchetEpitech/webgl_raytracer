@@ -2,7 +2,9 @@
 
 
 
-#include "./ray-tracer-2.1-intersectScene.glsl.frag"
+// #--ignored--include "./ray-tracer-2.1-intersectScene-bvh2.glsl.frag"
+
+#include "./ray-tracer-2.1-intersectScene-bvh4.glsl.frag"
 
 #include "./ray-tracer-2.2-lightAt.glsl.frag"
 

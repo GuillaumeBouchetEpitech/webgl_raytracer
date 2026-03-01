@@ -212,9 +212,9 @@ void _intersectBoxShape(
 
   outBestResult.position = ray.origin + currDistance * ray.direction;
 
+  vec3 txPos = inverseNormalMatrix * (center - outBestResult.position);
   // the multiplication by 0.999 will remove unwanted graphic artifact
-  vec3 txPos = (inverseNormalMatrix * 0.999) * (center - outBestResult.position);
-  outBestResult.txPos = txPos;
+  outBestResult.txPos = txPos * 0.999;
 
   outBestResult.hasHit = true;
 
@@ -380,9 +380,6 @@ void intersectSceneOneShape(
       shadowCastingMode
     );
   }
-  else {
-    return;
-  }
 }
 
 //
@@ -462,15 +459,19 @@ bool intersectScene(
     // BVH-node-texel[0]:A: max.x
     // BVH-node-texel[1]:R: max.y
     // BVH-node-texel[1]:G: max.z
-    // BVH-node-texel[1]:B: left bvh node index
-    // BVH-node-texel[1]:A: right bvh node index
-    // BVH-node-texel[2]:R: left leaf shape index
-    // BVH-node-texel[2]:G: right leaf shape index
-    // BVH-node-texel[2]:B: <unused>
-    // BVH-node-texel[2]:A: <unused>
+    // BVH-node-texel[1]:B: child node0 index
+    // BVH-node-texel[1]:A: child node1 index
+    // BVH-node-texel[2]:R: child node2 index
+    // BVH-node-texel[2]:G: child node3 index
+    // BVH-node-texel[2]:B: leaf0 shape index
+    // BVH-node-texel[2]:A: leaf1 shape index
+    // BVH-node-texel[3]:R: leaf2 shape index
+    // BVH-node-texel[3]:G: leaf3 shape index
+    // BVH-node-texel[3]:B: <unused>
+    // BVH-node-texel[3]:A: <unused>
 
-    vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(nodeIndex * 3 + 0, BVH_ROW_INDEX), 0);
-    vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(nodeIndex * 3 + 1, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 0, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 1, BVH_ROW_INDEX), 0);
 
     vec3 aabbMin = rootNodeTexel0.rgb;
     vec3 aabbMax = vec3(rootNodeTexel0.a, rootNodeTexel1.r, rootNodeTexel1.g);
@@ -481,40 +482,69 @@ bool intersectScene(
 
     //
 
-    int leftNodeIndex = int(rootNodeTexel1.b);
-    if (leftNodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
-      // push left bvh node index on to the stack
+    vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 2, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel3 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 3, BVH_ROW_INDEX), 0);
+
+    int childNode0Index = int(rootNodeTexel1.b);
+    if (childNode0Index >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
+      // push bvh node index on to the stack
       bvhStackTopIndex += 1;
-      g_bvhStack[bvhStackTopIndex] = leftNodeIndex;
+      g_bvhStack[bvhStackTopIndex] = childNode0Index;
     }
 
-    int rightNodeIndex = int(rootNodeTexel1.a);
-    if (rightNodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
-      // push right bvh node index on to the stack
+    int childNode1Index = int(rootNodeTexel1.a);
+    if (childNode1Index >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
+      // push bvh node index on to the stack
       bvhStackTopIndex += 1;
-      g_bvhStack[bvhStackTopIndex] = rightNodeIndex;
+      g_bvhStack[bvhStackTopIndex] = childNode1Index;
+    }
+
+    int childNode2Index = int(rootNodeTexel2.r);
+    if (childNode2Index >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
+      // push bvh node index on to the stack
+      bvhStackTopIndex += 1;
+      g_bvhStack[bvhStackTopIndex] = childNode2Index;
+    }
+
+    int childNode3Index = int(rootNodeTexel2.g);
+    if (childNode3Index >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
+      // push bvh node index on to the stack
+      bvhStackTopIndex += 1;
+      g_bvhStack[bvhStackTopIndex] = childNode3Index;
     }
 
     //
 
-    vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(nodeIndex * 3 + 2, BVH_ROW_INDEX), 0);
-
-    int leftLeafShapeIndex = int(rootNodeTexel2.r);
+    int leaf0ShapeIndex = int(rootNodeTexel2.b);
     if (
-      // has shape
-      leftLeafShapeIndex >= 0 &&
-      leftLeafShapeIndex != toIgnoreShapeIndex
+      leaf0ShapeIndex >= 0 && // has shape
+      leaf0ShapeIndex != toIgnoreShapeIndex // is not ignored
     ) {
-      intersectSceneOneShape(leftLeafShapeIndex, ray, outBestResult, shadowCastingMode);
+      intersectSceneOneShape(leaf0ShapeIndex, ray, outBestResult, shadowCastingMode);
     }
 
-    int rightLeafShapeIndex = int(rootNodeTexel2.g);
+    int leaf1ShapeIndex = int(rootNodeTexel2.a);
     if (
-      // has shape
-      rightLeafShapeIndex >= 0 &&
-      rightLeafShapeIndex != toIgnoreShapeIndex
+      leaf1ShapeIndex >= 0 && // has shape
+      leaf1ShapeIndex != toIgnoreShapeIndex // is not ignored
     ) {
-      intersectSceneOneShape(rightLeafShapeIndex, ray, outBestResult, shadowCastingMode);
+      intersectSceneOneShape(leaf1ShapeIndex, ray, outBestResult, shadowCastingMode);
+    }
+
+    int leaf2ShapeIndex = int(rootNodeTexel3.r);
+    if (
+      leaf2ShapeIndex >= 0 && // has shape
+      leaf2ShapeIndex != toIgnoreShapeIndex // is not ignored
+    ) {
+      intersectSceneOneShape(leaf2ShapeIndex, ray, outBestResult, shadowCastingMode);
+    }
+
+    int leaf3ShapeIndex = int(rootNodeTexel3.g);
+    if (
+      leaf3ShapeIndex >= 0 && // has shape
+      leaf3ShapeIndex != toIgnoreShapeIndex // is not ignored
+    ) {
+      intersectSceneOneShape(leaf3ShapeIndex, ray, outBestResult, shadowCastingMode);
     }
 
     //

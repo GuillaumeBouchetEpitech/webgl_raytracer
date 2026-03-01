@@ -2,7 +2,7 @@
 import* as glm from "gl-matrix"
 
 import { BvhTreeNode, IBvhEntry, BvhEntryPool } from './BvhTreeNode';
-import { ObjectPool } from './ObjectPool';
+import { ObjectPool } from '../utils/ObjectPool';
 
 export class BvhTree<T extends IBvhEntry> {
 

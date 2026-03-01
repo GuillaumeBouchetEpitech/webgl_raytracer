@@ -1,8 +1,8 @@
 
 import { GpuDataTexture2d } from './GpuDataTexture2d';
-import { ShapesBvhTreeNode } from './utils/ShapesBvhTree';
+import { ShapesBvhTreeNode } from './bvh/bvh2/ShapesBvhTree';
 
-export class GpuBvhManager {
+export class GpuBvh2NodeManager {
 
   private _gpuDataTexture2d: GpuDataTexture2d;
 
@@ -58,6 +58,8 @@ export class GpuBvhManager {
       this._gpuDataTexture2d.push(
         (currNode._leftLeaf?.shapeIndex ?? -2) + 0.5,
         (currNode._rightLeaf?.shapeIndex ?? -2) + 0.5,
+        // (currNode._leftLeaf?.canCastShadow) ? 1 : 0,
+        // (currNode._rightLeaf?.canCastShadow) ? 1 : 0,
         0,
         0,
       );

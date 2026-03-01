@@ -41,6 +41,7 @@ export class Experiment {
 
   private _physicDebugModeEnabled: boolean = false;
   private _showBvhDebugModeEnabled: boolean = false;
+  private _raytracingEnabled: boolean = true;
 
   private _freeFlyController: system.controllers.FreeFlyController;
 
@@ -330,7 +331,8 @@ export class Experiment {
     this._currFrameMsecTime = currentMsecTime;
 
     // this make sure the time sensitive logic isn't "jumping" in case of slow down
-    const safeDelta = Math.min(deltaMsecTime, 40); // 40ms is 25fps
+    // -> ex: minor/major GC
+    const safeDelta = Math.min(deltaMsecTime, 40); // 40ms -> 25fps
 
     const deltaSecTime = (safeDelta / 1000);
 
@@ -358,7 +360,10 @@ export class Experiment {
     this._renderScene();
     this._renderHud();
 
-    this._renderer.rayTracerRenderer.renderRayTracingPass();
+    this._renderer.rayTracerRenderer.synchronizeBvh();
+    if (this._raytracingEnabled) {
+      this._renderer.rayTracerRenderer.renderRayTracingPass();
+    }
     this._renderer.rayTracerRenderer.rayTracerPass.reset();
   }
   // #endregion main loop
@@ -438,9 +443,10 @@ export class Experiment {
         this._freeFlyController.getUpAxis()
       );
 
-      this._renderer.rayTracerRenderer.renderTexturePass();
-      // this._renderer.rayTracerRenderer.renderAsciiArt();
-
+      if (this._raytracingEnabled) {
+        this._renderer.rayTracerRenderer.renderTexturePass();
+        // this._renderer.rayTracerRenderer.renderAsciiArt();
+      }
 
       if (this._physicDebugModeEnabled) {
         this._renderer.stackRenderers.clear();
@@ -509,6 +515,14 @@ export class Experiment {
   }
   setShowBvhDebugModeEnabled(isEnabled: boolean) {
     this._showBvhDebugModeEnabled = isEnabled;
+
+    if (this.isStopped()) {
+      this.updateCanvasOnce();
+    }
+  }
+
+  setRaytracingEnabled(isEnabled: boolean): void {
+    this._raytracingEnabled = isEnabled;
 
     if (this.isStopped()) {
       this.updateCanvasOnce();

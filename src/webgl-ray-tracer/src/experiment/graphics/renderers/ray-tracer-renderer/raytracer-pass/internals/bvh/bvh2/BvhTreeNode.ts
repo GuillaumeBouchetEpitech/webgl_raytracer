@@ -1,7 +1,7 @@
 
 import * as glm from 'gl-matrix';
 
-import { ObjectPool } from './ObjectPool';
+import { ObjectPool } from '../utils/ObjectPool';
 
 
 export interface IBvhEntry {

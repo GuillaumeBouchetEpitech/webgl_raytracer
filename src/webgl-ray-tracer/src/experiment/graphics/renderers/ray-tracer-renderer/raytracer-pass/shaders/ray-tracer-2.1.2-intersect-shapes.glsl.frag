@@ -53,15 +53,19 @@ bool intersectBox(RayValues ray, vec3 boxSize, out float outDistance, out vec3 n
   // if (ray.origin.y == 0.0) ray.origin.y = -1e-8;
   // if (ray.origin.z == 0.0) ray.origin.z = -1e-8;
 
-  if (ray.direction.x == 0.0) ray.direction.x = -1e-8;
-  if (ray.direction.y == 0.0) ray.direction.y = -1e-8;
-  if (ray.direction.z == 0.0) ray.direction.z = -1e-8;
+  // if (ray.direction.x == 0.0) ray.direction.x = -1e-8;
+  // if (ray.direction.y == 0.0) ray.direction.y = -1e-8;
+  // if (ray.direction.z == 0.0) ray.direction.z = -1e-8;
+
+  // safe -> mitigated risk of division by zero
+  // -> faster approach
+  ray.direction = mix(ray.direction, vec3(-1e-8), equal(ray.direction, vec3(0.0)));
 
   // sad hack: fix a shadow related bug
   //
   //
 
-  vec3 m = sign(ray.direction) / max(abs(ray.direction), 1e-8);
+  vec3 m = sign(ray.direction) / abs(ray.direction);
   vec3 n = m * ray.origin;
   vec3 k = abs(m) * boxSize;
 
@@ -104,7 +108,14 @@ bool intersectTriangle(RayValues ray, vec3 v0, vec3 v1, vec3 v2, out float outDi
 
   vec3 n = cross(v1v0, v2v0);
   vec3 q = cross(rov0, ray.direction);
-  float d = 1.0 / dot(ray.direction, n);
+
+  // unsafe -> potential division by zero
+  // float d = 1.0 / dot(ray.direction, n);
+
+  // safe -> mitigated risk of division by zero
+  float tmpDotVal = dot(ray.direction, n);
+  float d = 1.0 / (tmpDotVal == 0.0 ? -1e-8 : tmpDotVal);
+
   float u = d * dot(-q, v2v0);
   float v = d * dot(q, v1v0);
   float t = d * dot(-n, rov0);
