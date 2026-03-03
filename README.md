@@ -171,7 +171,7 @@ point-light-texel[1]:B: <unused>
 point-light-texel[1]:A: <unused>
 ```
 
-BVH tree node row values (row index: 5)
+BVH2 tree node row values (row index: 5)
 ```
 3 x vec4f
 BVH-node-texel[0]:R: AABB.min.x
@@ -184,6 +184,27 @@ BVH-node-texel[1]:B: child node (left) index (if none: set to -1 )
 BVH-node-texel[1]:A: child node (right) index (if none: set to -1 )
 BVH-node-texel[2]:R: leaf shape (left) index (if none: set to -1 )
 BVH-node-texel[2]:G: leaf shape (right) index (if none: set to -1 )
-BVH-node-texel[2]:B: leaf shape (left) "can cast shadow" (0 or 1)
-BVH-node-texel[2]:A: leaf shape (right) "can cast shadow" (0 or 1)
+BVH-node-texel[2]:B: <unused>
+BVH-node-texel[2]:A: <unused>
+```
+
+BVH4 tree node row values (row index: 5)
+```
+4 x vec4f
+BVH-node-texel[0]:R: min.x
+BVH-node-texel[0]:G: min.y
+BVH-node-texel[0]:B: min.z
+BVH-node-texel[0]:A: max.x
+BVH-node-texel[1]:R: max.y
+BVH-node-texel[1]:G: max.z
+BVH-node-texel[1]:B: child node0 index
+BVH-node-texel[1]:A: child node1 index
+BVH-node-texel[2]:R: child node2 index
+BVH-node-texel[2]:G: child node3 index
+BVH-node-texel[2]:B: leaf0 shape index
+BVH-node-texel[2]:A: leaf1 shape index
+BVH-node-texel[3]:R: leaf2 shape index
+BVH-node-texel[3]:G: leaf3 shape index
+BVH-node-texel[3]:B: <unused>
+BVH-node-texel[3]:A: <unused>
 ```
