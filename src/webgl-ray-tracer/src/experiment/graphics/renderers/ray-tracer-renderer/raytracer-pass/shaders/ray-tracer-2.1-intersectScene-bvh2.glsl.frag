@@ -453,71 +453,80 @@ bool intersectScene(
     int nodeIndex = g_bvhStack[bvhStackTopIndex];
     bvhStackTopIndex -= 1;
 
-    // BVH-node-texel[0]:R: min.x
-    // BVH-node-texel[0]:G: min.y
-    // BVH-node-texel[0]:B: min.z
-    // BVH-node-texel[0]:A: max.x
-    // BVH-node-texel[1]:R: max.y
-    // BVH-node-texel[1]:G: max.z
-    // BVH-node-texel[1]:B: left bvh node index
-    // BVH-node-texel[1]:A: right bvh node index
-    // BVH-node-texel[2]:R: left leaf shape index
-    // BVH-node-texel[2]:G: right leaf shape index
-    // BVH-node-texel[2]:B: <unused>
-    // BVH-node-texel[2]:A: <unused>
-
-    vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(nodeIndex * 3 + 0, BVH_ROW_INDEX), 0);
-    vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(nodeIndex * 3 + 1, BVH_ROW_INDEX), 0);
-
-    vec3 aabbMin = rootNodeTexel0.rgb;
-    vec3 aabbMax = vec3(rootNodeTexel0.a, rootNodeTexel1.r, rootNodeTexel1.g);
-
-    if (!rayIntersectBvhAABB(ray, aabbMin, aabbMax)) {
-      continue;
-    }
-
     //
 
-    int leftNodeIndex = int(rootNodeTexel1.b);
-    if (leftNodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
-      // push left bvh node index on to the stack
-      bvhStackTopIndex += 1;
-      g_bvhStack[bvhStackTopIndex] = leftNodeIndex;
-    }
+    // BVH-node-texel[0]:R: left node type
+    // BVH-node-texel[0]:G: left node index
+    // BVH-node-texel[0]:B: left min.x
+    // BVH-node-texel[0]:A: left min.y
+    // BVH-node-texel[1]:R: left min.z
+    // BVH-node-texel[1]:G: left max.x
+    // BVH-node-texel[1]:B: left max.y
+    // BVH-node-texel[1]:A: left max.z
+    // BVH-node-texel[2]:R: right node type
+    // BVH-node-texel[2]:G: right node index
+    // BVH-node-texel[2]:B: right min.x
+    // BVH-node-texel[2]:A: right min.y
+    // BVH-node-texel[3]:R: right min.z
+    // BVH-node-texel[3]:G: right max.x
+    // BVH-node-texel[3]:B: right max.y
+    // BVH-node-texel[3]:A: right max.z
 
-    int rightNodeIndex = int(rootNodeTexel1.a);
-    if (rightNodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
-      // push right bvh node index on to the stack
-      bvhStackTopIndex += 1;
-      g_bvhStack[bvhStackTopIndex] = rightNodeIndex;
-    }
+    vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 0, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 1, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 2, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel3 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 3, BVH_ROW_INDEX), 0);
 
-    //
+    int leftNodeType = int(rootNodeTexel0.r);
+    int leftNodeIndex = int(rootNodeTexel0.g);
+    vec3 leftAabbMin = vec3(rootNodeTexel0.b, rootNodeTexel0.a, rootNodeTexel1.r);
+    vec3 leftAabbMax = vec3(rootNodeTexel1.g, rootNodeTexel1.b, rootNodeTexel1.a);
 
-    vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(nodeIndex * 3 + 2, BVH_ROW_INDEX), 0);
+    int rightNodeType = int(rootNodeTexel2.r);
+    int rightNodeIndex = int(rootNodeTexel2.g);
+    vec3 rightAabbMin = vec3(rootNodeTexel2.b, rootNodeTexel2.a, rootNodeTexel3.r);
+    vec3 rightAabbMax = vec3(rootNodeTexel3.g, rootNodeTexel3.b, rootNodeTexel3.a);
 
-    int leftLeafShapeIndex = int(rootNodeTexel2.r);
     if (
-      leftLeafShapeIndex >= 0 && // has shape
-      leftLeafShapeIndex != toIgnoreShapeIndex // is not ignored
-      // && (
-      //   shadowCastingMode == false || // is not casting shadows -> pass
-      //   (int(rootNodeTexel2.b) == 1) // is casting shadows + shadows enabled -> pass
-      // )
+      leftNodeType > 0 &&
+      rayIntersectBvhAABB(ray, leftAabbMin, leftAabbMax)
     ) {
-      intersectSceneOneShape(leftLeafShapeIndex, ray, outBestResult, shadowCastingMode);
+      if (leftNodeType == 1) {
+        if (leftNodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
+          // push left bvh node index on to the stack
+          bvhStackTopIndex += 1;
+          g_bvhStack[bvhStackTopIndex] = leftNodeIndex;
+        }
+      }
+      else if (leftNodeType == 2) {
+        if (
+          leftNodeIndex >= 0 && // has shape
+          leftNodeIndex != toIgnoreShapeIndex // is not ignored
+        ) {
+          intersectSceneOneShape(leftNodeIndex, ray, outBestResult, shadowCastingMode);
+        }
+      }
     }
 
-    int rightLeafShapeIndex = int(rootNodeTexel2.g);
     if (
-      rightLeafShapeIndex >= 0 && // has shape
-      rightLeafShapeIndex != toIgnoreShapeIndex // is not ignored
-      // && (
-      //   shadowCastingMode == false || // is not casting shadows -> pass
-      //   (int(rootNodeTexel2.a) == 1) // is casting shadows + shadows enabled -> pass
-      // )
+      rightNodeType > 0 &&
+      rayIntersectBvhAABB(ray, rightAabbMin, rightAabbMax)
     ) {
-      intersectSceneOneShape(rightLeafShapeIndex, ray, outBestResult, shadowCastingMode);
+      if (rightNodeType == 1) {
+        if (rightNodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
+          // push right bvh node index on to the stack
+          bvhStackTopIndex += 1;
+          g_bvhStack[bvhStackTopIndex] = rightNodeIndex;
+        }
+      }
+      else if (rightNodeType == 2) {
+        if (
+          rightNodeIndex >= 0 && // has shape
+          rightNodeIndex != toIgnoreShapeIndex // is not ignored
+        ) {
+          intersectSceneOneShape(rightNodeIndex, ray, outBestResult, shadowCastingMode);
+        }
+      }
     }
 
     //

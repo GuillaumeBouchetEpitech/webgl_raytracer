@@ -1,6 +1,6 @@
 
 import { GpuDataTexture2d } from './GpuDataTexture2d';
-import { ShapesBvhTreeNode } from './bvh/bvh2/ShapesBvhTree';
+import { IShape, ShapesBvhTreeNode } from './bvh/bvh2/ShapesBvhTree';
 
 export class GpuBvh2NodeManager {
 
@@ -43,25 +43,56 @@ export class GpuBvh2NodeManager {
 
     for (const currNode of this._allNodes) {
 
+      let leftType = 0; // empty, do not test
+      let leftIndex = 0; // empty, no index
+      let leftNode: ShapesBvhTreeNode | IShape | undefined = undefined;
+      if (currNode._leftNode) {
+        leftType = 1; // child node, test and maybe push to the stack
+        leftIndex = currNode._leftNode._index;
+        leftNode = currNode._leftNode;
+      } else if (currNode._leftLeaf) {
+        leftType = 2; // leaf node, test and maybe push to the stack
+        leftIndex = currNode._leftLeaf.shapeIndex;
+        leftNode = currNode._leftLeaf;
+      }
+
       this._gpuDataTexture2d.push(
-        currNode.min[0],
-        currNode.min[1],
-        currNode.min[2],
-        currNode.max[0],
+        leftType + 0.5,
+        leftIndex + 0.5,
+        leftNode?.min[0] ?? -1,
+        leftNode?.min[1] ?? -1,
       );
       this._gpuDataTexture2d.push(
-        currNode.max[1],
-        currNode.max[2],
-        (currNode._leftNode?._index ?? -2) + 0.5,
-        (currNode._rightNode?._index ?? -2) + 0.5,
+        leftNode?.min[2] ?? -1,
+        leftNode?.max[0] ?? -1,
+        leftNode?.max[1] ?? -1,
+        leftNode?.max[2] ?? -1,
+      );
+
+      let rightType = 0; // empty, do not test
+      let rightIndex = 0; // empty, no index
+      let rightNode: ShapesBvhTreeNode | IShape | undefined = undefined;
+      if (currNode._rightNode) {
+        rightType = 1; // child node, test and maybe push to the stack
+        rightIndex = currNode._rightNode._index;
+        rightNode = currNode._rightNode;
+      } else if (currNode._rightLeaf) {
+        rightType = 2; // leaf node, test and maybe push to the stack
+        rightIndex = currNode._rightLeaf.shapeIndex;
+        rightNode = currNode._rightLeaf;
+      }
+
+      this._gpuDataTexture2d.push(
+        rightType + 0.5,
+        rightIndex + 0.5,
+        rightNode?.min[0] ?? -1,
+        rightNode?.min[1] ?? -1,
       );
       this._gpuDataTexture2d.push(
-        (currNode._leftLeaf?.shapeIndex ?? -2) + 0.5,
-        (currNode._rightLeaf?.shapeIndex ?? -2) + 0.5,
-        // (currNode._leftLeaf?.canCastShadow) ? 1 : 0,
-        // (currNode._rightLeaf?.canCastShadow) ? 1 : 0,
-        0,
-        0,
+        rightNode?.min[2] ?? -1,
+        rightNode?.max[0] ?? -1,
+        rightNode?.max[1] ?? -1,
+        rightNode?.max[2] ?? -1,
       );
 
     }
