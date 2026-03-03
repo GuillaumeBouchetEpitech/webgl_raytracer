@@ -3,14 +3,12 @@ import * as glm from 'gl-matrix';
 
 import { ObjectPool } from '../utils/ObjectPool';
 
-
 export interface IBvhEntry {
   min: glm.ReadonlyVec3;
   max: glm.ReadonlyVec3;
-}
+};
 
 export type BvhEntryPool<T extends IBvhEntry> = ObjectPool<BvhTreeNode<T>, [glm.ReadonlyVec3, glm.ReadonlyVec3]>;
-
 
 export class BvhTreeNode<T extends IBvhEntry> implements IBvhEntry {
 

@@ -9,19 +9,16 @@ const k_minDelta = 0.01;
 
 export interface ISphereShape extends IBvhEntry {
   shapeIndex: number;
-  // canCastShadow: boolean;
   type: 'sphere';
   shape: IInternalSphere;
 };
 export interface IBoxShape extends IBvhEntry {
   shapeIndex: number;
-  // canCastShadow: boolean;
   type: 'box';
   shape: IInternalBox;
 };
 export interface ITriangleShape extends IBvhEntry {
   shapeIndex: number;
-  // canCastShadow: boolean;
   type: 'triangle';
   shape: IInternalTriangle;
 };
