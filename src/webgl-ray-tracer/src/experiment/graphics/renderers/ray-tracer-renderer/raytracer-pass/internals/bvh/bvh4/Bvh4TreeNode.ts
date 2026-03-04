@@ -1,13 +1,14 @@
 
 import * as glm from 'gl-matrix';
 
-import { IBvh2Entry, Bvh2TreeNode } from '../bvh2/Bvh2TreeNode';
+import { type MutableAABB } from "../bvh2/aabb-utils";
+import { Bvh2TreeNode } from '../bvh2/Bvh2TreeNode';
 
 import { ObjectPool } from '../utils/ObjectPool';
 
-export type Bvh4EntryPool<T extends IBvh2Entry> = ObjectPool<Bvh4TreeNode<T>, [glm.ReadonlyVec3, glm.ReadonlyVec3]>;
+export type Bvh4EntryPool<T extends MutableAABB> = ObjectPool<Bvh4TreeNode<T>, [glm.ReadonlyVec3, glm.ReadonlyVec3]>;
 
-export class Bvh4TreeNode<T extends IBvh2Entry> implements IBvh2Entry {
+export class Bvh4TreeNode<T extends MutableAABB> implements MutableAABB {
 
   _index: number = -1;
 
@@ -19,7 +20,7 @@ export class Bvh4TreeNode<T extends IBvh2Entry> implements IBvh2Entry {
 
   private static s_index: number = 0;
 
-  static buildBvhGraph<T extends IBvh2Entry>(
+  static buildBvhGraph<T extends MutableAABB>(
     nodePool: Bvh4EntryPool<T>,
     bvh2RootNode: Bvh2TreeNode<T>,
   ): Bvh4TreeNode<T> {

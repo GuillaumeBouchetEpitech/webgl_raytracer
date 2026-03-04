@@ -1,11 +1,12 @@
 
 import* as glm from "gl-matrix"
 
-import { type IBvh2Entry, Bvh2TreeNode } from "../bvh2/Bvh2TreeNode";
+import { type MutableAABB } from "../bvh2/aabb-utils";
+import { Bvh2TreeNode } from "../bvh2/Bvh2TreeNode";
 import { Bvh4TreeNode, Bvh4EntryPool } from './Bvh4TreeNode';
 import { ObjectPool } from '../utils/ObjectPool';
 
-export class Bvh4Tree<T extends IBvh2Entry> {
+export class Bvh4Tree<T extends MutableAABB> {
 
   private _objectPool: Bvh4EntryPool<T>;
   private _rootNode?: Bvh4TreeNode<T>;

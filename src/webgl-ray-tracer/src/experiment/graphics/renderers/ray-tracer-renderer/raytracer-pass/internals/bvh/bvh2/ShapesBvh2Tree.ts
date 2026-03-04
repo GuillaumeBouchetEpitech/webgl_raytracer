@@ -3,22 +3,23 @@ import * as glm from 'gl-matrix';
 
 import { IInternalBox, IInternalSphere, IInternalTriangle } from '../../../all-interfaces';
 
-import { Bvh2TreeNode, IBvh2Entry } from './Bvh2TreeNode';
+import { type MutableAABB } from './aabb-utils';
+import { Bvh2TreeNode } from './Bvh2TreeNode';
 import { Bvh2Tree } from './Bvh2Tree';
 
 const k_minDelta = 0.01;
 
-export interface ISphereShape extends IBvh2Entry {
+export interface ISphereShape extends MutableAABB {
   shapeIndex: number;
   type: 'sphere';
   shape: IInternalSphere;
 };
-export interface IBoxShape extends IBvh2Entry {
+export interface IBoxShape extends MutableAABB {
   shapeIndex: number;
   type: 'box';
   shape: IInternalBox;
 };
-export interface ITriangleShape extends IBvh2Entry {
+export interface ITriangleShape extends MutableAABB {
   shapeIndex: number;
   type: 'triangle';
   shape: IInternalTriangle;

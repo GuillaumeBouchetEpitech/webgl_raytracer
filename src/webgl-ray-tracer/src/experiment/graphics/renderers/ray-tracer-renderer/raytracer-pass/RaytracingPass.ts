@@ -8,9 +8,9 @@ import rayTracerFragment from './shaders/ray-tracer.glsl.frag';
 
 import * as glm from 'gl-matrix';
 
-import { ShapesBvh2Tree } from './internals/bvh/bvh2/ShapesBvh2Tree';
-import { Bvh2Debug } from './internals/bvh/bvh2/Bvh2Debug';
-import { GpuBvh2NodeManager } from './internals/GpuBvh2NodeManager';
+// import { ShapesBvh2Tree } from './internals/bvh/bvh2/ShapesBvh2Tree';
+// import { Bvh2Debug } from './internals/bvh/bvh2/Bvh2Debug';
+// import { GpuBvh2NodeManager } from './internals/GpuBvh2NodeManager';
 
 import { ShapesBvh4Tree } from './internals/bvh/bvh4/ShapesBvh4Tree';
 import { Bvh4Debug } from './internals/bvh/bvh4/Bvh4Debug';
@@ -207,7 +207,6 @@ export class RayTracerPass implements IRayTracerPass {
     glm.vec3.copy(this._camera.up, upDir);
   }
 
-// #region RENDER
 
   synchronizeBvh() {
     this._bvhTree.synchronize(
@@ -217,6 +216,7 @@ export class RayTracerPass implements IRayTracerPass {
     );
   }
 
+  // MARK: render
   render() {
     const gl = WebGLContext.getContext();
 
@@ -291,8 +291,7 @@ export class RayTracerPass implements IRayTracerPass {
     } // raytracing pass
   }
 
-// #endregion RENDER
-
+  // MARK: reset, etc.
   reset(): void {
     this._gpuPointLightsManager.clear();
     this._gpuMaterialsManager.clear();
@@ -340,7 +339,7 @@ export class RayTracerPass implements IRayTracerPass {
     return this._gpuPointLightsManager;
   }
 
-
+  // MARK: computeCameraFarCornersBufferGeometry
   private _computeCameraFarCornersBufferGeometry(): ReadonlyArray<number> {
 
     const forwardDir = glm.vec3.sub(

@@ -3,17 +3,19 @@ import * as glm from 'gl-matrix';
 
 import { ObjectPool } from '../utils/ObjectPool';
 
+import { type MutableAABB, setAabbFromAabbList } from './aabb-utils';
+
 // import { naiveSplit } from './splitters/naive-splitter';
 import { surfaceAreaHeuristicSplit } from './splitters/surface-area-heuristic-splitter';
 
-export interface IBvh2Entry {
-  min: glm.ReadonlyVec3;
-  max: glm.ReadonlyVec3;
-};
+// export interface IBvh2Entry {
+//   min: glm.ReadonlyVec3;
+//   max: glm.ReadonlyVec3;
+// };
 
-export type Bvh2EntryPool<T extends IBvh2Entry> = ObjectPool<Bvh2TreeNode<T>, [glm.ReadonlyVec3, glm.ReadonlyVec3]>;
+export type Bvh2EntryPool<T extends MutableAABB> = ObjectPool<Bvh2TreeNode<T>, [glm.ReadonlyVec3, glm.ReadonlyVec3]>;
 
-export class Bvh2TreeNode<T extends IBvh2Entry> implements IBvh2Entry {
+export class Bvh2TreeNode<T extends MutableAABB> implements MutableAABB {
 
   _index: number = -1;
 
@@ -30,26 +32,15 @@ export class Bvh2TreeNode<T extends IBvh2Entry> implements IBvh2Entry {
   private static s_min = glm.vec3.create();
   private static s_max = glm.vec3.create();
 
-  static buildBvhGraph<T extends IBvh2Entry>(
+  static buildBvhGraph<T extends MutableAABB>(
     nodePool: Bvh2EntryPool<T>,
     allEntries: ReadonlyArray<T>
   ): Bvh2TreeNode<T> {
     this.s_index = 0;
 
-    // create root node
-    const min = glm.vec3.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
-    const max = glm.vec3.fromValues(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
-    for (const currShape of allEntries) {
-
-      min[0] = Math.min(min[0], currShape.min[0]);
-      min[1] = Math.min(min[1], currShape.min[1]);
-      min[2] = Math.min(min[2], currShape.min[2]);
-      max[0] = Math.max(max[0], currShape.max[0]);
-      max[1] = Math.max(max[1], currShape.max[1]);
-      max[2] = Math.max(max[2], currShape.max[2]);
-    }
-
-    const rootNode = nodePool.acquire(min, max);
+    const rootAABB: MutableAABB = { min: glm.vec3.create(), max: glm.vec3.create() };
+    setAabbFromAabbList(rootAABB, allEntries);
+    const rootNode = nodePool.acquire(rootAABB.min, rootAABB.max);
 
     rootNode._subDivide(nodePool, allEntries);
     return rootNode;
@@ -90,33 +81,15 @@ export class Bvh2TreeNode<T extends IBvh2Entry> implements IBvh2Entry {
     const splitResult = surfaceAreaHeuristicSplit(this, allEntries);
 
     if (splitResult.left.length > 0) {
-      glm.vec3.set(Bvh2TreeNode.s_min, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
-      glm.vec3.set(Bvh2TreeNode.s_max, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
-      splitResult.left.forEach((f) => {
-        Bvh2TreeNode.s_min[0] = Math.min(Bvh2TreeNode.s_min[0], f.min[0]);
-        Bvh2TreeNode.s_min[1] = Math.min(Bvh2TreeNode.s_min[1], f.min[1]);
-        Bvh2TreeNode.s_min[2] = Math.min(Bvh2TreeNode.s_min[2], f.min[2]);
-        Bvh2TreeNode.s_max[0] = Math.max(Bvh2TreeNode.s_max[0], f.max[0]);
-        Bvh2TreeNode.s_max[1] = Math.max(Bvh2TreeNode.s_max[1], f.max[1]);
-        Bvh2TreeNode.s_max[2] = Math.max(Bvh2TreeNode.s_max[2], f.max[2]);
-      });
-
-      this._leftNode = nodePool.acquire(Bvh2TreeNode.s_min, Bvh2TreeNode.s_max);
+      const tmpAABB: MutableAABB = { min: Bvh2TreeNode.s_min, max: Bvh2TreeNode.s_max };
+      setAabbFromAabbList(tmpAABB, splitResult.left);
+      this._leftNode = nodePool.acquire(tmpAABB.min, tmpAABB.max);
     }
 
     if (splitResult.right.length > 0) {
-      glm.vec3.set(Bvh2TreeNode.s_min, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
-      glm.vec3.set(Bvh2TreeNode.s_max, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
-      splitResult.right.forEach((f) => {
-        Bvh2TreeNode.s_min[0] = Math.min(Bvh2TreeNode.s_min[0], f.min[0]);
-        Bvh2TreeNode.s_min[1] = Math.min(Bvh2TreeNode.s_min[1], f.min[1]);
-        Bvh2TreeNode.s_min[2] = Math.min(Bvh2TreeNode.s_min[2], f.min[2]);
-        Bvh2TreeNode.s_max[0] = Math.max(Bvh2TreeNode.s_max[0], f.max[0]);
-        Bvh2TreeNode.s_max[1] = Math.max(Bvh2TreeNode.s_max[1], f.max[1]);
-        Bvh2TreeNode.s_max[2] = Math.max(Bvh2TreeNode.s_max[2], f.max[2]);
-      });
-
-      this._rightNode = nodePool.acquire(Bvh2TreeNode.s_min, Bvh2TreeNode.s_max);
+      const tmpAABB: MutableAABB = { min: Bvh2TreeNode.s_min, max: Bvh2TreeNode.s_max };
+      setAabbFromAabbList(tmpAABB, splitResult.right);
+      this._rightNode = nodePool.acquire(tmpAABB.min, tmpAABB.max);
     }
 
     if (this._leftNode) {
