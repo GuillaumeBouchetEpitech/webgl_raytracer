@@ -1,34 +1,35 @@
 
 import * as glm from 'gl-matrix';
+
 import { IInternalBox, IInternalSphere, IInternalTriangle } from '../../../all-interfaces';
 
-import { BvhTreeNode, IBvhEntry } from './BvhTreeNode';
-import { BvhTree } from './BvhTree';
+import { Bvh2TreeNode, IBvh2Entry } from './Bvh2TreeNode';
+import { Bvh2Tree } from './Bvh2Tree';
 
 const k_minDelta = 0.01;
 
-export interface ISphereShape extends IBvhEntry {
+export interface ISphereShape extends IBvh2Entry {
   shapeIndex: number;
   type: 'sphere';
   shape: IInternalSphere;
 };
-export interface IBoxShape extends IBvhEntry {
+export interface IBoxShape extends IBvh2Entry {
   shapeIndex: number;
   type: 'box';
   shape: IInternalBox;
 };
-export interface ITriangleShape extends IBvhEntry {
+export interface ITriangleShape extends IBvh2Entry {
   shapeIndex: number;
   type: 'triangle';
   shape: IInternalTriangle;
 };
 export type IShape = ISphereShape | IBoxShape | ITriangleShape;
 
-export type ShapesBvhTreeNode = BvhTreeNode<IShape>;
+export type ShapesBvh2TreeNode = Bvh2TreeNode<IShape>;
 
-export class ShapesBvhTree {
+export class ShapesBvh2Tree {
 
-  private _bvhTree = new BvhTree<IShape>();
+  private _bvhTree = new Bvh2Tree<IShape>();
 
   // some heavily reused memory
   private _boxMat4_a = glm.mat4.create();
@@ -187,7 +188,7 @@ export class ShapesBvhTree {
     this._bvhTree.synchronize(allEntries);
   }
 
-  getRootNode(): ShapesBvhTreeNode | undefined {
+  getRootNode(): ShapesBvh2TreeNode | undefined {
     return this._bvhTree.getRootNode();
   }
 

@@ -2,9 +2,9 @@
 import * as glm from 'gl-matrix';
 import { IStackRenderer } from '../../../all-interfaces';
 
-import { ShapesBvhTreeNode } from './ShapesBvhTree';
+import { ShapesBvh2TreeNode } from './ShapesBvh2Tree';
 
-export class BvhDebug {
+export class Bvh2Debug {
 
   private static _bvhRenderAABB(
     renderer: IStackRenderer,
@@ -39,7 +39,7 @@ export class BvhDebug {
   }
 
   private static renderNode(
-    currNode: ShapesBvhTreeNode,
+    currNode: ShapesBvh2TreeNode,
     renderer: IStackRenderer,
     color: glm.ReadonlyVec3
   ): void {
@@ -88,7 +88,7 @@ export class BvhDebug {
   }
 
   static renderDebugWireframe(
-    rootNode: ShapesBvhTreeNode | undefined,
+    rootNode: ShapesBvh2TreeNode | undefined,
     renderer: IStackRenderer
   ) {
 

@@ -1,18 +1,18 @@
 
 import { GpuDataTexture2d } from './GpuDataTexture2d';
-import { IShape, ShapesBvhTreeNode } from './bvh/bvh2/ShapesBvhTree';
+import { type IShape, type ShapesBvh2TreeNode } from './bvh/bvh2/ShapesBvh2Tree';
 
 export class GpuBvh2NodeManager {
 
   private _gpuDataTexture2d: GpuDataTexture2d;
 
-  private _allNodes: ShapesBvhTreeNode[] = [];
+  private _allNodes: ShapesBvh2TreeNode[] = [];
 
   constructor(gpuDataTexture2d: GpuDataTexture2d) {
     this._gpuDataTexture2d = gpuDataTexture2d;
   }
 
-  syncRootNode(inputRootNode?: ShapesBvhTreeNode) {
+  syncRootNode(inputRootNode?: ShapesBvh2TreeNode) {
 
     this._allNodes.length = 0;
 
@@ -20,7 +20,7 @@ export class GpuBvh2NodeManager {
       return;
     }
 
-    const _recFunc = (currNode: ShapesBvhTreeNode) => {
+    const _recFunc = (currNode: ShapesBvh2TreeNode) => {
 
       this._allNodes.push(currNode);
 
@@ -45,7 +45,7 @@ export class GpuBvh2NodeManager {
 
       let leftType = 0; // empty, do not test
       let leftIndex = 0; // empty, no index
-      let leftNode: ShapesBvhTreeNode | IShape | undefined = undefined;
+      let leftNode: ShapesBvh2TreeNode | IShape | undefined = undefined;
       if (currNode._leftNode) {
         leftType = 1; // child node, test and maybe push to the stack
         leftIndex = currNode._leftNode._index;
@@ -71,7 +71,7 @@ export class GpuBvh2NodeManager {
 
       let rightType = 0; // empty, do not test
       let rightIndex = 0; // empty, no index
-      let rightNode: ShapesBvhTreeNode | IShape | undefined = undefined;
+      let rightNode: ShapesBvh2TreeNode | IShape | undefined = undefined;
       if (currNode._rightNode) {
         rightType = 1; // child node, test and maybe push to the stack
         rightIndex = currNode._rightNode._index;
