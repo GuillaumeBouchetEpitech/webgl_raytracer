@@ -1,7 +1,7 @@
 
 import { GpuDataTexture2d } from './GpuDataTexture2d';
 
-import { type IShape } from './bvh/bvh2/ShapesBvh2Tree';
+import { type AABB } from './bvh/bvh2/aabb-utils';
 import { ShapesBvh4TreeNode } from './bvh/bvh4/ShapesBvh4Tree';
 
 export class GpuBvh4NodeManager {
@@ -37,19 +37,24 @@ export class GpuBvh4NodeManager {
 
     for (const currNode of this._allNodes) {
 
+      let childrenNodeIndex = 0;
+      let leavesNodeIndex = 0;
+
       for (let ii = 0; ii < 4; ++ii) {
 
         let tmp_type = 0; // empty, do not test
         let tmp_index = 0; // empty, no index
-        let tmp_node: ShapesBvh4TreeNode | IShape | undefined = undefined;
-        if (currNode._childrenNodes[ii]) {
+        let tmp_node: AABB | undefined = undefined;
+        if (currNode._childrenNodes[childrenNodeIndex]) {
           tmp_type = 1; // child node, test and maybe push to the stack
-          tmp_index = currNode._childrenNodes[ii]._index;
-          tmp_node = currNode._childrenNodes[ii];
-        } else if (currNode._leaves[ii]) {
+          tmp_index = currNode._childrenNodes[childrenNodeIndex]._index;
+          tmp_node = currNode._childrenNodes[childrenNodeIndex];
+          childrenNodeIndex += 1;
+        } else if (currNode._leaves[leavesNodeIndex]) {
           tmp_type = 2; // leaf node, test and maybe push to the stack
-          tmp_index = currNode._leaves[ii].shapeIndex;
-          tmp_node = currNode._leaves[ii];
+          tmp_index = currNode._leaves[leavesNodeIndex].shapeIndex;
+          tmp_node = currNode._leaves[leavesNodeIndex];
+          leavesNodeIndex += 1;
         }
 
         this._gpuDataTexture2d.push(
