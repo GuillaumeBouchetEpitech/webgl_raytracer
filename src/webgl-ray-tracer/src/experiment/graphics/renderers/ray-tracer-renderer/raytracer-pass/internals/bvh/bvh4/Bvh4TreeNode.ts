@@ -93,7 +93,7 @@ export class Bvh4TreeNode<T extends MutableAABB> implements MutableAABB {
 
       //
 
-      // recursive collapse
+      // recursion here -> direction is "from top to bottom"
       newNode._childrenNodes.push(_collapseBvh2Node(bvh2Node._leftNode));
       newNode._childrenNodes.push(_collapseBvh2Node(bvh2Node._rightNode));
       return newNode;
@@ -101,21 +101,39 @@ export class Bvh4TreeNode<T extends MutableAABB> implements MutableAABB {
 
     const bvh4RootNode = _collapseBvh2Node(bvh2RootNode);
 
-    // const _sanitizeBvh4Node = (inBvh4Node: Bvh4TreeNode<T>): void => {
+    const _sanitizeBvh4Node = (inBvh4Node: Bvh4TreeNode<T>): void => {
 
-    //   for (let ii = 0; ii < inBvh4Node._childrenNodes.length; ) {
-    //     if (inBvh4Node._childrenNodes[ii]._leaves.length === 1) {
-    //       inBvh4Node._leaves.push(inBvh4Node._childrenNodes[ii]._leaves[0]);
-    //       inBvh4Node._childrenNodes.splice(ii, 1);
-    //     } else {
-    //       ++ii;
-    //     }
-    //   }
+      // recursion here -> direction is "from bottom to top"
+      inBvh4Node._childrenNodes.forEach(_sanitizeBvh4Node);
 
-    //   inBvh4Node._childrenNodes.forEach(_sanitizeBvh4Node);
-    // };
+      for (let ii = 0; ii < inBvh4Node._childrenNodes.length; ) {
+        if (
+          // can have new leaves
+          inBvh4Node._leaves.length < 4 &&
+          // has a child leaf
+          inBvh4Node._childrenNodes[ii]._childrenNodes.length === 0 &&
+          // that child leaf has only one value
+          inBvh4Node._childrenNodes[ii]._leaves.length === 1
+        ) {
+          // move the leave in the parent node
+          inBvh4Node._leaves.push(inBvh4Node._childrenNodes[ii]._leaves[0]);
+          // delete the (now redundant) children node
+          inBvh4Node._childrenNodes.splice(ii, 1);
+        } else {
+          ++ii;
+        }
+      }
+    };
+    _sanitizeBvh4Node(bvh4RootNode);
 
-    // _sanitizeBvh4Node(bvh4RootNode);
+    // re-sync the nodes internal index
+    let tmpIndex = 0;
+    const _resetIndex = (inBvh4Node: Bvh4TreeNode<T>) => {
+      inBvh4Node._index = tmpIndex++;
+      // recursion here -> direction is "from top to bottom"
+      inBvh4Node._childrenNodes.forEach(_resetIndex);
+    };
+    _resetIndex(bvh4RootNode);
 
     return bvh4RootNode;
   }
