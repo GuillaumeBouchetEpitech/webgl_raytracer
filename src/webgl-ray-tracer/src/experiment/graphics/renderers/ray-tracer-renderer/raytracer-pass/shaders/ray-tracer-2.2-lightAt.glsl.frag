@@ -16,10 +16,12 @@ void _checkForShadowOrTransparency(
 ) {
 
   // initialize stack
+  vec3 invLightDir = 1.0 / lightDir;
   for (int ii = 0; ii < g_maxLightStackSize; ++ii)
   {
     g_lightStack[ii].used = false;
     g_lightStack[ii].ray.direction = lightDir;
+    g_lightStack[ii].ray.invDirection = invLightDir;
     g_lightStack[ii].result.reflectionFactor = 1.0;
     g_lightStack[ii].result.refractionFactor = 1.0;
     g_lightStack[ii].result.materialIndex = -1;

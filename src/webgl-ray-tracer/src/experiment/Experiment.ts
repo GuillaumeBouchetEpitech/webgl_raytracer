@@ -27,7 +27,7 @@ interface ExperimentDef {
   logger: Logger;
 }
 
-const k_maxFramesUntilNextCheck = 3;
+const k_maxFramesUntilNextCheck = 30;
 
 export class Experiment {
   private _animationFrameHandle: number = 0;
@@ -52,7 +52,8 @@ export class Experiment {
   private _running: number = 0;
   private _errorGraphicContext: boolean = false;
 
-  private _lastFrameTime: number = Date.now();
+  // private _lastFrameTime: number = Date.now();
+  private _lastFrameTime: number = -1;
   private _currFrameMsecTime: number = Date.now();
   private _frameProfiler = new system.metrics.FrameProfiler();
 
@@ -320,6 +321,11 @@ export class Experiment {
   // #region main loop
   private _mainLoop() {
     const currentMsecTime = Date.now();
+
+    if (this._lastFrameTime < 0) {
+      // true the first time
+      this._lastFrameTime = currentMsecTime;
+    }
 
     const deltaFrameMsecTime = currentMsecTime - this._lastFrameTime;
     this._lastFrameTime = currentMsecTime;

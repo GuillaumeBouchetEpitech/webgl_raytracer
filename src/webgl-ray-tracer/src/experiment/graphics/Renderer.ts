@@ -101,89 +101,13 @@ export class Renderer {
   }
 
   private _pushWireFrameSphere(sphere: allInterfaces.IPublicSphere, color: glm.ReadonlyVec3) {
-    // const X = 0.525731112119133606;
-    // const Z = 0.850650808352039932;
-    // const N = 0.0;
-
-    // const k_positions: ReadonlyArray<glm.vec3> = [
-    //   [-X, N, Z],
-    //   [X, N, Z],
-    //   [-X, N, -Z],
-    //   [X, N, -Z],
-    //   [N, Z, X],
-    //   [N, Z, -X],
-    //   [N, -Z, X],
-    //   [N, -Z, -X],
-    //   [Z, X, N],
-    //   [-Z, X, N],
-    //   [Z, -X, N],
-    //   [-Z, -X, N]
-    // ];
-
-    // const k_indices: ReadonlyArray<glm.ReadonlyVec3> = [
-    //   [0, 4, 1],
-    //   [0, 9, 4],
-    //   [9, 5, 4],
-    //   [4, 5, 8],
-    //   [4, 8, 1],
-    //   [8, 10, 1],
-    //   [8, 3, 10],
-    //   [5, 3, 8],
-    //   [5, 2, 3],
-    //   [2, 7, 3],
-    //   [7, 10, 3],
-    //   [7, 6, 10],
-    //   [7, 11, 6],
-    //   [11, 0, 6],
-    //   [0, 1, 6],
-    //   [6, 1, 10],
-    //   [9, 0, 11],
-    //   [9, 11, 2],
-    //   [9, 2, 5],
-    //   [7, 2, 11]
-    // ];
 
     const mat4 = glm.mat4.identity(glm.mat4.create());
     glm.mat4.translate(mat4, mat4, sphere.position);
     const mat4b = glm.mat4.fromQuat(glm.mat4.create(), sphere.orientation);
     glm.mat4.multiply(mat4, mat4, mat4b);
 
-    // const allVertices: glm.vec3[] = [];
-    // for (const index of k_indices) {
-    //   const v1 = k_positions[index[0]];
-    //   const v2 = k_positions[index[1]];
-    //   const v3 = k_positions[index[2]];
-
-    //   const v12 = system.math.lerpVec3(glm.vec3.create(), 0.5, v1, v2);
-    //   const v23 = system.math.lerpVec3(glm.vec3.create(), 0.5, v2, v3);
-    //   const v31 = system.math.lerpVec3(glm.vec3.create(), 0.5, v3, v1);
-
-    //   system.math.safeNormalize(v12, v12);
-    //   system.math.safeNormalize(v23, v23);
-    //   system.math.safeNormalize(v31, v31);
-
-    //   allVertices.push(v1, v12, v31);
-    //   allVertices.push(v2, v23, v12);
-    //   allVertices.push(v3, v23, v31);
-    // }
-
-    // const positions1: glm.ReadonlyVec3[] = [];
-
-    // allVertices.forEach((vertex) => {
-    //   positions1.push(glm.vec3.fromValues(
-    //     vertex[0] * sphere.radius,
-    //     vertex[1] * sphere.radius,
-    //     vertex[2] * sphere.radius,
-    //   ));
-    // });
-
     const positions2: glm.ReadonlyVec3[] = [];
-
-    // positions1.forEach((vertex) => {
-    //   const pos = glm.vec3.fromValues(0, 0, 0);
-    //   glm.vec3.transformMat4(pos, vertex, mat4);
-    //   positions2.push(pos);
-    // });
 
     const vertices = graphics.geometries.makeSphere(1, sphere.radius);
     vertices.forEach((vertex) => {
@@ -191,7 +115,6 @@ export class Renderer {
       glm.vec3.transformMat4(pos, vertex.pos, mat4);
       positions2.push(pos);
     });
-
 
     for (let index = 0; index < positions2.length; index += 3) {
       const v1 = positions2[index + 0];

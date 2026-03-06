@@ -403,8 +403,10 @@ void intersectSceneOneShape(
 // MARK: rayIntersectBvhAABB
 bool rayIntersectBvhAABB(RayValues ray, vec3 bvhMin, vec3 bvhMax)
 {
-  vec3 valA = (bvhMin - ray.origin) / ray.direction;
-  vec3 valB = (bvhMax - ray.origin) / ray.direction;
+  // vec3 valA = (bvhMin - ray.origin) / ray.direction;
+  // vec3 valB = (bvhMax - ray.origin) / ray.direction;
+  vec3 valA = (bvhMin - ray.origin) * ray.invDirection;
+  vec3 valB = (bvhMax - ray.origin) * ray.invDirection;
   vec3 minVal = min(valA, valB);
   vec3 maxVal = max(valA, valB);
 

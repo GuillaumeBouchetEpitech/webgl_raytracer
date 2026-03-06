@@ -3,6 +3,7 @@ struct RayValues
 {
   vec3 origin;
   vec3 direction;
+  vec3 invDirection;
 };
 
 struct RayResult
@@ -23,8 +24,7 @@ struct LightResult {
   vec3 color;
 };
 
-
-struct StackData
+struct SceneStackData
 {
   bool used;
   RayValues ray;

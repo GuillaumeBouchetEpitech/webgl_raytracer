@@ -21,14 +21,14 @@ vec3 castInitialRay(in vec3 rayDir)
     g_sceneStack[ii].result.reflectionFactor = 0.0;
     g_sceneStack[ii].result.refractionFactor = 0.0;
     g_sceneStack[ii].result.materialIndex = -1;
-    g_sceneStack[ii].result.distance = -1.0;
+    g_sceneStack[ii].result.distance = 999999999.0;
     g_sceneStack[ii].reflectionIndex = -1;
     g_sceneStack[ii].refractionIndex = -1;
   }
 
   // initialize first stack element
   g_sceneStack[0].used = true;
-  g_sceneStack[0].ray = RayValues(u_cameraEye, rayDir);
+  g_sceneStack[0].ray = RayValues(u_cameraEye, rayDir, 1.0 / rayDir);
   g_sceneStack[0].result.position = u_cameraEye;
   g_sceneStack[0].reflectionIndex = -1;
   g_sceneStack[0].refractionIndex = -1;
@@ -186,7 +186,9 @@ vec3 castInitialRay(in vec3 rayDir)
 
       g_sceneStack[sceneStackWriteIndex].used = true;
       g_sceneStack[sceneStackWriteIndex].ray.origin = g_sceneStack[sceneStackReadIndex].result.position;
-      g_sceneStack[sceneStackWriteIndex].ray.direction = refract(g_sceneStack[sceneStackReadIndex].ray.direction, g_sceneStack[sceneStackReadIndex].result.normal, Eta);
+      vec3 nextRayDir = refract(g_sceneStack[sceneStackReadIndex].ray.direction, g_sceneStack[sceneStackReadIndex].result.normal, Eta);
+      g_sceneStack[sceneStackWriteIndex].ray.direction = nextRayDir;
+      g_sceneStack[sceneStackWriteIndex].ray.invDirection = 1.0 / nextRayDir;
 
       // here add 0.01 of the normal to the new origin
       // -> this get properly "inside" the intersected shape
@@ -212,7 +214,9 @@ vec3 castInitialRay(in vec3 rayDir)
 
       g_sceneStack[sceneStackWriteIndex].used = true;
       g_sceneStack[sceneStackWriteIndex].ray.origin = g_sceneStack[sceneStackReadIndex].result.position;
-      g_sceneStack[sceneStackWriteIndex].ray.direction = reflect(g_sceneStack[sceneStackReadIndex].ray.direction, g_sceneStack[sceneStackReadIndex].result.normal);
+      vec3 nextRayDir = reflect(g_sceneStack[sceneStackReadIndex].ray.direction, g_sceneStack[sceneStackReadIndex].result.normal);
+      g_sceneStack[sceneStackWriteIndex].ray.direction = nextRayDir;
+      g_sceneStack[sceneStackWriteIndex].ray.invDirection = 1.0 / nextRayDir;
 
       // set the new "child stack element" to its "parent stack element"
       g_sceneStack[sceneStackReadIndex].reflectionIndex = sceneStackWriteIndex;

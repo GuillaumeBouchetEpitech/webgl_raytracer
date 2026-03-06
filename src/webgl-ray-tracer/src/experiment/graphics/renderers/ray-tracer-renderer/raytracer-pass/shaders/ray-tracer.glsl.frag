@@ -71,7 +71,7 @@ const int       BVH_ROW_INDEX = 5;
 
 // ideal scene stack size is >=7 for reflective AND refractive shapes
 const int       g_maxSceneStackSize = 7;
-StackData       g_sceneStack[g_maxSceneStackSize];
+SceneStackData  g_sceneStack[g_maxSceneStackSize];
 
 // ideal light stack size is >=5 to handle multiple transparent shapes
 const int       g_maxLightStackSize = 5;
@@ -98,6 +98,9 @@ void main()
   // initial ray
 
   vec3 rayDir = normalize(v_position - u_cameraEye); // camera direction
+
+  // ensure the rayDir components are "not exactly of value 0"
+  rayDir = mix(rayDir, vec3(-1e-8), equal(rayDir, vec3(0.0)));
 
   vec3 finalPixelColor = castInitialRay(rayDir);
 

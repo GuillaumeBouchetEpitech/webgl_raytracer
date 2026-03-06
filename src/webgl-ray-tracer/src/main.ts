@@ -158,12 +158,16 @@ const onPageLoad = async () => {
 
     graphics.webgl2.WebGLContext.initialize(canvasElement);
 
+    logger.log('[SETUP] initialize (will compile shaders)');
+    await system.utilities.AsyncHelpers.sleep(1);
     mainDemo = new Experiment({
       domElement: canvasElement,
       width: canvasElement.width,
       height: canvasElement.height,
       logger,
     });
+    logger.log('[SETUP] initialized');
+    await system.utilities.AsyncHelpers.sleep(1);
 
     mainDemo.setResolution(8);
 
