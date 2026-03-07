@@ -13,6 +13,8 @@
 
 vec3 castInitialRay(in vec3 rayDir)
 {
+  // ensure the rayDir components are "not exactly of value 0"
+  rayDir = mix(rayDir, vec3(-1e-8), equal(rayDir, vec3(0.0)));
 
   // initialize stack
   for (int ii = 0; ii < g_maxSceneStackSize; ++ii)
@@ -21,7 +23,7 @@ vec3 castInitialRay(in vec3 rayDir)
     g_sceneStack[ii].result.reflectionFactor = 0.0;
     g_sceneStack[ii].result.refractionFactor = 0.0;
     g_sceneStack[ii].result.materialIndex = -1;
-    g_sceneStack[ii].result.distance = 999999999.0;
+    g_sceneStack[ii].result.distance = 100.0;
     g_sceneStack[ii].reflectionIndex = -1;
     g_sceneStack[ii].refractionIndex = -1;
   }
@@ -187,6 +189,10 @@ vec3 castInitialRay(in vec3 rayDir)
       g_sceneStack[sceneStackWriteIndex].used = true;
       g_sceneStack[sceneStackWriteIndex].ray.origin = g_sceneStack[sceneStackReadIndex].result.position;
       vec3 nextRayDir = refract(g_sceneStack[sceneStackReadIndex].ray.direction, g_sceneStack[sceneStackReadIndex].result.normal, Eta);
+
+      // ensure the lightDir components are "not exactly of value 0"
+      nextRayDir = mix(nextRayDir, vec3(-1e-8), equal(nextRayDir, vec3(0.0)));
+
       g_sceneStack[sceneStackWriteIndex].ray.direction = nextRayDir;
       g_sceneStack[sceneStackWriteIndex].ray.invDirection = 1.0 / nextRayDir;
 
@@ -215,6 +221,10 @@ vec3 castInitialRay(in vec3 rayDir)
       g_sceneStack[sceneStackWriteIndex].used = true;
       g_sceneStack[sceneStackWriteIndex].ray.origin = g_sceneStack[sceneStackReadIndex].result.position;
       vec3 nextRayDir = reflect(g_sceneStack[sceneStackReadIndex].ray.direction, g_sceneStack[sceneStackReadIndex].result.normal);
+
+      // ensure the lightDir components are "not exactly of value 0"
+      nextRayDir = mix(nextRayDir, vec3(-1e-8), equal(nextRayDir, vec3(0.0)));
+
       g_sceneStack[sceneStackWriteIndex].ray.direction = nextRayDir;
       g_sceneStack[sceneStackWriteIndex].ray.invDirection = 1.0 / nextRayDir;
 

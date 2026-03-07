@@ -99,9 +99,6 @@ void main()
 
   vec3 rayDir = normalize(v_position - u_cameraEye); // camera direction
 
-  // ensure the rayDir components are "not exactly of value 0"
-  rayDir = mix(rayDir, vec3(-1e-8), equal(rayDir, vec3(0.0)));
-
   vec3 finalPixelColor = castInitialRay(rayDir);
 
   //

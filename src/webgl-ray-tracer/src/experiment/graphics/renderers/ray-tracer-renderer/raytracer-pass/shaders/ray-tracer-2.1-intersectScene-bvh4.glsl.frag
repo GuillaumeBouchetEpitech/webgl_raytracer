@@ -413,8 +413,37 @@ bool rayIntersectBvhAABB(RayValues ray, vec3 bvhMin, vec3 bvhMax)
   float max_nearVal = max(nearVal.x, max(nearVal.y, nearVal.z));
   float min_farVal = min(farVal.x, min(farVal.y, farVal.z));
 
-  // return max_nearVal < min_farVal;
-  return max_nearVal < max(min_farVal, 0.0);
+  return max_nearVal < min_farVal;
+}
+
+// MARK: rayIntersectBvhAABB_2
+bool rayIntersectBvhAABB_2(RayValues ray, vec3 bvhMin, vec3 bvhMax, out float outDistance)
+{
+  // vec3 valA = (bvhMin - ray.origin) / ray.direction;
+  // vec3 valB = (bvhMax - ray.origin) / ray.direction;
+  vec3 valA = (bvhMin - ray.origin) * ray.invDirection;
+  vec3 valB = (bvhMax - ray.origin) * ray.invDirection;
+  vec3 nearVal = min(valA, valB);
+  vec3 farVal = max(valA, valB);
+
+  float max_nearVal = max(nearVal.x, max(nearVal.y, nearVal.z));
+  float min_farVal = min(farVal.x, min(farVal.y, farVal.z));
+
+  // outDistance = max_nearVal;
+  // outDistance = 0.01 + max_nearVal * 100.0;
+
+  // outDistance = max(max_nearVal, 0.0);
+  outDistance = -max_nearVal;
+  // outDistance = abs(max_nearVal);
+  // outDistance = max_nearVal + min(min(ray.origin.x, ray.origin.y), ray.origin.z);
+  return max_nearVal < min_farVal;
+  // return max_nearVal < max(min_farVal, 0.0);
+
+  // bool hasHit = min_farVal >= min(max_nearVal, 0.0);
+  // // outDistance = hasHit ? max_nearVal * 100.0 : 999999999.0;
+  // // outDistance = -max_nearVal * 100.0;
+  // outDistance = -min(max_nearVal, 0.0);
+  // return hasHit;
 }
 
 //
@@ -518,9 +547,13 @@ bool intersectScene(
     vec3 val3_AabbMin = vec3(rootNodeTexel6.b, rootNodeTexel6.a, rootNodeTexel7.r);
     vec3 val3_AabbMax = vec3(rootNodeTexel7.g, rootNodeTexel7.b, rootNodeTexel7.a);
 
+    // float tmpAabbDistance = 100.0;
+
     if (
       val0_NodeType > 0 &&
       rayIntersectBvhAABB(ray, val0_AabbMin, val0_AabbMax)
+      // rayIntersectBvhAABB_2(ray, val0_AabbMin, val0_AabbMax, tmpAabbDistance)
+      // && tmpAabbDistance <= outBestResult.distance
     ) {
       if (val0_NodeType == 1) {
         if (val0_NodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
@@ -542,6 +575,8 @@ bool intersectScene(
     if (
       val1_NodeType > 0 &&
       rayIntersectBvhAABB(ray, val1_AabbMin, val1_AabbMax)
+      // rayIntersectBvhAABB_2(ray, val1_AabbMin, val1_AabbMax, tmpAabbDistance)
+      // && tmpAabbDistance <= outBestResult.distance
     ) {
       if (val1_NodeType == 1) {
         if (val1_NodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
@@ -563,6 +598,8 @@ bool intersectScene(
     if (
       val2_NodeType > 0 &&
       rayIntersectBvhAABB(ray, val2_AabbMin, val2_AabbMax)
+      // rayIntersectBvhAABB_2(ray, val2_AabbMin, val2_AabbMax, tmpAabbDistance)
+      // && tmpAabbDistance <= outBestResult.distance
     ) {
       if (val2_NodeType == 1) {
         if (val2_NodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
@@ -584,6 +621,8 @@ bool intersectScene(
     if (
       val3_NodeType > 0 &&
       rayIntersectBvhAABB(ray, val3_AabbMin, val3_AabbMax)
+      // rayIntersectBvhAABB_2(ray, val3_AabbMin, val3_AabbMax, tmpAabbDistance)
+      // && tmpAabbDistance <= outBestResult.distance
     ) {
       if (val3_NodeType == 1) {
         if (val3_NodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {

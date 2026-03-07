@@ -22,9 +22,10 @@ void _checkForShadowOrTransparency(
     g_lightStack[ii].used = false;
     g_lightStack[ii].ray.direction = lightDir;
     g_lightStack[ii].ray.invDirection = invLightDir;
-    g_lightStack[ii].result.reflectionFactor = 1.0;
-    g_lightStack[ii].result.refractionFactor = 1.0;
+    g_lightStack[ii].result.reflectionFactor = 0.0;
+    g_lightStack[ii].result.refractionFactor = 0.0;
     g_lightStack[ii].result.materialIndex = -1;
+    g_lightStack[ii].result.distance = 100.0;
     g_lightStack[ii].lightResult.intensity = 1.0;
     g_lightStack[ii].lightResult.color = vec3(1.0);
   }
@@ -241,7 +242,7 @@ void lightAt(
 
     vec4 lightTexel0 = texelFetch(u_dataTexture, ivec2(lightIndex + 0, LIGHTS_ROW_INDEX), 0);
     vec3 lightPos = lightTexel0.rgb;
-    float lightRadius = max(0.001, lightTexel0.a);
+    float lightRadius = max(lightTexel0.a, 0.001);
 
     vec3 lightToImpactVec3 = lightPos - impactPosition;
 
@@ -254,7 +255,10 @@ void lightAt(
     // }
 
     // normalize lightDir
-    lightDir = lightToImpactVec3 / lightToImpactDistance;
+    lightDir = lightToImpactVec3 / max(lightToImpactDistance, 0.001);
+
+    // ensure the lightDir components are "not exactly of value 0"
+    lightDir = mix(lightDir, vec3(-1e-8), equal(lightDir, vec3(0.0)));
 
     vec4 lightTexel1 = texelFetch(u_dataTexture, ivec2(lightIndex + 1, LIGHTS_ROW_INDEX), 0);
     float lightIntensitySetting = lightTexel1.r;
@@ -308,7 +312,7 @@ void lightAt(
     //
 
     float maxIntensity = max(finalResult.intensity, currentIntensity);
-    float normalizedRatio = 1.0 / maxIntensity;
+    float normalizedRatio = 1.0 / max(maxIntensity, 0.001);
 
     float oldBlendRatio = normalizedRatio * max(finalResult.intensity, g_ambientLightIntensity);
     float newBlendRatio = normalizedRatio * max(currentIntensity, g_ambientLightIntensity);
