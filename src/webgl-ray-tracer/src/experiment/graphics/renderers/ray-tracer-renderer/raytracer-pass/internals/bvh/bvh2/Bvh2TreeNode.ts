@@ -8,11 +8,6 @@ import { type MutableAABB, setAabbFromAabbList } from './aabb-utils';
 // import { naiveSplit } from './splitters/naive-splitter';
 import { surfaceAreaHeuristicSplit } from './splitters/surface-area-heuristic-splitter';
 
-// export interface IBvh2Entry {
-//   min: glm.ReadonlyVec3;
-//   max: glm.ReadonlyVec3;
-// };
-
 export type Bvh2EntryPool<T extends MutableAABB> = ObjectPool<Bvh2TreeNode<T>, [glm.ReadonlyVec3, glm.ReadonlyVec3]>;
 
 export class Bvh2TreeNode<T extends MutableAABB> implements MutableAABB {

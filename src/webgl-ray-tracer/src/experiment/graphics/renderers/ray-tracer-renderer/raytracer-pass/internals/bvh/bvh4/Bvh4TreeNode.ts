@@ -47,6 +47,7 @@ export class Bvh4TreeNode<T extends MutableAABB> implements MutableAABB {
         (bvh2Node._rightNode._leftLeaf || bvh2Node._rightNode._rightLeaf)
       ) {
 
+        // collapse the left "grandchild node" leaf node
         if (bvh2Node._leftNode._leftLeaf) {
           newNode._leaves.push(bvh2Node._leftNode._leftLeaf);
         }
@@ -54,6 +55,7 @@ export class Bvh4TreeNode<T extends MutableAABB> implements MutableAABB {
           newNode._leaves.push(bvh2Node._leftNode._rightLeaf);
         }
 
+        // collapse the right "grandchild node" leaf node
         if (bvh2Node._rightNode._leftLeaf) {
           newNode._leaves.push(bvh2Node._rightNode._leftLeaf);
         }
@@ -74,6 +76,7 @@ export class Bvh4TreeNode<T extends MutableAABB> implements MutableAABB {
         (bvh2Node._rightNode._leftNode || bvh2Node._rightNode._rightNode)
       ) {
 
+        // collapse the left "grandchild node" children nodes
         if (bvh2Node._leftNode._leftNode) {
           newNode._childrenNodes.push(_collapseBvh2Node(bvh2Node._leftNode._leftNode));
         }
@@ -81,6 +84,7 @@ export class Bvh4TreeNode<T extends MutableAABB> implements MutableAABB {
           newNode._childrenNodes.push(_collapseBvh2Node(bvh2Node._leftNode._rightNode));
         }
 
+        // collapse the right "grandchild node" children nodes
         if (bvh2Node._rightNode._leftNode) {
           newNode._childrenNodes.push(_collapseBvh2Node(bvh2Node._rightNode._leftNode));
         }

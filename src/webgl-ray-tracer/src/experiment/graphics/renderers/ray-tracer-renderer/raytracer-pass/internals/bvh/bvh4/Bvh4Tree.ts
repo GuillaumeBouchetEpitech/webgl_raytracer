@@ -28,13 +28,7 @@ export class Bvh4Tree<T extends MutableAABB> {
     this._rootNode = undefined;
   }
 
-  // synchronize(allEntries: ReadonlyArray<T>) {
-  //   this.reset();
-  //   this._rootNode = Bvh4TreeNode.buildBvhGraph(this._objectPool, allEntries);
-  // }
-
   synchronize(
-    // allEntries: ReadonlyArray<T>
     bvh2RootNode: Bvh2TreeNode<T>,
   ) {
     this.reset();

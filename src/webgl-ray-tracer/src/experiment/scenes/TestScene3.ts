@@ -287,7 +287,7 @@ export class TestScene3 {
     _createBox2(
       physicWorld,
       {
-        position: [-6,-3.5,7],
+        position: [-6,-2.5,7],
         orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
         boxSize: [0.25,4,0.25],
         material: {
@@ -309,7 +309,7 @@ export class TestScene3 {
     _createBox2(
       physicWorld,
       {
-        position: [-4.5,-3.5,7],
+        position: [-4.5,-3.0,7],
         orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0),
         boxSize: [0.25,4,0.25],
         material: {

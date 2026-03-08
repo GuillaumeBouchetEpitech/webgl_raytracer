@@ -1,13 +1,8 @@
 
-import * as glm from 'gl-matrix';
+import * as aabb from '../aabb-utils';
 
-interface IBvh2Entry {
-  min: glm.ReadonlyVec3;
-  max: glm.ReadonlyVec3;
-};
-
-export const naiveSplit = <T extends IBvh2Entry>(
-  parentNode: Readonly<IBvh2Entry>,
+export const naiveSplit = <T extends aabb.AABB>(
+  parentNode: Readonly<aabb.AABB>,
   allEntries: ReadonlyArray<T>
 ): { left: T[], right: T[] } => {
 
@@ -43,7 +38,7 @@ export const naiveSplit = <T extends IBvh2Entry>(
     return (minA + maxA) * 0.5 - (minB + maxB) * 0.5;
   });
 
-  const halfIndex = Math.floor(sortedEntries.length / 2);
+  const halfIndex = Math.floor(sortedEntries.length * 0.5);
 
   return {
     left: sortedEntries.slice(0, halfIndex),

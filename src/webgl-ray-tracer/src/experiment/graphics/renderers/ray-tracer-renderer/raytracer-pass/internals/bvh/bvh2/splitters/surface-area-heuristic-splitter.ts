@@ -3,6 +3,10 @@ import * as glm from 'gl-matrix';
 
 import * as aabb from '../aabb-utils';
 
+const TOTAL_BIN = 8;
+const COST_TRAVERSE = 1;
+const COST_INTERSECT = 2;
+
 export const surfaceAreaHeuristicSplit = <T extends aabb.AABB>(
   parentNode: Readonly<aabb.AABB>,
   allEntries: ReadonlyArray<T>,
@@ -14,15 +18,6 @@ export const surfaceAreaHeuristicSplit = <T extends aabb.AABB>(
       right: allEntries.slice(1),
     };
   }
-
-  interface AABB {
-    min: glm.ReadonlyVec3;
-    max: glm.ReadonlyVec3;
-  };
-
-  const TOTAL_BIN = 8;
-  const COST_TRAVERSE = 1;
-  const COST_INTERSECT = 2;
 
   const parentSurfaceArea = aabb.computeSurfaceArea(parentNode);
 

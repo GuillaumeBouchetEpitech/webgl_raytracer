@@ -2,7 +2,6 @@
 import * as glm from 'gl-matrix';
 import { IStackRenderer } from '../../../all-interfaces';
 
-// import { ShapesBvh4TreeNode } from './ShapesBvh4Tree';
 import { ShapesBvh4TreeNode } from './ShapesBvh4Tree';
 
 export class Bvh4Debug {
@@ -67,16 +66,16 @@ export class Bvh4Debug {
     //
 
     currNode._leaves.forEach((currLeaf) => {
-      this._bvhRenderAABB(renderer, currLeaf.min, currLeaf.max, [0.5,0.5,0], 0.05);
+      this._bvhRenderAABB(renderer, currLeaf.min, currLeaf.max, [0.5,0.5,0], 0.02);
 
       // render the "link" to the leaf (red)
-      const pointA: glm.ReadonlyVec3 = [ currNode.max[0] + 0.1, currNode.max[1] + 0.1, currNode.max[2] + 0.1 ];
-      // const pointB: glm.ReadonlyVec3 = [ currLeaf.max[0] + 0.1, currLeaf.max[1] + 0.1, currLeaf.max[2] + 0.1 ];
-      const pointB: glm.ReadonlyVec3 = [
-        currLeaf.min[0] + (currLeaf.max[0] - currLeaf.min[0]) * 0.4,
-        currLeaf.min[1] + (currLeaf.max[1] - currLeaf.min[1]) * 0.4,
-        currLeaf.min[2] + (currLeaf.max[2] - currLeaf.min[2]) * 0.4
-      ];
+      const pointA: glm.ReadonlyVec3 = [ currNode.max[0] + 0.0, currNode.max[1] + 0.0, currNode.max[2] + 0.0 ];
+      const pointB: glm.ReadonlyVec3 = [ currLeaf.max[0] + 0.2, currLeaf.max[1] + 0.2, currLeaf.max[2] + 0.2 ];
+      // const pointB: glm.ReadonlyVec3 = [
+      //   currLeaf.min[0] + (currLeaf.max[0] - currLeaf.min[0]) * 0.0,
+      //   currLeaf.min[1] + (currLeaf.max[1] - currLeaf.min[1]) * 0.0,
+      //   currLeaf.min[2] + (currLeaf.max[2] - currLeaf.min[2]) * 0.0
+      // ];
       // renderer.pushLine(pointA, pointB, [1,0,0]);
       renderer.push3dLine(pointA, pointB, 0.2, 0.1, [1,0,0], [1,0,0]);
     });
@@ -96,7 +95,7 @@ export class Bvh4Debug {
       return;
     }
 
-    this.renderNode(rootNode, renderer, [0.5,0.0,0.0], 0.5);
+    this.renderNode(rootNode, renderer, [0.75,0.0,0.0], 0.5);
   }
 
 }
