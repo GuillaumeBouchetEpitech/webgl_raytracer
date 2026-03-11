@@ -338,9 +338,9 @@ export class Experiment {
 
     // this make sure the time sensitive logic isn't "jumping" in case of slow down
     // -> ex: minor/major GC
-    const safeDelta = Math.min(deltaMsecTime, 40); // 40ms -> 25fps
+    const safeDeltaMsecTime = Math.min(deltaMsecTime, 40); // 40ms -> 25fps
 
-    const deltaSecTime = (safeDelta / 1000);
+    const deltaSecTime = (safeDeltaMsecTime / 1000);
 
     this._freeFlyController.update(deltaSecTime);
 

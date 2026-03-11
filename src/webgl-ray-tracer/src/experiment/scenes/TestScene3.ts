@@ -811,8 +811,8 @@ export class TestScene3 {
         });
       }
 
-      // if (false)
-      // {
+      // // if (false)
+      // if (sphere2_fresnelMarble) {
       //   const position = sphere2_fresnelMarble.physicBody.getPosition();
       //   const rotation = sphere2_fresnelMarble.physicBody.getRotation();
 
@@ -885,7 +885,7 @@ export class TestScene3 {
       //   renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushSphere({
       //     position: position,
       //     orientation: glm.quat.identity(glm.quat.create()),
-      //     radius: 1.0,
+      //     radius: 0.5,
       //     materialAlias: materialAlias_sphere_made_of_triangles + 2,
       //   });
 

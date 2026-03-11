@@ -13,6 +13,9 @@
 
 vec3 castInitialRay(in vec3 rayDir)
 {
+  // ensure normalized
+  rayDir /= max(length(rayDir), 0.001);
+
   // ensure the rayDir components are "not exactly of value 0"
   rayDir = mix(rayDir, vec3(-1e-8), equal(rayDir, vec3(0.0)));
 
@@ -190,6 +193,9 @@ vec3 castInitialRay(in vec3 rayDir)
       g_sceneStack[sceneStackWriteIndex].ray.origin = g_sceneStack[sceneStackReadIndex].result.position;
       vec3 nextRayDir = refract(g_sceneStack[sceneStackReadIndex].ray.direction, g_sceneStack[sceneStackReadIndex].result.normal, Eta);
 
+      // ensure normalized
+      nextRayDir /= max(length(nextRayDir), 0.001);
+
       // ensure the lightDir components are "not exactly of value 0"
       nextRayDir = mix(nextRayDir, vec3(-1e-8), equal(nextRayDir, vec3(0.0)));
 
@@ -221,6 +227,9 @@ vec3 castInitialRay(in vec3 rayDir)
       g_sceneStack[sceneStackWriteIndex].used = true;
       g_sceneStack[sceneStackWriteIndex].ray.origin = g_sceneStack[sceneStackReadIndex].result.position;
       vec3 nextRayDir = reflect(g_sceneStack[sceneStackReadIndex].ray.direction, g_sceneStack[sceneStackReadIndex].result.normal);
+
+      // ensure normalized
+      nextRayDir /= max(length(nextRayDir), 0.001);
 
       // ensure the lightDir components are "not exactly of value 0"
       nextRayDir = mix(nextRayDir, vec3(-1e-8), equal(nextRayDir, vec3(0.0)));

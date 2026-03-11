@@ -97,7 +97,8 @@ void main()
   //
   // initial ray
 
-  vec3 rayDir = normalize(v_position - u_cameraEye); // camera direction
+  // will be normalized in the function castInitialRay()
+  vec3 rayDir = v_position - u_cameraEye;
 
   vec3 finalPixelColor = castInitialRay(rayDir);
 
