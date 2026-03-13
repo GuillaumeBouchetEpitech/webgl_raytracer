@@ -203,10 +203,10 @@ void _checkForShadowOrTransparency(
       result.lightColor *= g_lightStack[lightStackReadIndex].lightResult.color.xyz;
       result.lightIntensity *= g_lightStack[lightStackReadIndex].lightResult.intensity;
 
-      // caustic effect
-      vec3 impactNormal = g_lightStack[lightStackReadIndex].result.normal;
-      result.lightIntensity += pow(max(dot(-lightDir, impactNormal), 0.0), 120.0);
-      // /caustic effect
+      // // caustic effect (<- only works on spheres)
+      // vec3 impactNormal = g_lightStack[lightStackReadIndex].result.normal;
+      // result.lightIntensity += pow(max(dot(-lightDir, impactNormal), 0.0), 120.0);
+      // // /caustic effect (<- only works on spheres)
 
     }
 

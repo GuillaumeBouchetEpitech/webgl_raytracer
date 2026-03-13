@@ -127,7 +127,7 @@ const _createSphere = (
     position: opts.position,
     orientation: glm.quat.identity(glm.quat.create()),
   });
-  physicBody.setFriction(1); // so the sphere doesn't slide but roll on it
+  physicBody.setFriction(10); // so the sphere doesn't slide but roll on it
   physicBody.setRestitution(opts.restitution ?? 0); // bouncing
   physicBody.disableDeactivation(); // so the sphere doesn't ever freeze if "too slow"
 
@@ -177,7 +177,7 @@ export class TestScene3 {
           materialA: { color: [1,1,1] },
           materialB: { color: [0.2,0.2,0.5] },
         },
-        friction: 1,
+        friction: 10,
         restitution: 0.7,
       }
     );
@@ -193,7 +193,7 @@ export class TestScene3 {
           materialA: { color: [1,1,1] },
           materialB: { color: [0.2,0.2,0.5] },
         },
-        friction: 1,
+        friction: 10,
         restitution: 0.7,
       }
     );
@@ -207,7 +207,7 @@ export class TestScene3 {
         material: {
           color: [0.5, 1, 0.5],
         },
-        friction: 1,
+        friction: 10,
         restitution: 0.7,
       }
     );
@@ -222,7 +222,7 @@ export class TestScene3 {
         material: {
           color: [1, 1, 1],
         },
-        friction: 1,
+        friction: 10,
         restitution: 0.7,
       }
     );
@@ -239,7 +239,7 @@ export class TestScene3 {
           materialA: { color: [1,1,1] },
           materialB: { color: [0.2,0.2,0.5] },
         },
-        friction: 1,
+        friction: 10,
         restitution: 0.7,
       },
     );
@@ -254,7 +254,7 @@ export class TestScene3 {
         material: {
           color: [0.5, 1, 0.5],
         },
-        friction: 1,
+        friction: 10,
         restitution: 0.7,
       }
     );
@@ -269,7 +269,7 @@ export class TestScene3 {
         material: {
           color: [0.5, 1, 0.5],
         },
-        friction: 1,
+        friction: 10,
         restitution: 0.7,
       }
     );
@@ -788,115 +788,117 @@ export class TestScene3 {
 
       }
 
-      // if (false)
-      if (sphere2_fresnelMarble) {
-        const position = sphere2_fresnelMarble.physicBody.getPosition();
-        const rotation = sphere2_fresnelMarble.physicBody.getRotation();
-
-        // refractive and reflective sphere
-        // renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
-        //   materialAlias: 669,
-        //   color: [1, 1, 1],
-        //   reflectionFactor: 0.8,
-        //   refractionFactor: 0.8,
-        //   receiveLightEnabled: true,
-        //   castShadowEnabled: true
-        // });
-        renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushSphere({
-          position: position,
-          orientation: rotation,
-          radius: 1.5,
-          // materialAlias: 669,
-          materialAlias: _buildMaterial(sphere2_fresnelMarble.material),
-        });
-      }
-
       // // if (false)
       // if (sphere2_fresnelMarble) {
       //   const position = sphere2_fresnelMarble.physicBody.getPosition();
       //   const rotation = sphere2_fresnelMarble.physicBody.getRotation();
 
-      //   const materialAlias_sphere_made_of_triangles = 7000;
-      //   renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
-      //     materialAlias: materialAlias_sphere_made_of_triangles,
-      //       color: [1.0,0.0,1.0],
-      //       castShadowEnabled: true,
-      //       receiveLightEnabled: true,
-      //       reflectionFactor: 0.0,
-      //       refractionFactor: 0.0,
-      //   });
-      //   renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
-      //     materialAlias: materialAlias_sphere_made_of_triangles + 1,
-      //       color: [0.0,0.5,0.0],
-      //       castShadowEnabled: true,
-      //       receiveLightEnabled: true,
-      //       reflectionFactor: 0.0,
-      //       refractionFactor: 0.4,
-      //   });
-      //   renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
-      //     materialAlias: materialAlias_sphere_made_of_triangles + 2,
-      //       color: [0.0,1.0,0.0],
-      //       castShadowEnabled: false,
-      //       receiveLightEnabled: false,
-      //       reflectionFactor: 0.0,
-      //       refractionFactor: 0.0,
-      //   });
-
-      //   const vertices = graphics.geometries.makeSphere(1, 1.5);
-
-      //   const positions2: glm.vec3[] = [];
-
-      //   const mat4 = glm.mat4.identity(glm.mat4.create());
-      //   // glm.mat4.scale(mat4, mat4, [0.5,0.5,0.5]);
-      //   glm.mat4.translate(mat4, mat4, position);
-      //   glm.mat4.multiply(mat4, mat4, glm.mat4.fromQuat(glm.mat4.create(), rotation));
-
-      //   vertices.forEach((vertex) => {
-      //     const pos = glm.vec3.fromValues(0, 0, 0);
-      //     glm.vec3.transformMat4(pos, vertex.pos, mat4);
-      //     positions2.push(pos);
-      //   });
-
-      //   for (let index = 0; index < positions2.length; index += 3) {
-
-      //     let materialAlias = materialAlias_sphere_made_of_triangles;
-      //     if ((index % (3*2)) !== 0) {
-      //       materialAlias = materialAlias_sphere_made_of_triangles + 1;
-      //     }
-
-      //     const v0 = positions2[index + 0];
-      //     const v2 = positions2[index + 1];
-      //     const v1 = positions2[index + 2];
-
-      //     renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushTriangle({
-      //       v0: v0,
-      //       v1: v1,
-      //       v2: v2,
-      //       materialAlias,
-      //     });
-      //   }
-
-      //   //
-      //   //
-      //   //
-      //   //
-      //   //
-
+      //   // refractive and reflective sphere
+      //   // renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+      //   //   materialAlias: 669,
+      //   //   color: [1, 1, 1],
+      //   //   reflectionFactor: 0.8,
+      //   //   refractionFactor: 0.8,
+      //   //   receiveLightEnabled: true,
+      //   //   castShadowEnabled: true
+      //   // });
       //   renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushSphere({
       //     position: position,
-      //     orientation: glm.quat.identity(glm.quat.create()),
-      //     radius: 0.5,
-      //     materialAlias: materialAlias_sphere_made_of_triangles + 2,
+      //     orientation: rotation,
+      //     radius: 1.5,
+      //     // materialAlias: 669,
+      //     materialAlias: _buildMaterial(sphere2_fresnelMarble.material),
       //   });
-
-      //   // actual point light inside the sphere
-      //   renderer.rayTracerRenderer.rayTracerPass.gpuPointLightsManager.pushPointLight({
-      //     position: position,
-      //     intensity: 4,
-      //     radius: 15
-      //   });
-
       // }
+
+      // if (false)
+      if (sphere2_fresnelMarble) {
+        const position = sphere2_fresnelMarble.physicBody.getPosition();
+        const rotation = sphere2_fresnelMarble.physicBody.getRotation();
+
+        const materialAlias_sphere_made_of_triangles = 7000;
+        renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+          materialAlias: materialAlias_sphere_made_of_triangles,
+            color: [1.0,0.0,0.0],
+            castShadowEnabled: true,
+            receiveLightEnabled: true,
+            reflectionFactor: 0.0,
+            refractionFactor: 0.0,
+        });
+        renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+          materialAlias: materialAlias_sphere_made_of_triangles + 1,
+            color: [0.0,1.0,0.0],
+            castShadowEnabled: true,
+            receiveLightEnabled: true,
+            reflectionFactor: 0.0,
+            refractionFactor: 0.0,
+        });
+        renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+          materialAlias: materialAlias_sphere_made_of_triangles + 2,
+            color: [0.0,0.0,1.0],
+            castShadowEnabled: true,
+            receiveLightEnabled: true,
+            reflectionFactor: 0.0,
+            refractionFactor: 0.0,
+        });
+
+        const vertices = graphics.geometries.makeSphere(1, 1.5);
+
+        const positions2: glm.vec3[] = [];
+
+        const mat4 = glm.mat4.identity(glm.mat4.create());
+        // glm.mat4.scale(mat4, mat4, [0.5,0.5,0.5]);
+        glm.mat4.translate(mat4, mat4, position);
+        glm.mat4.multiply(mat4, mat4, glm.mat4.fromQuat(glm.mat4.create(), rotation));
+
+        vertices.forEach((vertex) => {
+          const pos = glm.vec3.fromValues(0, 0, 0);
+          glm.vec3.transformMat4(pos, vertex.pos, mat4);
+          positions2.push(pos);
+        });
+
+        for (let index = 0; index < positions2.length; index += 3) {
+
+          let materialAlias = materialAlias_sphere_made_of_triangles;
+          if ((index % (3 * 3)) === 3) {
+            materialAlias = materialAlias_sphere_made_of_triangles + 1;
+          } else if ((index % (3 * 3)) === 6) {
+            materialAlias = materialAlias_sphere_made_of_triangles + 2;
+          }
+
+          const v0 = positions2[index + 0];
+          const v2 = positions2[index + 1];
+          const v1 = positions2[index + 2];
+
+          renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushTriangle({
+            v0: v0,
+            v1: v1,
+            v2: v2,
+            materialAlias,
+          });
+        }
+
+        //
+        //
+        //
+        //
+        //
+
+        // renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushSphere({
+        //   position: position,
+        //   orientation: glm.quat.identity(glm.quat.create()),
+        //   radius: 0.5,
+        //   materialAlias: materialAlias_sphere_made_of_triangles + 2,
+        // });
+
+        // // actual point light inside the sphere
+        // renderer.rayTracerRenderer.rayTracerPass.gpuPointLightsManager.pushPointLight({
+        //   position: position,
+        //   intensity: 4,
+        //   radius: 15
+        // });
+
+      }
 
       /**/
       // background reflective blue sphere

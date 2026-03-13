@@ -488,6 +488,16 @@ bool intersectScene(
     // BVH-node-texel[7]:B: node3 max.y
     // BVH-node-texel[7]:A: node3 max.z
 
+    //
+    //
+    //
+
+#if 1
+
+    //
+    //
+    //
+
     vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 0, BVH_ROW_INDEX), 0);
     vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 1, BVH_ROW_INDEX), 0);
     vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 2, BVH_ROW_INDEX), 0);
@@ -516,12 +526,6 @@ bool intersectScene(
     int val3_NodeIndex = int(rootNodeTexel6.g);
     vec3 val3_AabbMin = vec3(rootNodeTexel6.b, rootNodeTexel6.a, rootNodeTexel7.r);
     vec3 val3_AabbMax = vec3(rootNodeTexel7.g, rootNodeTexel7.b, rootNodeTexel7.a);
-
-    //
-    //
-    //
-
-#if 1
 
     float allNodeDistance[4];
     int   allNodeTypes[4];
@@ -607,7 +611,6 @@ bool intersectScene(
 
       if (allNodeDistance[ii] > outBestResult.distance) {
         break;
-        // continue;
       }
 
       // is bvh4 node?
@@ -637,6 +640,39 @@ bool intersectScene(
     //
 
 #else
+
+    //
+    //
+    //
+
+    vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 0, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 1, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 2, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel3 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 3, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel4 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 4, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel5 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 5, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel6 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 6, BVH_ROW_INDEX), 0);
+    vec4 rootNodeTexel7 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 7, BVH_ROW_INDEX), 0);
+
+    int val0_NodeType = int(rootNodeTexel0.r);
+    int val0_NodeIndex = int(rootNodeTexel0.g);
+    vec3 val0_AabbMin = vec3(rootNodeTexel0.b, rootNodeTexel0.a, rootNodeTexel1.r);
+    vec3 val0_AabbMax = vec3(rootNodeTexel1.g, rootNodeTexel1.b, rootNodeTexel1.a);
+
+    int val1_NodeType = int(rootNodeTexel2.r);
+    int val1_NodeIndex = int(rootNodeTexel2.g);
+    vec3 val1_AabbMin = vec3(rootNodeTexel2.b, rootNodeTexel2.a, rootNodeTexel3.r);
+    vec3 val1_AabbMax = vec3(rootNodeTexel3.g, rootNodeTexel3.b, rootNodeTexel3.a);
+
+    int val2_NodeType = int(rootNodeTexel4.r);
+    int val2_NodeIndex = int(rootNodeTexel4.g);
+    vec3 val2_AabbMin = vec3(rootNodeTexel4.b, rootNodeTexel4.a, rootNodeTexel5.r);
+    vec3 val2_AabbMax = vec3(rootNodeTexel5.g, rootNodeTexel5.b, rootNodeTexel5.a);
+
+    int val3_NodeType = int(rootNodeTexel6.r);
+    int val3_NodeIndex = int(rootNodeTexel6.g);
+    vec3 val3_AabbMin = vec3(rootNodeTexel6.b, rootNodeTexel6.a, rootNodeTexel7.r);
+    vec3 val3_AabbMax = vec3(rootNodeTexel7.g, rootNodeTexel7.b, rootNodeTexel7.a);
 
     float tmpAabbDistance = 100.0;
 
@@ -727,6 +763,10 @@ bool intersectScene(
         }
       }
     }
+
+    //
+    //
+    //
 
 #endif
 
