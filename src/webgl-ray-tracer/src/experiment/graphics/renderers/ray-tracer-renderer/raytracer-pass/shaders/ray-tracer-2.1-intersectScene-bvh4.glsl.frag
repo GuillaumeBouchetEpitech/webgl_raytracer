@@ -22,7 +22,7 @@
 //
 //
 
-// MARK: _intersectSphereShape
+// MARK: Sphere
 void _intersectSphereShape(
   int rawShapeIndex,
   RayValues ray,
@@ -137,7 +137,7 @@ void _intersectSphereShape(
 //
 //
 
-// MARK: _intersectBoxShape
+// MARK: Box
 void _intersectBoxShape(
   int rawShapeIndex,
   RayValues ray,
@@ -251,7 +251,7 @@ void _intersectBoxShape(
 //
 //
 
-// MARK: _intersectTriangleShape
+// MARK: Triangle
 void _intersectTriangleShape(
   int rawShapeIndex,
   RayValues ray,
@@ -345,7 +345,7 @@ void _intersectTriangleShape(
 //
 //
 
-// MARK: intersectSceneOneShape
+// MARK: One Shape
 void intersectSceneOneShape(
   int rawShapeIndex,
   RayValues ray,

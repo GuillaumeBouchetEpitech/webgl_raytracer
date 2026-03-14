@@ -10,7 +10,7 @@
 
 
 
-
+// MARK: castInitialRay
 vec3 castInitialRay(in vec3 rayDir)
 {
   // ensure normalized
@@ -59,6 +59,7 @@ vec3 castInitialRay(in vec3 rayDir)
 
     const bool shadowCastingMode = false;
 
+    // MARK: intersectScene
     bool hasHit = intersectScene(
       g_sceneStack[sceneStackReadIndex].ray,
       g_sceneStack[sceneStackReadIndex].result,
@@ -74,7 +75,7 @@ vec3 castInitialRay(in vec3 rayDir)
     }
 
     //
-    // material handling
+    // MARK: material handling
     //
 
     int materialIndex = g_sceneStack[sceneStackReadIndex].result.materialIndex;
@@ -143,7 +144,7 @@ vec3 castInitialRay(in vec3 rayDir)
     bool canReceiveLight = (matTexel1.r != 0.0);
 
     //
-    // Light handling
+    // MARK: Light handling
     //
 
     LightResult lightResult;
@@ -173,11 +174,7 @@ vec3 castInitialRay(in vec3 rayDir)
     }
 
     //
-    // reflection/refraction here
-    //
-
-    //
-    // refraction here
+    // MARK: refraction
     //
 
     if (
@@ -212,7 +209,7 @@ vec3 castInitialRay(in vec3 rayDir)
     }
 
     //
-    // reflection here
+    // MARK: reflection here
     //
 
     if (
@@ -244,6 +241,7 @@ vec3 castInitialRay(in vec3 rayDir)
   }
 
   //
+  // MARK: Unrolling stack
   // Unrolling this fragment's accumulated scene stack
   //
 
