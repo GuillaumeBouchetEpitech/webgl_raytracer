@@ -14,6 +14,10 @@ export class GpuBvh4NodeManager {
     this._gpuDataTexture2d = gpuDataTexture2d;
   }
 
+  clear() {
+    this._allNodes.length = 0;
+  }
+
   syncRootNode(inputRootNode?: ShapesBvh4TreeNode) {
 
     this._allNodes.length = 0;
@@ -31,9 +35,10 @@ export class GpuBvh4NodeManager {
     this._allNodes.sort((a, b) => a._index - b._index);
   }
 
-  prepareBuffer() {
+  prepareBuffer(texelY: number) {
 
-    this._gpuDataTexture2d.clear();
+    const currRow = this._gpuDataTexture2d.getDataRow(texelY);
+    currRow.clear();
 
     for (const currNode of this._allNodes) {
 
@@ -57,13 +62,13 @@ export class GpuBvh4NodeManager {
           leavesNodeIndex += 1;
         }
 
-        this._gpuDataTexture2d.push(
+        currRow.push(
           tmp_type + 0.5,
           tmp_index + 0.5,
           tmp_node?.min[0] ?? -1,
           tmp_node?.min[1] ?? -1,
         );
-        this._gpuDataTexture2d.push(
+        currRow.push(
           tmp_node?.min[2] ?? -1,
           tmp_node?.max[0] ?? -1,
           tmp_node?.max[1] ?? -1,
@@ -71,25 +76,25 @@ export class GpuBvh4NodeManager {
         );
       }
 
-      // this._gpuDataTexture2d.push(
+      // currRow.push(
       //   currNode.min[0],
       //   currNode.min[1],
       //   currNode.min[2],
       //   currNode.max[0],
       // );
-      // this._gpuDataTexture2d.push(
+      // currRow.push(
       //   currNode.max[1],
       //   currNode.max[2],
       //   (currNode._childrenNodes[0]?._index ?? -2) + 0.5,
       //   (currNode._childrenNodes[1]?._index ?? -2) + 0.5,
       // );
-      // this._gpuDataTexture2d.push(
+      // currRow.push(
       //   (currNode._childrenNodes[2]?._index ?? -2) + 0.5,
       //   (currNode._childrenNodes[3]?._index ?? -2) + 0.5,
       //   (currNode._leaves[0]?.shapeIndex ?? -2) + 0.5,
       //   (currNode._leaves[1]?.shapeIndex ?? -2) + 0.5,
       // );
-      // this._gpuDataTexture2d.push(
+      // currRow.push(
       //   (currNode._leaves[2]?.shapeIndex ?? -2) + 0.5,
       //   (currNode._leaves[3]?.shapeIndex ?? -2) + 0.5,
       //   0,

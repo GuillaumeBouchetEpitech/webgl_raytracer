@@ -84,9 +84,11 @@ export class GpuMaterialsManager {
     this._matAliasToIndex.clear();
   }
 
-  prepareBuffer() {
+  prepareBuffer(texelY: number) {
 
-    this._gpuDataTexture2d.clear();
+    const currRow = this._gpuDataTexture2d.getDataRow(texelY);
+
+    currRow.clear();
 
     let currIndex = 0;
 
@@ -99,14 +101,14 @@ export class GpuMaterialsManager {
 
       const matType = 0;
 
-      this._gpuDataTexture2d.push(
+      currRow.push(
         matType + 0.5, // [0] R
         // (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
         0,
         currMat.reflectionFactor, // [2] B
         currMat.refractionFactor, // [3] A
       );
-      this._gpuDataTexture2d.push(
+      currRow.push(
         currMat.receiveLightEnabled ? 1 : 0, // [4] R
         currMat.color[0], // [5] G
         currMat.color[1], // [6] B
@@ -129,14 +131,14 @@ export class GpuMaterialsManager {
 
       const matType = 1;
 
-      this._gpuDataTexture2d.push(
+      currRow.push(
         matType + 0.5, // [0] R
         // (currMat.castShadowEnabled ? 1 : 0) + 0.5, // [1] G
         0,
         subMatIndexA + 0.5, // [2] B
         subMatIndexB + 0.5, // [3] A
       );
-      this._gpuDataTexture2d.push(
+      currRow.push(
         currMat.chessboardArgs ? currMat.chessboardArgs[0] : 1.0, // [4] R
         currMat.chessboardArgs ? currMat.chessboardArgs[1] : 1.0, // [5] G
         currMat.chessboardArgs ? currMat.chessboardArgs[2] : 1.0, // [6] B

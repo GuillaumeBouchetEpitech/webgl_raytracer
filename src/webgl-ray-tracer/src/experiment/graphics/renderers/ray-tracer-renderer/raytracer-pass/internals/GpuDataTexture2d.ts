@@ -1,27 +1,34 @@
 
 import { graphics } from '@local-framework';
 
-// 3 texture rows worth of cached heap
-const k_maxLength = 2048 * 3;
+const k_dataRowLength = 2048;
+const k_maxTotalRows = 2048;
 
-export class GpuDataTexture2d {
+export interface IGpuDataTexture2dRow {
+  clear(): void;
+  push(r: number, g: number, b: number, a: number): void;
 
-  private _textureUniformName: string;
+  texelY: number;
+  dataValues: Readonly<Float32Array>;
+  currentIndex: number;
+};
 
-  private _dataTexture: graphics.webgl2.IUnboundDataTexture2dVec4f32;
-  private _dataValues = new Float32Array(k_maxLength);
-  private _currentIndex = 0;
+class GpuDataTexture2dRow implements IGpuDataTexture2dRow {
+  private _texelY: number;
+  private _dataValues = new Float32Array(k_dataRowLength * 4);
+  private _currentIndex: number = 0;
 
-  constructor(textureUniformName: string) {
-    this._textureUniformName = textureUniformName;
-    this._dataTexture = new graphics.webgl2.DataTexture2dVec4f32();
-    this._dataTexture.initialize(2048, 6);
+  constructor(texelY: number) {
+    this._texelY = texelY;
+  }
+
+  clear() {
+    this._currentIndex = 0;
   }
 
   push(r: number, g: number, b: number, a: number) {
-
-    if (this._currentIndex >= k_maxLength) {
-      throw new Error(`not more space left in the GpuDataTexture2d heap cache, max length is ${k_maxLength}.`);
+    if (this._currentIndex >= k_dataRowLength) {
+      throw new Error(`not more space left in the GpuDataTexture2dRow heap cache, max length is ${k_dataRowLength}.`);
     }
 
     this._dataValues[this._currentIndex * 4 + 0] = r;
@@ -31,29 +38,79 @@ export class GpuDataTexture2d {
     this._currentIndex += 1;
   }
 
-  clear() {
-    this._currentIndex = 0;
+  get texelY(): number { return this._texelY; }
+  get dataValues(): Readonly<Float32Array> { return this._dataValues; }
+  get currentIndex(): number { return this._currentIndex; }
+};
+
+export class GpuDataTexture2d {
+
+  private _textureUniformName: string;
+
+  private _dataTexture: graphics.webgl2.IUnboundDataTexture2dVec4f32;
+
+  private _dataRows: GpuDataTexture2dRow[] = [];
+
+  constructor(textureUniformName: string) {
+    this._textureUniformName = textureUniformName;
+    this._dataTexture = new graphics.webgl2.DataTexture2dVec4f32();
+
+    const k_initialTotalRows = 1;
+    this._dataTexture.initialize(k_dataRowLength, k_initialTotalRows);
+
+    for (let ii = 0; ii < k_initialTotalRows; ++ii) {
+      this._dataRows.push(new GpuDataTexture2dRow(ii));
+    }
   }
 
-  uploadGpuDataAsRow(texelY: number) {
+  getDataRow(texelY: number): Readonly<IGpuDataTexture2dRow> {
+
+    if (texelY >= k_maxTotalRows) {
+      throw new Error(`not more space left in the GpuDataTexture2d heap cache, max total rows is ${k_maxTotalRows}.`);
+    }
+
+    // ensure the row exist
+    if (texelY >= this._dataRows.length) {
+      const totalToCreate = texelY - (this._dataRows.length - 1);
+      for (let ii = 0; ii < totalToCreate; ++ii) {
+        const newRow = new GpuDataTexture2dRow(this._dataRows.length);
+        this._dataRows.push(newRow);
+      }
+    }
+
+    return this._dataRows[texelY];
+  }
+
+  uploadToGpu() {
+    let totalData = 0;
+    for (const currRow of this._dataRows) {
+      totalData += currRow.currentIndex;
+    }
+
+    if (totalData === 0) {
+      // nothing to upload
+      return;
+    }
+
     this._dataTexture.preBind((boundDataTexture) => {
-      boundDataTexture.updateFromBuffer(0, texelY, this._currentIndex, 1, this._dataValues);
-    });
-  }
 
-  uploadGpuData(
-    texelX: number,
-    texelY: number,
-    width: number,
-    height: number,
-  ) {
-    this._dataTexture.preBind((boundDataTexture) => {
-      boundDataTexture.updateFromBuffer(texelX, texelY, width, height, this._dataValues);
-    });
-  }
+      if (this._dataTexture.height < this._dataRows.length) {
+        // grow the texture -> just re-allocating it larger
+        boundDataTexture.allocate(k_dataRowLength, this._dataRows.length);
+      }
 
-  getCurrentIndex(): number {
-    return this._currentIndex;
+      for (let texelY = 0; texelY < this._dataRows.length; ++texelY) {
+
+        const currRow = this._dataRows[texelY];
+
+        // TODO: only update if necessary
+        // -> when the texture reallocated
+        // -> or when the data row is modified
+
+        boundDataTexture.updateFromBuffer(0, texelY, currRow.currentIndex, 1, currRow.dataValues);
+      }
+
+    });
   }
 
   setForShader(

@@ -40,20 +40,21 @@ export class GpuPointLightsManager implements IGpuPointLightsManager {
     this._pointLights.length = 0;
   }
 
-  prepareBuffer() {
+  prepareBuffer(texelY: number) {
 
-    this._gpuDataTexture2d.clear();
+    const currRow = this._gpuDataTexture2d.getDataRow(texelY);
+    currRow.clear();
 
     for (const pointLight of this._pointLights) {
       // add point light
 
-      this._gpuDataTexture2d.push(
+      currRow.push(
         pointLight.position[0],
         pointLight.position[1],
         pointLight.position[2],
         pointLight.radius,
       );
-      this._gpuDataTexture2d.push(
+      currRow.push(
         pointLight.intensity,
         0,
         0,

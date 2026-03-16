@@ -17,7 +17,7 @@ void _checkForShadowOrTransparency(
 
   // initialize stack
   vec3 invLightDir = 1.0 / lightDir;
-  for (int ii = 0; ii < g_maxLightStackSize; ++ii)
+  for (int ii = 0; ii < MAX_LIGHT_STACK_SIZE; ++ii)
   {
     g_lightStack[ii].used = false;
     g_lightStack[ii].ray.direction = lightDir;
@@ -25,7 +25,8 @@ void _checkForShadowOrTransparency(
     g_lightStack[ii].result.reflectionFactor = 0.0;
     g_lightStack[ii].result.refractionFactor = 0.0;
     g_lightStack[ii].result.materialIndex = -1;
-    g_lightStack[ii].result.distance = 100.0;
+    g_lightStack[ii].result.distance = FAR_VALUE;
+    g_lightStack[ii].result.sceneIndex = 0;
     g_lightStack[ii].lightResult.intensity = 1.0;
     g_lightStack[ii].lightResult.color = vec3(1.0);
   }
@@ -48,7 +49,7 @@ void _checkForShadowOrTransparency(
   //
 
   int lightStackReadIndex = 0;
-  for (; lightStackReadIndex < g_maxLightStackSize; ++lightStackReadIndex)
+  for (; lightStackReadIndex < MAX_LIGHT_STACK_SIZE; ++lightStackReadIndex)
   {
     // intersect object
     // if reflection/refraction push to stack
@@ -91,6 +92,9 @@ void _checkForShadowOrTransparency(
 
     // now we're going to need the shape's material
     int materialIndex = g_lightStack[lightStackReadIndex].result.materialIndex;
+    int sceneIndex = g_lightStack[lightStackReadIndex].result.sceneIndex;
+
+    int baseIndex = 1 + sceneIndex * 6;
 
     // material-texel[0]:R: material type (0=basic or 1=chessboard)
     // material-texel[0]:G: can cast shadows (0 or 1)
@@ -100,8 +104,8 @@ void _checkForShadowOrTransparency(
     // material-texel[1]:G: ??? (per material type)
     // material-texel[1]:B: ??? (per material type)
     // material-texel[1]:A: ??? (per material type)
-    vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
-    vec4 matTexel1 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 1, MATERIALS_ROW_INDEX), 0);
+    vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, baseIndex + ROW_OFFSET_MATERIALS), 0);
+    vec4 matTexel1 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 1, baseIndex + ROW_OFFSET_MATERIALS), 0);
 
     int materialType = int(matTexel0.r);
 
@@ -143,8 +147,8 @@ void _checkForShadowOrTransparency(
       // basic-material-texel[1]:G: color.r
       // basic-material-texel[1]:B: color.g
       // basic-material-texel[1]:A: color.b
-      matTexel0 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
-      matTexel1 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 1, MATERIALS_ROW_INDEX), 0);
+      matTexel0 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 0, baseIndex + ROW_OFFSET_MATERIALS), 0);
+      matTexel1 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 1, baseIndex + ROW_OFFSET_MATERIALS), 0);
     }
 
     float refractionFactor = matTexel0.a;
@@ -166,7 +170,7 @@ void _checkForShadowOrTransparency(
     // handle refraction/transparency
     //
 
-    if (lightStackWriteIndex + 1 >= g_maxLightStackSize)
+    if (lightStackWriteIndex + 1 >= MAX_LIGHT_STACK_SIZE)
     {
       // no more stack writing space left -> stop now
       break;
@@ -177,7 +181,7 @@ void _checkForShadowOrTransparency(
     g_lightStack[lightStackWriteIndex].used = true;
     g_lightStack[lightStackWriteIndex].ray.origin = g_lightStack[lightStackReadIndex].result.position;
 
-  } // for (int ii = 0; ii < g_maxLightStackSize; ++ii)
+  } // for (int ii = 0; ii < MAX_LIGHT_STACK_SIZE; ++ii)
 
   result.lightIsBlocked = lightIsBlocked;
 
@@ -192,7 +196,7 @@ void _checkForShadowOrTransparency(
     // -> from last element to first element
     // -> here we start from where we stopped during the accumulation phase
     for (lightStackReadIndex = lightStackWriteIndex; lightStackReadIndex >= 0; --lightStackReadIndex)
-    // for (lightStackReadIndex = g_maxLightStackSize - 1; lightStackReadIndex >= 0; --lightStackReadIndex)
+    // for (lightStackReadIndex = MAX_LIGHT_STACK_SIZE - 1; lightStackReadIndex >= 0; --lightStackReadIndex)
     {
       // if (g_lightStack[lightStackReadIndex].used == false)
       // {
@@ -223,7 +227,7 @@ void lightAt(
   out LightResult finalResult
 ) {
 
-  finalResult.intensity = g_ambientLightIntensity;
+  finalResult.intensity = AMBIENT_LIGHT_INTENSITY;
   finalResult.color = vec3(1.0);
 
   //
@@ -246,7 +250,7 @@ void lightAt(
     // point-light-texel[1]:B: <unused>
     // point-light-texel[1]:A: <unused>
 
-    vec4 lightTexel0 = texelFetch(u_dataTexture, ivec2(lightIndex + 0, LIGHTS_ROW_INDEX), 0);
+    vec4 lightTexel0 = texelFetch(u_dataTexture, ivec2(lightIndex + 0, POINT_LIGHTS_ROW_INDEX), 0);
     vec3 lightPos = lightTexel0.rgb;
     float lightRadius = max(lightTexel0.a, 0.001);
 
@@ -266,7 +270,7 @@ void lightAt(
     // ensure the lightDir components are "not exactly of value 0"
     lightDir = mix(lightDir, vec3(-1e-8), equal(lightDir, vec3(0.0)));
 
-    vec4 lightTexel1 = texelFetch(u_dataTexture, ivec2(lightIndex + 1, LIGHTS_ROW_INDEX), 0);
+    vec4 lightTexel1 = texelFetch(u_dataTexture, ivec2(lightIndex + 1, POINT_LIGHTS_ROW_INDEX), 0);
     float lightIntensitySetting = lightTexel1.r;
 
     // attenuation
@@ -320,8 +324,8 @@ void lightAt(
     float maxIntensity = max(finalResult.intensity, currentIntensity);
     float normalizedRatio = 1.0 / max(maxIntensity, 0.001);
 
-    float oldBlendRatio = normalizedRatio * max(finalResult.intensity, g_ambientLightIntensity);
-    float newBlendRatio = normalizedRatio * max(currentIntensity, g_ambientLightIntensity);
+    float oldBlendRatio = normalizedRatio * max(finalResult.intensity, AMBIENT_LIGHT_INTENSITY);
+    float newBlendRatio = normalizedRatio * max(currentIntensity, AMBIENT_LIGHT_INTENSITY);
 
     finalResult.color = finalResult.color * oldBlendRatio + localResult.lightColor * newBlendRatio;
     finalResult.intensity = maxIntensity;

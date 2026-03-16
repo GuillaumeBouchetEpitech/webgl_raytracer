@@ -430,8 +430,11 @@ export class TestScene3 {
       continuousTime += deltaTime;
     }
 
-    {
+    const rayTracerPass = renderer.rayTracerRenderer.rayTracerPass;
+    const primaryScene = rayTracerPass.allScenes[0];
+    const secondaryScene = rayTracerPass.allScenes[1];
 
+    {
       { // center the light
 
         // const allPos: glm.vec3[] = [];
@@ -519,7 +522,7 @@ export class TestScene3 {
       {
 
         // graphical presentation of the point light
-        renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+        primaryScene.gpuMaterialsManager.pushBasicMaterial({
           materialAlias: 666,
           color: [1, 1, 0],
           reflectionFactor: 0,
@@ -527,7 +530,7 @@ export class TestScene3 {
           receiveLightEnabled: false,
           castShadowEnabled: false
         });
-        renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushSphere({
+        primaryScene.gpuShapesManager.pushSphere({
           position: g_lightPos,
           orientation: glm.quat.identity(glm.quat.create()),
           radius: 0.06125,
@@ -535,7 +538,7 @@ export class TestScene3 {
         });
 
         // actual point light
-        renderer.rayTracerRenderer.rayTracerPass.gpuPointLightsManager.pushPointLight({
+        rayTracerPass.gpuPointLightsManager.pushPointLight({
           position: g_lightPos,
           intensity: 1,
           radius: 15
@@ -574,7 +577,7 @@ export class TestScene3 {
           indices.push([0,4,1]);
 
           const materialAlias_lightCoverTriangle: number[] = [6000, 6001, 6002, 6003];
-          renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+          primaryScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: materialAlias_lightCoverTriangle[0],
               color: [1.0, 0.0, 1.0], // purple
               reflectionFactor: 0.0,
@@ -582,7 +585,7 @@ export class TestScene3 {
               receiveLightEnabled: false,
               castShadowEnabled: true,
           });
-          renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+          primaryScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: materialAlias_lightCoverTriangle[1],
               color: [1.0, 0.0, 0.0],
               reflectionFactor: 0.0,
@@ -590,7 +593,7 @@ export class TestScene3 {
               receiveLightEnabled: false,
               castShadowEnabled: true,
           });
-          renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+          primaryScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: materialAlias_lightCoverTriangle[2],
               color: [0.0, 1.0, 0.0],
               reflectionFactor: 0.0,
@@ -598,7 +601,7 @@ export class TestScene3 {
               receiveLightEnabled: false,
               castShadowEnabled: true,
           });
-          renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+          primaryScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: materialAlias_lightCoverTriangle[3],
               color: [0.0, 0.0, 1.0],
               reflectionFactor: 0.0,
@@ -609,7 +612,7 @@ export class TestScene3 {
 
           indices.forEach(([idx0, idx1, idx2], index) => {
 
-            renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushTriangle({
+            primaryScene.gpuShapesManager.pushTriangle({
               v0: coverVertices[idx0],
               v1: coverVertices[idx1],
               v2: coverVertices[idx2],
@@ -622,7 +625,7 @@ export class TestScene3 {
         { // debug refractive planes (the ones almost against the "left wall")
 
           const materialAlias_refractive1 = 1001;
-          renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+          primaryScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: materialAlias_refractive1,
             color: [1.0,1.0,0.5],
             reflectionFactor: 0.0,
@@ -630,7 +633,7 @@ export class TestScene3 {
             castShadowEnabled: true,
             receiveLightEnabled: true,
           });
-          renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushBox({
+          primaryScene.gpuShapesManager.pushBox({
             position: [-9,2,2],
             orientation: glm.quat.identity(glm.quat.create()),
             boxSize: [0.05, 0.5, 1.5],
@@ -638,7 +641,7 @@ export class TestScene3 {
           });
 
           const materialAlias_refractive2 = 1002;
-          renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+          primaryScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: materialAlias_refractive2,
             color: [0.5,1.0,0.5],
             reflectionFactor: 0.0,
@@ -646,7 +649,7 @@ export class TestScene3 {
             castShadowEnabled: true,
             receiveLightEnabled: true,
           });
-          renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushBox({
+          primaryScene.gpuShapesManager.pushBox({
             position: [-9.2,2,2],
             orientation: glm.quat.identity(glm.quat.create()),
             boxSize: [0.05, 1.5, 0.5],
@@ -666,7 +669,7 @@ export class TestScene3 {
       const _buildMaterial = (material: BasicMaterial | ChessMaterial): number => {
 
         if (_isBasicMaterial(material)) {
-          return renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+          return primaryScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: ++_tmpMaterialAlias,
             color: material.color,
             refractionFactor: material.refractionFactor ?? 0,
@@ -677,7 +680,7 @@ export class TestScene3 {
         }
 
         if (_isChessMaterial(material)) {
-          const materialA = renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+          const materialA = primaryScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: ++_tmpMaterialAlias,
             color: material.materialA.color,
             refractionFactor: material.materialA.refractionFactor ?? 0,
@@ -685,7 +688,7 @@ export class TestScene3 {
             receiveLightEnabled: material.materialA.receiveLightEnabled ?? true,
             castShadowEnabled: material.materialA.castShadowEnabled ?? true,
           });
-          const materialB = renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+          const materialB = primaryScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: ++_tmpMaterialAlias,
             color: material.materialB.color,
             refractionFactor: material.materialB.refractionFactor ?? 0,
@@ -693,7 +696,7 @@ export class TestScene3 {
             receiveLightEnabled: material.materialB.receiveLightEnabled ?? true,
             castShadowEnabled: material.materialB.castShadowEnabled ?? true,
           });
-          return renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushChessboardMaterial({
+          return primaryScene.gpuMaterialsManager.pushChessboardMaterial({
             materialAlias: ++_tmpMaterialAlias,
             chessboardArgs: material.chessboardArgs,
             castShadowEnabled: true,
@@ -710,7 +713,7 @@ export class TestScene3 {
         const position = currBox.physicBody.getPosition();
         const rotation = currBox.physicBody.getRotation();
 
-        renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushBox({
+        primaryScene.gpuShapesManager.pushBox({
           position: position,
           orientation: rotation,
           boxSize: currBox.boxSize,
@@ -752,7 +755,7 @@ export class TestScene3 {
         const position = sphere1_chessLight.physicBody.getPosition();
         const rotation = sphere1_chessLight.physicBody.getRotation();
 
-        renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushSphere({
+        primaryScene.gpuShapesManager.pushSphere({
           position: position,
           orientation: rotation,
           radius: sphere1_chessLight.radius,
@@ -762,7 +765,7 @@ export class TestScene3 {
 
 
         // graphical presentation of the point lights
-        renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+        primaryScene.gpuMaterialsManager.pushBasicMaterial({
           materialAlias: 668,
           // color: [blinkColor, blinkColor, 0],
           color: [blinkColor*currColorMask[0], blinkColor*currColorMask[1], blinkColor*currColorMask[2]],
@@ -771,7 +774,7 @@ export class TestScene3 {
           receiveLightEnabled: false,
           castShadowEnabled: false
         });
-        renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushSphere({
+        primaryScene.gpuShapesManager.pushSphere({
           position: position,
           orientation: rotation,
           // radius: blinkColor * 0.9,
@@ -780,7 +783,7 @@ export class TestScene3 {
         });
 
         // actual point light inside the sphere
-        renderer.rayTracerRenderer.rayTracerPass.gpuPointLightsManager.pushPointLight({
+        rayTracerPass.gpuPointLightsManager.pushPointLight({
           position: position,
           intensity: 0.1 + 3.9 * lightCoef,
           radius: 10,
@@ -788,68 +791,69 @@ export class TestScene3 {
 
       }
 
-      // // if (false)
-      // if (sphere2_fresnelMarble) {
-      //   const position = sphere2_fresnelMarble.physicBody.getPosition();
-      //   const rotation = sphere2_fresnelMarble.physicBody.getRotation();
-
-      //   // refractive and reflective sphere
-      //   // renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
-      //   //   materialAlias: 669,
-      //   //   color: [1, 1, 1],
-      //   //   reflectionFactor: 0.8,
-      //   //   refractionFactor: 0.8,
-      //   //   receiveLightEnabled: true,
-      //   //   castShadowEnabled: true
-      //   // });
-      //   renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushSphere({
-      //     position: position,
-      //     orientation: rotation,
-      //     radius: 1.5,
-      //     // materialAlias: 669,
-      //     materialAlias: _buildMaterial(sphere2_fresnelMarble.material),
-      //   });
-      // }
-
       // if (false)
       if (sphere2_fresnelMarble) {
         const position = sphere2_fresnelMarble.physicBody.getPosition();
         const rotation = sphere2_fresnelMarble.physicBody.getRotation();
 
+        // refractive and reflective sphere
+        // renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+        //   materialAlias: 669,
+        //   color: [1, 1, 1],
+        //   reflectionFactor: 0.8,
+        //   refractionFactor: 0.8,
+        //   receiveLightEnabled: true,
+        //   castShadowEnabled: true
+        // });
+        primaryScene.gpuShapesManager.pushSphere({
+          position: position,
+          orientation: rotation,
+          radius: 1.5,
+          // materialAlias: 669,
+          materialAlias: _buildMaterial(sphere2_fresnelMarble.material),
+        });
+      }
+
+      // if (false)
+      // if (sphere2_fresnelMarble)
+      {
+        // const position = sphere2_fresnelMarble.physicBody.getPosition();
+        // const rotation = sphere2_fresnelMarble.physicBody.getRotation();
+
         const materialAlias_sphere_made_of_triangles = 7000;
-        renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+        secondaryScene.gpuMaterialsManager.pushBasicMaterial({
           materialAlias: materialAlias_sphere_made_of_triangles,
             color: [1.0,0.0,0.0],
             castShadowEnabled: true,
-            receiveLightEnabled: true,
+            receiveLightEnabled: false,
             reflectionFactor: 0.0,
             refractionFactor: 0.0,
         });
-        renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+        secondaryScene.gpuMaterialsManager.pushBasicMaterial({
           materialAlias: materialAlias_sphere_made_of_triangles + 1,
             color: [0.0,1.0,0.0],
             castShadowEnabled: true,
-            receiveLightEnabled: true,
+            receiveLightEnabled: false,
             reflectionFactor: 0.0,
             refractionFactor: 0.0,
         });
-        renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+        secondaryScene.gpuMaterialsManager.pushBasicMaterial({
           materialAlias: materialAlias_sphere_made_of_triangles + 2,
             color: [0.0,0.0,1.0],
             castShadowEnabled: true,
-            receiveLightEnabled: true,
+            receiveLightEnabled: false,
             reflectionFactor: 0.0,
             refractionFactor: 0.0,
         });
 
-        const vertices = graphics.geometries.makeSphere(1, 1.5);
+        const vertices = graphics.geometries.makeSphere(1, 2.5);
 
         const positions2: glm.vec3[] = [];
 
         const mat4 = glm.mat4.identity(glm.mat4.create());
-        // glm.mat4.scale(mat4, mat4, [0.5,0.5,0.5]);
-        glm.mat4.translate(mat4, mat4, position);
-        glm.mat4.multiply(mat4, mat4, glm.mat4.fromQuat(glm.mat4.create(), rotation));
+        // // glm.mat4.scale(mat4, mat4, [0.5,0.5,0.5]);
+        // glm.mat4.translate(mat4, mat4, position);
+        // glm.mat4.multiply(mat4, mat4, glm.mat4.fromQuat(glm.mat4.create(), rotation));
 
         vertices.forEach((vertex) => {
           const pos = glm.vec3.fromValues(0, 0, 0);
@@ -870,12 +874,43 @@ export class TestScene3 {
           const v2 = positions2[index + 1];
           const v1 = positions2[index + 2];
 
-          renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushTriangle({
+          secondaryScene.gpuShapesManager.pushTriangle({
             v0: v0,
             v1: v1,
             v2: v2,
             materialAlias,
           });
+        }
+
+        {
+          // const position = sphere2_fresnelMarble.physicBody.getPosition();
+          // const rotation = sphere2_fresnelMarble.physicBody.getRotation();
+
+          // primaryScene.gpuShapesManager.pushSubScene({
+          //   sceneIndex: 1,
+          //   position,
+          //   orientation: rotation
+          // });
+
+        }
+
+        {
+
+          const tmpQuat = glm.quat.create();
+
+          for (let yy = 0; yy < 3; ++yy)
+          for (let xx = 0; xx < 3; ++xx) {
+
+            const tmpVal = (((xx + yy) % 2) == 0) ? 1 : -1;
+            glm.quat.setAxisAngle(tmpQuat, [0,1,0], continuousTime * Math.PI * tmpVal);
+
+            primaryScene.gpuShapesManager.pushSubScene({
+              sceneIndex: 1,
+              position: [-10+xx*7,5+yy*7,+15],
+              orientation: tmpQuat,
+            });
+          }
+
         }
 
         //
@@ -884,7 +919,7 @@ export class TestScene3 {
         //
         //
 
-        // renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushSphere({
+        // primaryScene.gpuShapesManager.pushSphere({
         //   position: position,
         //   orientation: glm.quat.identity(glm.quat.create()),
         //   radius: 0.5,
@@ -892,7 +927,7 @@ export class TestScene3 {
         // });
 
         // // actual point light inside the sphere
-        // renderer.rayTracerRenderer.rayTracerPass.gpuPointLightsManager.pushPointLight({
+        // rayTracerPass.gpuPointLightsManager.pushPointLight({
         //   position: position,
         //   intensity: 4,
         //   radius: 15
@@ -903,7 +938,7 @@ export class TestScene3 {
       /**/
       // background reflective blue sphere
 
-      renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+      primaryScene.gpuMaterialsManager.pushBasicMaterial({
         materialAlias: 888,
         color: [0, 0, 1],
         reflectionFactor: 0.8,
@@ -913,7 +948,7 @@ export class TestScene3 {
         castShadowEnabled: true
       });
 
-      renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushSphere({
+      primaryScene.gpuShapesManager.pushSphere({
         position: [-5, 0, -7],
         orientation: glm.quat.identity(glm.quat.create()),
         radius: 5,
@@ -926,7 +961,7 @@ export class TestScene3 {
 
       //     meshTriangles.forEach((vertices) => {
 
-      //       renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushTriangle({
+      //       primaryScene.gpuShapesManager.pushTriangle({
       //         v0: vertices[0],
       //         v1: vertices[1],
       //         v2: vertices[2],
@@ -953,7 +988,7 @@ export class TestScene3 {
 
         // simple reflective triangle
         const materialAlias_heartTriangle = 4000;
-        renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+        primaryScene.gpuMaterialsManager.pushBasicMaterial({
           materialAlias: materialAlias_heartTriangle,
           color: [1.0, 0.5, 0.5],
           reflectionFactor: 0.0,
@@ -961,19 +996,19 @@ export class TestScene3 {
           receiveLightEnabled: true,
           castShadowEnabled: true,
         });
-        renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushTriangle({
+        primaryScene.gpuShapesManager.pushTriangle({
           v0: vertices[0],
           v1: vertices[1],
           v2: vertices[2],
           materialAlias: materialAlias_heartTriangle,
         });
-        renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushTriangle({
+        primaryScene.gpuShapesManager.pushTriangle({
           v0: vertices[0],
           v1: vertices[4],
           v2: vertices[3],
           materialAlias: materialAlias_heartTriangle,
         });
-        renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushTriangle({
+        primaryScene.gpuShapesManager.pushTriangle({
           v0: vertices[2],
           v1: vertices[5],
           v2: vertices[4],
@@ -989,7 +1024,7 @@ export class TestScene3 {
         allPos.push([-10, -1+0.5, +2+ 2]);
 
         const materialAlias_wallBoxes = 5000;
-        renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+        primaryScene.gpuMaterialsManager.pushBasicMaterial({
           materialAlias: materialAlias_wallBoxes,
             color: [1.0,0.5,0.5],
             reflectionFactor: 0.0,
@@ -1000,7 +1035,7 @@ export class TestScene3 {
         });
 
         for (const currPos of allPos) {
-          renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushBox({
+          primaryScene.gpuShapesManager.pushBox({
             position: currPos,
             orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),
             boxSize: [0.05, 0.25, 0.25],
@@ -1064,7 +1099,7 @@ export class TestScene3 {
         // const v3ex = glm.vec3.create();
 
         // const materialAlias_sphere = 7000;
-        // renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+        // primaryScene.gpuMaterialsManager.pushBasicMaterial({
         //   materialAlias: materialAlias_sphere,
         //     color: [1.0,0.5,0.5],
         //     reflectionFactor: 0.0,
@@ -1111,19 +1146,19 @@ export class TestScene3 {
         //   }
 
 
-        //   renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushTriangle({
+        //   primaryScene.gpuShapesManager.pushTriangle({
         //     v0: v1ex,
         //     v1: v12,
         //     v2: v31,
         //     materialAlias: materialAlias_sphere,
         //   });
-        //   renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushTriangle({
+        //   primaryScene.gpuShapesManager.pushTriangle({
         //     v0: v2ex,
         //     v1: v12,
         //     v2: v23,
         //     materialAlias: materialAlias_sphere,
         //   });
-        //   renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushTriangle({
+        //   primaryScene.gpuShapesManager.pushTriangle({
         //     v0: v3ex,
         //     v1: v31,
         //     v2: v23,
@@ -1143,7 +1178,7 @@ export class TestScene3 {
         // {
 
         //   const materialAlias_sphere_made_of_triangles = 7000;
-        //   renderer.rayTracerRenderer.rayTracerPass.gpuMaterialsManager.pushBasicMaterial({
+        //   primaryScene.gpuMaterialsManager.pushBasicMaterial({
         //     materialAlias: materialAlias_sphere_made_of_triangles,
         //       color: [1.0,0.5,0.5],
         //       castShadowEnabled: true,
@@ -1170,7 +1205,7 @@ export class TestScene3 {
         //     const v2 = positions2[index + 1];
         //     const v1 = positions2[index + 2];
 
-        //     renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushTriangle({
+        //     primaryScene.gpuShapesManager.pushTriangle({
         //       v0: v0,
         //       v1: v1,
         //       v2: v2,
@@ -1184,7 +1219,7 @@ export class TestScene3 {
       //*/
 
       // // refractive blue box
-      // renderer.rayTracerRenderer.rayTracerPass.gpuShapesManager.pushBox({
+      // primaryScene.gpuShapesManager.pushBox({
       //   position: [-5, 2, +7],
       //   // orientation: glm.quat.identity(glm.quat.create()),
       //   orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),

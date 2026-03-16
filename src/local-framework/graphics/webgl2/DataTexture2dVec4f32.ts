@@ -6,6 +6,8 @@ export interface IUnboundDataTexture2dVec4f32 {
   rawBind(): void;
   preBind(inCallback: (bound: IBoundDataTexture2dVec4f32) => void): void;
   bind(inCallback: (bound: IBoundDataTexture2dVec4f32) => void): void;
+  width: number;
+  height: number;
 }
 
 export interface IBoundDataTexture2dVec4f32 extends IUnboundDataTexture2dVec4f32 {
@@ -16,7 +18,7 @@ export interface IBoundDataTexture2dVec4f32 extends IUnboundDataTexture2dVec4f32
     texelY: number,
     width: number,
     height: number,
-    inputBuffer: Float32Array
+    inputBuffer: Readonly<Float32Array>
   ): void;
 }
 
@@ -150,7 +152,7 @@ export class DataTexture2dVec4f32 implements IBoundDataTexture2dVec4f32 {
     texelY: number,
     width: number,
     height: number,
-    inputBuffer: Float32Array
+    inputBuffer: Readonly<Float32Array>
   ): void {
 
     if (!this._internalData) {
@@ -227,6 +229,9 @@ export class DataTexture2dVec4f32 implements IBoundDataTexture2dVec4f32 {
     this.preBind(inCallback);
     DataTexture2dVec4f32.unbind();
   }
+
+  get width(): number { return this._internalData?.width ?? 0; }
+  get height(): number { return this._internalData?.height ?? 0; }
 
   static unbind(): void {
     const gl = WebGLContext.getContext();

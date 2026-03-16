@@ -3,7 +3,7 @@ import { graphics } from '@local-framework';
 import * as glm from 'gl-matrix';
 
 import { RayTracerPass, IRayTracerPass } from './raytracer-pass/RaytracingPass';
-import { PostProcessPass, IPostProcessPass } from './post-process-pass/PostProcessPass';
+import { PostProcessPass } from './post-process-pass/PostProcessPass';
 
 export * as allInterfaces from './raytracer-pass/all-interfaces';
 
@@ -17,7 +17,6 @@ export interface IDefinition {
 
 export interface IRayTracerRenderer {
 
-  synchronizeBvh(): void;
   renderRayTracingPass(): void;
   renderTexturePass(): void;
   // renderAsciiArt(): void;
@@ -87,10 +86,6 @@ export class RayTracerRenderer implements IRayTracerRenderer {
 
   //   this._postProcessPass.renderAsciiArt();
   // }
-
-  synchronizeBvh() {
-    this._rayTracerPass.synchronizeBvh();
-  }
 
   renderRayTracingPass() {
     this._postProcessPass.capture(() => {

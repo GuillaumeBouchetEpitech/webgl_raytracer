@@ -366,7 +366,6 @@ export class Experiment {
     this._renderScene();
     this._renderHud();
 
-    this._renderer.rayTracerRenderer.synchronizeBvh();
     if (this._raytracingEnabled) {
       this._renderer.rayTracerRenderer.renderRayTracingPass();
     }

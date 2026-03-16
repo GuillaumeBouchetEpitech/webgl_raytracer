@@ -1,8 +1,8 @@
 
 
-// #include "./ray-tracer-2.1.1-quat-utils.glsl.frag"
+// #include "./ray-tracer-3.1.1-quat-utils.glsl.frag"
 
-// #include "./ray-tracer-2.1.2-intersect-shapes.glsl.frag"
+// #include "./ray-tracer-3.1.2-intersect-shapes.glsl.frag"
 
 // //
 // //
@@ -50,7 +50,7 @@
 //   // sphere-shape-texel[2]:B: <unused>
 //   // sphere-shape-texel[2]:A: <unused>
 
-//   vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, SPHERE_SHAPES_ROW_INDEX), 0);
+//   vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, SHAPES_SPHERE_ROW_INDEX), 0);
 
 //   if (
 //     shadowCastingMode == true &&
@@ -60,8 +60,8 @@
 //     return;
 //   }
 
-//   vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 1, SPHERE_SHAPES_ROW_INDEX), 0);
-//   vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 2, SPHERE_SHAPES_ROW_INDEX), 0);
+//   vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 1, SHAPES_SPHERE_ROW_INDEX), 0);
+//   vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 2, SHAPES_SPHERE_ROW_INDEX), 0);
 
 //   vec3 center = vec3(shTexel0.b, shTexel0.a, shTexel1.r);
 //   float radius = shTexel2.g;
@@ -164,7 +164,7 @@
 //   // box-shape-texel[2]:G: boxSize.x
 //   // box-shape-texel[2]:B: boxSize.y
 //   // box-shape-texel[2]:A: boxSize.z
-//   vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, BOX_SHAPES_ROW_INDEX), 0);
+//   vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, SHAPES_BOX_ROW_INDEX), 0);
 
 //   if (
 //     shadowCastingMode == true &&
@@ -174,8 +174,8 @@
 //     return;
 //   }
 
-//   vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 1, BOX_SHAPES_ROW_INDEX), 0);
-//   vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 2, BOX_SHAPES_ROW_INDEX), 0);
+//   vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 1, SHAPES_BOX_ROW_INDEX), 0);
+//   vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 2, SHAPES_BOX_ROW_INDEX), 0);
 
 
 //   vec3 center = vec3(shTexel0.b, shTexel0.a, shTexel1.r);
@@ -277,7 +277,7 @@
 //   // triangle-shape-texel[2]:G: triangle2.y
 //   // triangle-shape-texel[2]:B: triangle2.z
 //   // triangle-shape-texel[2]:A: <unused>
-//   vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, TRIANGLE_SHAPES_ROW_INDEX), 0);
+//   vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, SHAPES_TRIANGLE_ROW_INDEX), 0);
 
 //   if (
 //     shadowCastingMode == true &&
@@ -287,8 +287,8 @@
 //     return;
 //   }
 
-//   vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 1, TRIANGLE_SHAPES_ROW_INDEX), 0);
-//   vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 2, TRIANGLE_SHAPES_ROW_INDEX), 0);
+//   vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 1, SHAPES_TRIANGLE_ROW_INDEX), 0);
+//   vec4 shTexel2 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 2, SHAPES_TRIANGLE_ROW_INDEX), 0);
 
 //   vec3 v0 = vec3(shTexel0.b, shTexel0.a, shTexel1.r);
 //   vec3 v1 = shTexel1.gba;
@@ -474,10 +474,10 @@
 //     // BVH-node-texel[3]:B: right max.y
 //     // BVH-node-texel[3]:A: right max.z
 
-//     vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 0, BVH_ROW_INDEX), 0);
-//     vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 1, BVH_ROW_INDEX), 0);
-//     vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 2, BVH_ROW_INDEX), 0);
-//     vec4 rootNodeTexel3 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 3, BVH_ROW_INDEX), 0);
+//     vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 0, BVH_NODES_ROW_INDEX), 0);
+//     vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 1, BVH_NODES_ROW_INDEX), 0);
+//     vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 2, BVH_NODES_ROW_INDEX), 0);
+//     vec4 rootNodeTexel3 = texelFetch(u_dataTexture, ivec2(nodeIndex * 4 + 3, BVH_NODES_ROW_INDEX), 0);
 
 //     int leftNodeType = int(rootNodeTexel0.r);
 //     int leftNodeIndex = int(rootNodeTexel0.g);
@@ -494,7 +494,7 @@
 //       rayIntersectBvhAABB(ray, leftAabbMin, leftAabbMax)
 //     ) {
 //       if (leftNodeType == 1) {
-//         if (leftNodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
+//         if (leftNodeIndex >= 0 && bvhStackTopIndex + 1 < MAX_BVH_STACK) {
 //           // push left bvh node index on to the stack
 //           bvhStackTopIndex += 1;
 //           g_bvhStack[bvhStackTopIndex] = leftNodeIndex;
@@ -515,7 +515,7 @@
 //       rayIntersectBvhAABB(ray, rightAabbMin, rightAabbMax)
 //     ) {
 //       if (rightNodeType == 1) {
-//         if (rightNodeIndex >= 0 && bvhStackTopIndex + 1 < g_maxBvhStack) {
+//         if (rightNodeIndex >= 0 && bvhStackTopIndex + 1 < MAX_BVH_STACK) {
 //           // push right bvh node index on to the stack
 //           bvhStackTopIndex += 1;
 //           g_bvhStack[bvhStackTopIndex] = rightNodeIndex;

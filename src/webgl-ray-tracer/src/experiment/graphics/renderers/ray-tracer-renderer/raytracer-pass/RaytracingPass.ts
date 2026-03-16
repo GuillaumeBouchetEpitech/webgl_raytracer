@@ -2,9 +2,9 @@
 import { graphics } from '@local-framework';
 
 // @ts-ignore
-import rayTracerVertex from './shaders/ray-tracer.glsl.vert';
+import rayTracerVertex from './shaders/ray-tracer-0.glsl.vert';
 // @ts-ignore
-import rayTracerFragment from './shaders/ray-tracer.glsl.frag';
+import rayTracerFragment from './shaders/ray-tracer-1.glsl.frag';
 
 import * as glm from 'gl-matrix';
 
@@ -68,6 +68,88 @@ export interface IStackRenderer {
 //
 //
 
+// MARK: ITestScene
+interface ITestScene {
+  bvhRenderDebugWireframe(renderer: IStackRenderer, modelView?: glm.ReadonlyMat4): void;
+  gpuMaterialsManager: Readonly<IGpuMaterialsManager>;
+  gpuShapesManager: Readonly<IGpuShapesManager>;
+};
+
+// MARK: TestScene
+class TestScene {
+
+  private _gpuDataTexture2d: GpuDataTexture2d;
+
+  private _gpuMaterialsManager: GpuMaterialsManager;
+  private _gpuShapesManager: GpuShapesManager;
+
+  // private _bvhTree = new ShapesBvh2Tree();
+  // private _gpuBvh2NodeManager: GpuBvh2NodeManager;
+  private _bvhTree = new ShapesBvh4Tree();
+  private _gpuBvh4NodeManager: GpuBvh4NodeManager;
+
+  constructor(inGpuDataTexture2d: GpuDataTexture2d) {
+    this._gpuDataTexture2d = inGpuDataTexture2d;
+
+    this._gpuMaterialsManager = new GpuMaterialsManager(this._gpuDataTexture2d);
+    this._gpuShapesManager = new GpuShapesManager(
+      this._gpuDataTexture2d,
+      this._gpuMaterialsManager,
+    );
+
+    // this._gpuBvh2NodeManager = new GpuBvh2NodeManager(this._gpuDataTexture2d);
+    this._gpuBvh4NodeManager = new GpuBvh4NodeManager(this._gpuDataTexture2d);
+  }
+
+  reset(): void {
+    // this._bvhTree.reset(); // <- commented, breaks the "graphic debugger"
+    this._gpuBvh4NodeManager.clear();
+    this._gpuMaterialsManager.clear();
+    this._gpuShapesManager.clear();
+  }
+
+  prepareBuffer(sceneIndex: number, allScenes: ReadonlyArray<TestScene>): void {
+
+    const baseIndex = 1 + sceneIndex * 6;
+
+    this._bvhTree.synchronize(
+      this._gpuShapesManager.spheres,
+      this._gpuShapesManager.boxes,
+      this._gpuShapesManager.triangles,
+      this._gpuShapesManager.subScenes,
+      allScenes,
+    );
+
+    this._gpuBvh4NodeManager.syncRootNode(this._bvhTree.getRootNode());
+
+    this._gpuMaterialsManager.prepareBuffer(baseIndex + 0);
+    this._gpuBvh4NodeManager.prepareBuffer(baseIndex + 1);
+    this._gpuShapesManager.prepareBufferSpheres(baseIndex + 2);
+    this._gpuShapesManager.prepareBufferBoxes(baseIndex + 3);
+    this._gpuShapesManager.prepareBufferTriangles(baseIndex + 4);
+    this._gpuShapesManager.prepareBufferSubScene(baseIndex + 5);
+  }
+
+  bvhRenderDebugWireframe(renderer: IStackRenderer, modelView?: glm.ReadonlyMat4) {
+    // Bvh2Debug.renderDebugWireframe(this._bvhTree.getRootNode(), renderer)
+    Bvh4Debug.renderDebugWireframe(this._bvhTree.getRootNode(), renderer, modelView);
+  }
+
+  get min(): glm.ReadonlyVec3 { return this._bvhTree.getRootNode()?.min ?? [0,0,0]; }
+  get max(): glm.ReadonlyVec3 { return this._bvhTree.getRootNode()?.max ?? [0,0,0]; }
+
+  get gpuMaterialsManager(): Readonly<IGpuMaterialsManager> {
+    return this._gpuMaterialsManager;
+  }
+
+  get gpuShapesManager(): Readonly<IGpuShapesManager> {
+    return this._gpuShapesManager;
+  }
+
+}
+
+
+// MARK: IRayTracerPass
 export interface IRayTracerPass {
 
   lookAt(
@@ -79,7 +161,7 @@ export interface IRayTracerPass {
   render(): void;
   reset(): void;
 
-  bvhRenderDebugWireframe(renderer: IStackRenderer): void;
+  // bvhRenderDebugWireframe(renderer: IStackRenderer): void;
 
   getCurrentSize(): glm.ReadonlyVec2;
 
@@ -87,11 +169,14 @@ export interface IRayTracerPass {
   renderWidth: number;
   renderHeight: number;
 
-  gpuMaterialsManager: Readonly<IGpuMaterialsManager>;
-  gpuShapesManager: Readonly<IGpuShapesManager>;
+  // gpuMaterialsManager: Readonly<IGpuMaterialsManager>;
+  // gpuShapesManager: Readonly<IGpuShapesManager>;
   gpuPointLightsManager: Readonly<IGpuPointLightsManager>;
+
+  allScenes: ReadonlyArray<Readonly<ITestScene>>;
 };
 
+// MARK: RayTracerPass
 export class RayTracerPass implements IRayTracerPass {
   private _cameraFovy: number;
 
@@ -102,19 +187,13 @@ export class RayTracerPass implements IRayTracerPass {
 
   private _rayTracerGeometry: graphics.webgl2.GeometryWrapper.Geometry;
 
-  // private _bvhTree = new ShapesBvh2Tree();
-  private _bvhTree = new ShapesBvh4Tree();
-
   private _camera: ICamera;
 
   private _gpuDataTexture2d = new GpuDataTexture2d("u_dataTexture");
 
-  private _gpuMaterialsManager: GpuMaterialsManager;
-  private _gpuShapesManager: GpuShapesManager;
   private _gpuPointLightsManager: GpuPointLightsManager;
 
-  // private _gpuBvh2NodeManager: GpuBvh2NodeManager;
-  private _gpuBvh4NodeManager: GpuBvh4NodeManager;
+  private _allScenes: TestScene[] = [];
 
   constructor(inDef: IDefinition) {
     this._cameraFovy = inDef.fovy;
@@ -168,15 +247,10 @@ export class RayTracerPass implements IRayTracerPass {
     //
     //
 
-    this._gpuMaterialsManager = new GpuMaterialsManager(this._gpuDataTexture2d);
-    this._gpuShapesManager = new GpuShapesManager(
-      this._gpuDataTexture2d,
-      this._gpuMaterialsManager,
-    );
     this._gpuPointLightsManager = new GpuPointLightsManager(this._gpuDataTexture2d);
 
-    // this._gpuBvh2NodeManager = new GpuBvh2NodeManager(this._gpuDataTexture2d);
-    this._gpuBvh4NodeManager = new GpuBvh4NodeManager(this._gpuDataTexture2d);
+    this._allScenes.push(new TestScene(this._gpuDataTexture2d));
+    this._allScenes.push(new TestScene(this._gpuDataTexture2d));
 
     this._camera = {
       position: glm.vec3.fromValues(0, 0, 0),
@@ -207,15 +281,6 @@ export class RayTracerPass implements IRayTracerPass {
     glm.vec3.copy(this._camera.up, upDir);
   }
 
-
-  synchronizeBvh() {
-    this._bvhTree.synchronize(
-      this._gpuShapesManager.spheres,
-      this._gpuShapesManager.boxes,
-      this._gpuShapesManager.triangles,
-    );
-  }
-
   // MARK: render
   render() {
     const gl = WebGLContext.getContext();
@@ -223,35 +288,12 @@ export class RayTracerPass implements IRayTracerPass {
     const farCorners = this._computeCameraFarCornersBufferGeometry();
     this._rayTracerGeometry.allocateBuffer(1, farCorners, farCorners.length);
 
-    this._gpuMaterialsManager.prepareBuffer();
-    this._gpuDataTexture2d.uploadGpuDataAsRow(0);
+    this._gpuPointLightsManager.prepareBuffer(0);
+    const lightsTextureSize = this._gpuDataTexture2d.getDataRow(0).currentIndex;
 
-    this._gpuShapesManager.prepareBufferSpheres();
-    this._gpuDataTexture2d.uploadGpuDataAsRow(1);
+    this._allScenes.forEach((currScene, index) => currScene.prepareBuffer(index, this._allScenes));
 
-    this._gpuShapesManager.prepareBufferBoxes();
-    this._gpuDataTexture2d.uploadGpuDataAsRow(2);
-
-    this._gpuShapesManager.prepareBufferTriangles();
-    this._gpuDataTexture2d.uploadGpuDataAsRow(3);
-
-
-    this._gpuPointLightsManager.prepareBuffer();
-    this._gpuDataTexture2d.uploadGpuDataAsRow(4);
-    const lightsTextureSize = this._gpuDataTexture2d.getCurrentIndex();
-
-    // this._bvhTree.synchronize(
-    //   this._gpuShapesManager.spheres,
-    //   this._gpuShapesManager.boxes,
-    //   this._gpuShapesManager.triangles,
-    //   // this._gpuMaterialsManager
-    // );
-    // this._gpuBvh2NodeManager.syncRootNode(this._bvhTree.getRootNode());
-    // this._gpuBvh2NodeManager.prepareBuffer();
-    this._gpuBvh4NodeManager.syncRootNode(this._bvhTree.getRootNode());
-    this._gpuBvh4NodeManager.prepareBuffer();
-
-    this._gpuDataTexture2d.uploadGpuDataAsRow(5);
+    this._gpuDataTexture2d.uploadToGpu();
 
     gl.viewport(0, 0, this._renderWidth, this._renderHeight);
     gl.clear(gl.COLOR_BUFFER_BIT /*| gl.DEPTH_BUFFER_BIT*/);
@@ -294,15 +336,10 @@ export class RayTracerPass implements IRayTracerPass {
   // MARK: reset, etc.
   reset(): void {
     this._gpuPointLightsManager.clear();
-    this._gpuMaterialsManager.clear();
-    this._gpuShapesManager.clear();
+    this._allScenes.forEach(currSCene => currSCene.reset());
   }
 
-  bvhRenderDebugWireframe(renderer: IStackRenderer) {
-    // Bvh2Debug.renderDebugWireframe(this._bvhTree.getRootNode(), renderer)
-    Bvh4Debug.renderDebugWireframe(this._bvhTree.getRootNode(), renderer)
-  }
-
+  // MARK: getters/setters
   setRenderSize(width: number, height: number): void {
     if (width < 10 || height < 10) {
       return;
@@ -327,12 +364,8 @@ export class RayTracerPass implements IRayTracerPass {
     return this._camera;
   }
 
-  get gpuMaterialsManager(): Readonly<IGpuMaterialsManager> {
-    return this._gpuMaterialsManager;
-  }
-
-  get gpuShapesManager(): Readonly<IGpuShapesManager> {
-    return this._gpuShapesManager;
+  get allScenes(): ReadonlyArray<Readonly<ITestScene>> {
+    return this._allScenes;
   }
 
   get gpuPointLightsManager(): Readonly<IGpuPointLightsManager> {

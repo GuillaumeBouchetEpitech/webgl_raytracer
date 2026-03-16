@@ -15,6 +15,7 @@ struct RayResult
   float reflectionFactor;
   float refractionFactor;
   vec3 txPos;
+  int sceneIndex;
   int shapeIndex;
   int materialIndex;
 };

@@ -2,11 +2,11 @@
 
 
 
-// #--ignored--include "./ray-tracer-2.1-intersectScene-bvh2.glsl.frag"
+// #--ignored--include "./ray-tracer-3.1-intersectScene-bvh2.glsl.frag"
 
-#include "./ray-tracer-2.1-intersectScene-bvh4.glsl.frag"
+#include "./ray-tracer-3.1-intersectScene-bvh4.glsl.frag"
 
-#include "./ray-tracer-2.2-lightAt.glsl.frag"
+#include "./ray-tracer-3.2-lightAt.glsl.frag"
 
 
 
@@ -20,13 +20,14 @@ vec3 castInitialRay(in vec3 rayDir)
   rayDir = mix(rayDir, vec3(-1e-8), equal(rayDir, vec3(0.0)));
 
   // initialize stack
-  for (int ii = 0; ii < g_maxSceneStackSize; ++ii)
+  for (int ii = 0; ii < MAX_SCENE_STACK_SIZE; ++ii)
   {
     g_sceneStack[ii].used = false;
     g_sceneStack[ii].result.reflectionFactor = 0.0;
     g_sceneStack[ii].result.refractionFactor = 0.0;
     g_sceneStack[ii].result.materialIndex = -1;
-    g_sceneStack[ii].result.distance = 100.0;
+    g_sceneStack[ii].result.distance = FAR_VALUE;
+    g_sceneStack[ii].result.sceneIndex = 0;
     g_sceneStack[ii].reflectionIndex = -1;
     g_sceneStack[ii].refractionIndex = -1;
   }
@@ -45,7 +46,7 @@ vec3 castInitialRay(in vec3 rayDir)
   //
 
   int sceneStackReadIndex = 0;
-  for (; sceneStackReadIndex < g_maxSceneStackSize; ++sceneStackReadIndex)
+  for (; sceneStackReadIndex < MAX_SCENE_STACK_SIZE; ++sceneStackReadIndex)
   {
     // intersect object
     // if reflection/refraction push to stack & set index
@@ -79,6 +80,9 @@ vec3 castInitialRay(in vec3 rayDir)
     //
 
     int materialIndex = g_sceneStack[sceneStackReadIndex].result.materialIndex;
+    int sceneIndex = g_sceneStack[sceneStackReadIndex].result.sceneIndex;
+
+    int baseIndex = 1 + sceneIndex * 6;
 
     // material-texel[0]:R: material type (0=basic or 1=chessboard)
     // material-texel[0]:G: can cast shadows (0 or 1)
@@ -88,8 +92,8 @@ vec3 castInitialRay(in vec3 rayDir)
     // material-texel[1]:G: ??? (per material type)
     // material-texel[1]:B: ??? (per material type)
     // material-texel[1]:A: ??? (per material type)
-    vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
-    vec4 matTexel1 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 1, MATERIALS_ROW_INDEX), 0);
+    vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, baseIndex + ROW_OFFSET_MATERIALS), 0);
+    vec4 matTexel1 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 1, baseIndex + ROW_OFFSET_MATERIALS), 0);
 
     int materialType = int(matTexel0.r);
 
@@ -129,8 +133,8 @@ vec3 castInitialRay(in vec3 rayDir)
       // basic-material-texel[1]:G: color.r
       // basic-material-texel[1]:B: color.g
       // basic-material-texel[1]:A: color.b
-      matTexel0 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 0, MATERIALS_ROW_INDEX), 0);
-      matTexel1 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 1, MATERIALS_ROW_INDEX), 0);
+      matTexel0 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 0, baseIndex + ROW_OFFSET_MATERIALS), 0);
+      matTexel1 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 1, baseIndex + ROW_OFFSET_MATERIALS), 0);
     }
 
     vec3 materialColor = matTexel1.gba;
@@ -179,7 +183,7 @@ vec3 castInitialRay(in vec3 rayDir)
 
     if (
       // first check if more stack space is left
-      sceneStackWriteIndex + 1 < g_maxSceneStackSize &&
+      sceneStackWriteIndex + 1 < MAX_SCENE_STACK_SIZE &&
       // then we check if the refraction factor is positive
       g_sceneStack[sceneStackReadIndex].result.refractionFactor > 0.0
     ) {
@@ -188,7 +192,7 @@ vec3 castInitialRay(in vec3 rayDir)
 
       g_sceneStack[sceneStackWriteIndex].used = true;
       g_sceneStack[sceneStackWriteIndex].ray.origin = g_sceneStack[sceneStackReadIndex].result.position;
-      vec3 nextRayDir = refract(g_sceneStack[sceneStackReadIndex].ray.direction, g_sceneStack[sceneStackReadIndex].result.normal, Eta);
+      vec3 nextRayDir = refract(g_sceneStack[sceneStackReadIndex].ray.direction, g_sceneStack[sceneStackReadIndex].result.normal, REFRACTION_ETA);
 
       // ensure normalized
       nextRayDir /= max(length(nextRayDir), 0.001);
@@ -214,7 +218,7 @@ vec3 castInitialRay(in vec3 rayDir)
 
     if (
       // first we check if more stack space is left
-      sceneStackWriteIndex + 1 < g_maxSceneStackSize &&
+      sceneStackWriteIndex + 1 < MAX_SCENE_STACK_SIZE &&
       // then we check if the reflection factor is positive
       g_sceneStack[sceneStackReadIndex].result.reflectionFactor > 0.0
     ) {
@@ -249,7 +253,7 @@ vec3 castInitialRay(in vec3 rayDir)
   // -> from last element to first element
   // -> here we start from where we stopped during the accumulation phase
   for (sceneStackReadIndex = sceneStackWriteIndex; sceneStackReadIndex >= 0; --sceneStackReadIndex)
-  // for (sceneStackReadIndex = g_maxSceneStackSize - 1; sceneStackReadIndex >= 0; --sceneStackReadIndex)
+  // for (sceneStackReadIndex = MAX_SCENE_STACK_SIZE - 1; sceneStackReadIndex >= 0; --sceneStackReadIndex)
   {
     // if (!g_sceneStack[sceneStackReadIndex].used) {
     //   continue;
@@ -278,5 +282,5 @@ vec3 castInitialRay(in vec3 rayDir)
 
   return g_sceneStack[0].result.hasHit
     ? g_sceneStack[0].color.xyz
-    : g_backgroundColor;
+    : BACKGROUND_COLOR;
 }

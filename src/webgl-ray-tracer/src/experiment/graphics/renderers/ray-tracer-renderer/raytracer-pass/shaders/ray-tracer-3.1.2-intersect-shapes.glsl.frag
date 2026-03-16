@@ -5,12 +5,9 @@
 //
 //
 
-// MARK: intersectSphere
+// MARK: Sphere
 bool intersectSphere(RayValues ray, float radius, out float outDistance, out vec3 normal)
 {
-  float nearValue = 0.001; // TODO: hardcoded
-  float farValue = 100.0; // TODO: hardcoded
-
   float b = dot(ray.origin, ray.direction);
   float c = dot(ray.origin, ray.origin) - radius * radius;
   float h = b * b - c;
@@ -21,7 +18,7 @@ bool intersectSphere(RayValues ray, float radius, out float outDistance, out vec
   h = sqrt(h);
 
   float d1 = -b - h;
-  if (d1 >= nearValue && d1 <= farValue)
+  if (d1 >= NEAR_VALUE && d1 <= FAR_VALUE)
   {
     normal = normalize(ray.origin + ray.direction * d1);
     outDistance = d1;
@@ -29,7 +26,7 @@ bool intersectSphere(RayValues ray, float radius, out float outDistance, out vec
   }
 
   float d2 = -b + h;
-  if (d2 >= nearValue && d2 <= farValue)
+  if (d2 >= NEAR_VALUE && d2 <= FAR_VALUE)
   {
     normal = normalize(ray.origin + ray.direction * d2);
     outDistance = d2;
@@ -39,31 +36,11 @@ bool intersectSphere(RayValues ray, float radius, out float outDistance, out vec
   return false;
 }
 
-// MARK: intersectBox
+// MARK: Box
 bool intersectBox(RayValues ray, vec3 boxSize, out float outDistance, out vec3 normal)
 {
-  float nearValue = 0.001; // TODO: hardcoded
-  float farValue = 100.0; // TODO: hardcoded
-
-  //
-  //
-  // sad hack: fix a shadow related bug
-
-  // if (ray.origin.x == 0.0) ray.origin.x = -1e-8;
-  // if (ray.origin.y == 0.0) ray.origin.y = -1e-8;
-  // if (ray.origin.z == 0.0) ray.origin.z = -1e-8;
-
-  // if (ray.direction.x == 0.0) ray.direction.x = -1e-8;
-  // if (ray.direction.y == 0.0) ray.direction.y = -1e-8;
-  // if (ray.direction.z == 0.0) ray.direction.z = -1e-8;
-
   // safe -> mitigated risk of division by zero
-  // -> faster approach
   ray.direction = mix(ray.direction, vec3(-1e-8), equal(ray.direction, vec3(0.0)));
-
-  // sad hack: fix a shadow related bug
-  //
-  //
 
   vec3 m = sign(ray.direction) / abs(ray.direction);
   vec3 n = m * ray.origin;
@@ -79,14 +56,14 @@ bool intersectBox(RayValues ray, vec3 boxSize, out float outDistance, out vec3 n
     return false;
   }
 
-  if (tN >= nearValue && tN <= farValue)
+  if (tN >= NEAR_VALUE && tN <= FAR_VALUE)
   {
     normal = normalize(-sign(ray.direction) * step(t1.yzx, t1.xyz) * step(t1.zxy, t1.xyz));
     outDistance = tN;
     return true;
   }
 
-  if (tF >= nearValue && tF <= farValue)
+  if (tF >= NEAR_VALUE && tF <= FAR_VALUE)
   {
     normal = normalize(-sign(ray.direction) * step(t1.yzx, t1.xyz) * step(t1.zxy, t1.xyz));
     outDistance = tF;
@@ -96,12 +73,9 @@ bool intersectBox(RayValues ray, vec3 boxSize, out float outDistance, out vec3 n
   return false;
 }
 
-// MARK: intersectTriangle
+// MARK: Triangle
 bool intersectTriangle(RayValues ray, vec3 v0, vec3 v1, vec3 v2, out float outDistance, out vec3 normal)
 {
-  float nearValue = 0.001; // TODO: hardcoded
-  float farValue = 100.0; // TODO: hardcoded
-
   vec3 v1v0 = v1 - v0;
   vec3 v2v0 = v2 - v0;
   vec3 rov0 = ray.origin - v0;
@@ -109,18 +83,18 @@ bool intersectTriangle(RayValues ray, vec3 v0, vec3 v1, vec3 v2, out float outDi
   vec3 n = cross(v1v0, v2v0);
   vec3 q = cross(rov0, ray.direction);
 
-  // unsafe -> potential division by zero
-  // float d = 1.0 / dot(ray.direction, n);
+  float tmpDotVal = dot(ray.direction, n);
 
   // safe -> mitigated risk of division by zero
-  float tmpDotVal = dot(ray.direction, n);
-  float d = 1.0 / (tmpDotVal == 0.0 ? -1e-8 : tmpDotVal);
+  tmpDotVal = (tmpDotVal == 0.0 ? -1e-8 : tmpDotVal);
+
+  float d = 1.0 / tmpDotVal;
 
   float u = d * dot(-q, v2v0);
   float v = d * dot(q, v1v0);
   float t = d * dot(-n, rov0);
 
-  if (u < 0.0 || v < 0.0 || (u + v) > 1.0 || t < nearValue || t > farValue) {
+  if (u < 0.0 || v < 0.0 || (u + v) > 1.0 || t < NEAR_VALUE || t > FAR_VALUE) {
     return false;
   }
 
@@ -136,13 +110,13 @@ bool intersectTriangle(RayValues ray, vec3 v0, vec3 v1, vec3 v2, out float outDi
 
 // float intersectPlane2(RayValues ray, vec3 normal, float offset)
 // {
-//     float nearValue = 0.001; // TODO: hardcoded
-//     float farValue = 1000.0; // TODO: hardcoded
+//     const float NEAR_VALUE = 0.001; // TODO: hardcoded
+//     const float FAR_VALUE = 1000.0; // TODO: hardcoded
 
 //     float a = dot(ray.direction, normal);
 //     float d = -(dot(ray.origin, normal) + offset) / a;
 
-//     if (a > 0.0 || d < nearValue || d > farValue)
+//     if (a > 0.0 || d < nearValue || d > FAR_VALUE)
 //         return -1.0;
 
 //     return d;
