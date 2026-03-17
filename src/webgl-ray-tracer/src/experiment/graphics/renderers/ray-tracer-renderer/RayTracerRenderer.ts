@@ -24,6 +24,9 @@ export interface IRayTracerRenderer {
   setResolutionCoef(inResolutionCoef: number): void;
   getResolutionCoef(): number;
 
+  setSceneStack(inValue: number): void;
+  setLightStack(inValue: number): void;
+
   // setAntiAliasing(enabled: boolean): void;
   // getAntiAliasing(): boolean;
 
@@ -117,6 +120,13 @@ export class RayTracerRenderer implements IRayTracerRenderer {
 
   getResolutionCoef(): number {
     return this._resolutionCoef;
+  }
+
+  setSceneStack(inValue: number): void {
+    this._rayTracerPass.setSceneStack(inValue);
+  }
+  setLightStack(inValue: number): void {
+    this._rayTracerPass.setLightStack(inValue);
   }
 
   // setAntiAliasing(enabled: boolean) {

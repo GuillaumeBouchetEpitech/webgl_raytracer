@@ -15,9 +15,11 @@ void _checkForShadowOrTransparency(
   inout ShadowTransparencyRayResult result
 ) {
 
+  int maxLightStackSize = min(u_maxLightStackSize, MAX_LIGHT_STACK_SIZE);
+
   // initialize stack
   vec3 invLightDir = 1.0 / lightDir;
-  for (int ii = 0; ii < MAX_LIGHT_STACK_SIZE; ++ii)
+  for (int ii = 0; ii < maxLightStackSize && ii < MAX_LIGHT_STACK_SIZE; ++ii)
   {
     g_lightStack[ii].used = false;
     g_lightStack[ii].ray.direction = lightDir;
@@ -49,7 +51,7 @@ void _checkForShadowOrTransparency(
   //
 
   int lightStackReadIndex = 0;
-  for (; lightStackReadIndex < MAX_LIGHT_STACK_SIZE; ++lightStackReadIndex)
+  for (; lightStackReadIndex < maxLightStackSize && lightStackReadIndex < MAX_LIGHT_STACK_SIZE; ++lightStackReadIndex)
   {
     // intersect object
     // if reflection/refraction push to stack
@@ -170,7 +172,7 @@ void _checkForShadowOrTransparency(
     // handle refraction/transparency
     //
 
-    if (lightStackWriteIndex + 1 >= MAX_LIGHT_STACK_SIZE)
+    if (lightStackWriteIndex + 1 >= maxLightStackSize)
     {
       // no more stack writing space left -> stop now
       break;
@@ -181,7 +183,7 @@ void _checkForShadowOrTransparency(
     g_lightStack[lightStackWriteIndex].used = true;
     g_lightStack[lightStackWriteIndex].ray.origin = g_lightStack[lightStackReadIndex].result.position;
 
-  } // for (int ii = 0; ii < MAX_LIGHT_STACK_SIZE; ++ii)
+  } // for (int ii = 0; ii < maxLightStackSize; ++ii)
 
   result.lightIsBlocked = lightIsBlocked;
 
@@ -196,13 +198,7 @@ void _checkForShadowOrTransparency(
     // -> from last element to first element
     // -> here we start from where we stopped during the accumulation phase
     for (lightStackReadIndex = lightStackWriteIndex; lightStackReadIndex >= 0; --lightStackReadIndex)
-    // for (lightStackReadIndex = MAX_LIGHT_STACK_SIZE - 1; lightStackReadIndex >= 0; --lightStackReadIndex)
     {
-      // if (g_lightStack[lightStackReadIndex].used == false)
-      // {
-      //   continue;
-      // }
-
       // used stack element
       result.lightColor *= g_lightStack[lightStackReadIndex].lightResult.color.xyz;
       result.lightIntensity *= g_lightStack[lightStackReadIndex].lightResult.intensity;
@@ -238,7 +234,7 @@ void lightAt(
 
   ShadowTransparencyRayResult localResult;
 
-  for (int lightIndex = 0; lightIndex < u_lightsTextureSize; lightIndex += 2)
+  for (int lightIndex = 0; lightIndex < u_lightsTextureSize && lightIndex < MAX_LIGHTS_PER_IMPACT; lightIndex += 2)
   {
 
     // point-light-texel[0]:R: point light position.x
@@ -258,11 +254,11 @@ void lightAt(
 
     // is it out of the point light effect radius?
     float lightToImpactDistance = length(lightToImpactVec3);
-    // if (lightToImpactDistance > lightRadius)
-    // {
-    //   // out of range, do not apply this light
-    //   continue;
-    // }
+    if (lightToImpactDistance > lightRadius)
+    {
+      // light is too far from the shape impact -> ignore the light
+      continue;
+    }
 
     // normalize lightDir
     lightDir = lightToImpactVec3 / max(lightToImpactDistance, 0.001);
@@ -330,5 +326,5 @@ void lightAt(
     finalResult.color = finalResult.color * oldBlendRatio + localResult.lightColor * newBlendRatio;
     finalResult.intensity = maxIntensity;
 
-  } // for (int index = 0; index < u_lightsTextureSize; index += 2)
+  } // for (int index = 0; index < u_lightsTextureSize && lightIndex < MAX_LIGHTS_PER_IMPACT; index += 2)
 }

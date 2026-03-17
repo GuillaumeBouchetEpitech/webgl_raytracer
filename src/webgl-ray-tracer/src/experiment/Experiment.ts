@@ -511,6 +511,16 @@ export class Experiment {
     this._onResolutionChange = inCallback;
   }
 
+  setSceneStack(inValue: number) {
+    const safeValue = system.math.clamp(inValue, 1, 7); // [1..7]
+    this._renderer.rayTracerRenderer.setSceneStack(safeValue);
+  }
+
+  setLightStack(inValue: number) {
+    const safeValue = system.math.clamp(inValue, 1, 5); // [1..5]
+    this._renderer.rayTracerRenderer.setLightStack(safeValue);
+  }
+
   setPhysicDebugModeEnabled(isEnabled: boolean) {
     this._physicDebugModeEnabled = isEnabled;
 
@@ -586,14 +596,14 @@ export class Experiment {
       return;
     }
 
-    this._def.logger.log(
-      `performance auto scaling: slow framerate, scaling down resolution`
-    );
-
     const currValue = this._resolution;
     const newValue = currValue - 1;
 
     if (newValue >= 0 && newValue <= 9) {
+      this._def.logger.log(
+        `performance auto scaling: slow framerate, scaling down resolution`
+      );
+
       this.setResolution(newValue);
       this.logResolution();
 

@@ -11,9 +11,11 @@ export interface IGpuDataTexture2dRow {
   texelY: number;
   dataValues: Readonly<Float32Array>;
   currentIndex: number;
+  isDirty: boolean;
 };
 
 class GpuDataTexture2dRow implements IGpuDataTexture2dRow {
+  private _isDirty: boolean = false;
   private _texelY: number;
   private _dataValues = new Float32Array(k_dataRowLength * 4);
   private _currentIndex: number = 0;
@@ -24,12 +26,15 @@ class GpuDataTexture2dRow implements IGpuDataTexture2dRow {
 
   clear() {
     this._currentIndex = 0;
+    this._isDirty = false;
   }
 
   push(r: number, g: number, b: number, a: number) {
     if (this._currentIndex >= k_dataRowLength) {
       throw new Error(`not more space left in the GpuDataTexture2dRow heap cache, max length is ${k_dataRowLength}.`);
     }
+
+    this._isDirty = true;
 
     this._dataValues[this._currentIndex * 4 + 0] = r;
     this._dataValues[this._currentIndex * 4 + 1] = g;
@@ -38,9 +43,18 @@ class GpuDataTexture2dRow implements IGpuDataTexture2dRow {
     this._currentIndex += 1;
   }
 
+  uploadToGpu(texelY: number, boundDataTexture: graphics.webgl2.IBoundDataTexture2dVec4f32) {
+    if (!this._isDirty) {
+      return;
+    }
+    this._isDirty = false;
+    boundDataTexture.updateFromBuffer(0, texelY, this.currentIndex, 1, this.dataValues);
+  }
+
   get texelY(): number { return this._texelY; }
   get dataValues(): Readonly<Float32Array> { return this._dataValues; }
   get currentIndex(): number { return this._currentIndex; }
+  get isDirty(): boolean { return this._isDirty; }
 };
 
 export class GpuDataTexture2d {
@@ -82,12 +96,14 @@ export class GpuDataTexture2d {
   }
 
   uploadToGpu() {
-    let totalData = 0;
+    let totalDataToUpload = 0;
     for (const currRow of this._dataRows) {
-      totalData += currRow.currentIndex;
+      if (currRow.isDirty) {
+        totalDataToUpload += currRow.currentIndex;
+      }
     }
 
-    if (totalData === 0) {
+    if (totalDataToUpload === 0) {
       // nothing to upload
       return;
     }
@@ -101,13 +117,19 @@ export class GpuDataTexture2d {
 
       for (let texelY = 0; texelY < this._dataRows.length; ++texelY) {
 
-        const currRow = this._dataRows[texelY];
+        // const currRow = this._dataRows[texelY];
+        // if (!currRow.isDirty) {
+        //   continue;
+        // }
 
         // TODO: only update if necessary
         // -> when the texture reallocated
         // -> or when the data row is modified
 
-        boundDataTexture.updateFromBuffer(0, texelY, currRow.currentIndex, 1, currRow.dataValues);
+        // currRow.uploadToGpu(texelY, boundDataTexture);
+        // boundDataTexture.updateFromBuffer(0, texelY, currRow.currentIndex, 1, currRow.dataValues);
+
+        this._dataRows[texelY].uploadToGpu(texelY, boundDataTexture);
       }
 
     });

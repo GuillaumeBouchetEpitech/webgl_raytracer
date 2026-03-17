@@ -19,8 +19,10 @@ vec3 castInitialRay(in vec3 rayDir)
   // ensure the rayDir components are "not exactly of value 0"
   rayDir = mix(rayDir, vec3(-1e-8), equal(rayDir, vec3(0.0)));
 
+  int maxSceneStackSize = min(u_maxSceneStackSize, MAX_SCENE_STACK_SIZE);
+
   // initialize stack
-  for (int ii = 0; ii < MAX_SCENE_STACK_SIZE; ++ii)
+  for (int ii = 0; ii < maxSceneStackSize && ii < MAX_SCENE_STACK_SIZE; ++ii)
   {
     g_sceneStack[ii].used = false;
     g_sceneStack[ii].result.reflectionFactor = 0.0;
@@ -46,7 +48,8 @@ vec3 castInitialRay(in vec3 rayDir)
   //
 
   int sceneStackReadIndex = 0;
-  for (; sceneStackReadIndex < MAX_SCENE_STACK_SIZE; ++sceneStackReadIndex)
+
+  for (; sceneStackReadIndex < maxSceneStackSize && sceneStackReadIndex < MAX_SCENE_STACK_SIZE; ++sceneStackReadIndex)
   {
     // intersect object
     // if reflection/refraction push to stack & set index
@@ -183,7 +186,7 @@ vec3 castInitialRay(in vec3 rayDir)
 
     if (
       // first check if more stack space is left
-      sceneStackWriteIndex + 1 < MAX_SCENE_STACK_SIZE &&
+      sceneStackWriteIndex + 1 < maxSceneStackSize &&
       // then we check if the refraction factor is positive
       g_sceneStack[sceneStackReadIndex].result.refractionFactor > 0.0
     ) {
@@ -218,7 +221,7 @@ vec3 castInitialRay(in vec3 rayDir)
 
     if (
       // first we check if more stack space is left
-      sceneStackWriteIndex + 1 < MAX_SCENE_STACK_SIZE &&
+      sceneStackWriteIndex + 1 < maxSceneStackSize &&
       // then we check if the reflection factor is positive
       g_sceneStack[sceneStackReadIndex].result.reflectionFactor > 0.0
     ) {
@@ -253,7 +256,6 @@ vec3 castInitialRay(in vec3 rayDir)
   // -> from last element to first element
   // -> here we start from where we stopped during the accumulation phase
   for (sceneStackReadIndex = sceneStackWriteIndex; sceneStackReadIndex >= 0; --sceneStackReadIndex)
-  // for (sceneStackReadIndex = MAX_SCENE_STACK_SIZE - 1; sceneStackReadIndex >= 0; --sceneStackReadIndex)
   {
     // if (!g_sceneStack[sceneStackReadIndex].used) {
     //   continue;

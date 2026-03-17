@@ -1,5 +1,5 @@
 
-import { graphics } from '@local-framework';
+import { system, graphics } from '@local-framework';
 
 // @ts-ignore
 import rayTracerVertex from './shaders/ray-tracer-0.glsl.vert';
@@ -70,6 +70,7 @@ export interface IStackRenderer {
 
 // MARK: ITestScene
 interface ITestScene {
+  markAsDirty(): void;
   bvhRenderDebugWireframe(renderer: IStackRenderer, modelView?: glm.ReadonlyMat4): void;
   gpuMaterialsManager: Readonly<IGpuMaterialsManager>;
   gpuShapesManager: Readonly<IGpuShapesManager>;
@@ -87,6 +88,8 @@ class TestScene {
   // private _gpuBvh2NodeManager: GpuBvh2NodeManager;
   private _bvhTree = new ShapesBvh4Tree();
   private _gpuBvh4NodeManager: GpuBvh4NodeManager;
+
+  private _isDirty: boolean = true;
 
   constructor(inGpuDataTexture2d: GpuDataTexture2d) {
     this._gpuDataTexture2d = inGpuDataTexture2d;
@@ -108,7 +111,30 @@ class TestScene {
     this._gpuShapesManager.clear();
   }
 
+  // isDirty(sceneIndex: number): boolean {
+  //   const baseIndex = 1 + sceneIndex * 6;
+  //   for (let ii = 0; ii < 6; ++ii) {
+  //     if (this._gpuDataTexture2d.getDataRow(baseIndex + ii).isDirty) {
+  //       return true;
+  //     }
+  //   }
+  //   return false;
+  // }
+
+  markAsDirty(): void {
+    this._isDirty = true;
+  }
+
   prepareBuffer(sceneIndex: number, allScenes: ReadonlyArray<TestScene>): void {
+
+    if (!this._isDirty) {
+      return;
+    }
+    this._isDirty = false;
+
+    // if (!this.isDirty(sceneIndex)) {
+    //   return;
+    // }
 
     const baseIndex = 1 + sceneIndex * 6;
 
@@ -183,6 +209,9 @@ export class RayTracerPass implements IRayTracerPass {
   private _renderWidth: number;
   private _renderHeight: number;
 
+  private _sceneStack: number = 7;
+  private _lightStack: number = 5;
+
   private _rayTracerShaderProgram: graphics.webgl2.IUnboundShader;
 
   private _rayTracerGeometry: graphics.webgl2.GeometryWrapper.Geometry;
@@ -209,6 +238,8 @@ export class RayTracerPass implements IRayTracerPass {
         'u_cameraEye',
         'u_dataTexture',
         'u_lightsTextureSize',
+        'u_maxSceneStackSize',
+        'u_maxLightStackSize',
       ]
     });
 
@@ -314,6 +345,9 @@ export class RayTracerPass implements IRayTracerPass {
         // boundShader.setInteger1Uniform('u_sceneTextureSize', sceneTextureSize);
         boundShader.setInteger1Uniform('u_lightsTextureSize', lightsTextureSize);
 
+        boundShader.setInteger1Uniform('u_maxSceneStackSize', this._sceneStack);
+        boundShader.setInteger1Uniform('u_maxLightStackSize', this._lightStack);
+
         //
         //
         //
@@ -336,7 +370,7 @@ export class RayTracerPass implements IRayTracerPass {
   // MARK: reset, etc.
   reset(): void {
     this._gpuPointLightsManager.clear();
-    this._allScenes.forEach(currSCene => currSCene.reset());
+    this._allScenes.forEach(currScene => currScene.reset());
   }
 
   // MARK: getters/setters
@@ -351,6 +385,16 @@ export class RayTracerPass implements IRayTracerPass {
 
   getCurrentSize(): glm.ReadonlyVec2 {
     return [this._renderWidth, this._renderHeight];
+  }
+
+  setSceneStack(inValue: number): void {
+    const safeValue = system.math.clamp(inValue, 1, 7); // [1..7]
+    this._sceneStack = safeValue;
+  }
+
+  setLightStack(inValue: number): void {
+    const safeValue = system.math.clamp(inValue, 1, 5); // [1..5]
+    this._lightStack = safeValue;
   }
 
   get renderWidth() {

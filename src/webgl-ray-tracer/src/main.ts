@@ -97,6 +97,8 @@ const onPageLoad = async () => {
       '#auto-scaling-enabled'
     );
     const resolution = _queryDomElement<HTMLInputElement>('#resolution');
+    const sceneStack = _queryDomElement<HTMLInputElement>('#scene-stack');
+    const lightStack = _queryDomElement<HTMLInputElement>('#light-stack');
     // const anti_aliasing_enabled = _queryDomElement<HTMLInputElement>(
     //   '#anti-aliasing-enabled'
     // );
@@ -124,6 +126,9 @@ const onPageLoad = async () => {
       toggleHudButton.disabled = true;
       perfAutoScaling.disabled = true;
       resolution.min = resolution.max = resolution.value = 0 as unknown as string;
+      sceneStack.min = sceneStack.max = sceneStack.value = 0 as unknown as string;
+      lightStack.min = lightStack.max = lightStack.value = 0 as unknown as string;
+
       // anti_aliasing_enabled.disabled = true;
       physic_debug_mode_enabled.disabled = true;
       bvh_debug_mode_enabled.disabled = true;
@@ -267,6 +272,25 @@ const onPageLoad = async () => {
       mainDemo.logResolution();
       resolution.blur(); // ensure it's not focused anymore (space-bar issues)
     });
+
+    sceneStack.addEventListener('input', (event) => {
+      if (!mainDemo) {
+        return;
+      }
+      const newValue = sceneStack.value as unknown as number;
+      mainDemo.setSceneStack(newValue);
+      sceneStack.blur(); // ensure it's not focused anymore (space-bar issues)
+    });
+
+    lightStack.addEventListener('input', (event) => {
+      if (!mainDemo) {
+        return;
+      }
+      const newValue = lightStack.value as unknown as number;
+      mainDemo.setLightStack(newValue);
+      lightStack.blur(); // ensure it's not focused anymore (space-bar issues)
+    });
+
 
     // anti_aliasing_enabled.addEventListener('click', () => {
     //   if (!mainDemo || !logger) {

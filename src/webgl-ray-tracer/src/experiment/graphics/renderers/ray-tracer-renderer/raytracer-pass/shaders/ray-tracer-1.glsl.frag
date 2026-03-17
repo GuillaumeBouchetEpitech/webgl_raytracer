@@ -16,6 +16,11 @@ uniform highp sampler2D   u_dataTexture;
 uniform int               u_lightsTextureSize;
 
 //
+
+uniform int               u_maxSceneStackSize;
+uniform int               u_maxLightStackSize;
+
+//
 //
 //
 

@@ -164,6 +164,9 @@ let sphere2_fresnelMarble: SphereObject | undefined;
 
 
 export class TestScene3 {
+
+  private _secondarySceneSetup = false;
+
   ensureSceneData(physicWorld: physics.PhysicWorld) {
 
     // downhill on X
@@ -432,7 +435,7 @@ export class TestScene3 {
 
     const rayTracerPass = renderer.rayTracerRenderer.rayTracerPass;
     const primaryScene = rayTracerPass.allScenes[0];
-    const secondaryScene = rayTracerPass.allScenes[1];
+    // const secondaryScene = rayTracerPass.allScenes[1];
 
     {
       { // center the light
@@ -814,124 +817,40 @@ export class TestScene3 {
         });
       }
 
-      // if (false)
-      // if (sphere2_fresnelMarble)
+
+      this._setupSecondaryScene(renderer);
+
       {
-        // const position = sphere2_fresnelMarble.physicBody.getPosition();
-        // const rotation = sphere2_fresnelMarble.physicBody.getRotation();
 
-        const materialAlias_sphere_made_of_triangles = 7000;
-        secondaryScene.gpuMaterialsManager.pushBasicMaterial({
-          materialAlias: materialAlias_sphere_made_of_triangles,
-            color: [1.0,0.0,0.0],
-            castShadowEnabled: true,
-            receiveLightEnabled: false,
-            reflectionFactor: 0.0,
-            refractionFactor: 0.0,
-        });
-        secondaryScene.gpuMaterialsManager.pushBasicMaterial({
-          materialAlias: materialAlias_sphere_made_of_triangles + 1,
-            color: [0.0,1.0,0.0],
-            castShadowEnabled: true,
-            receiveLightEnabled: false,
-            reflectionFactor: 0.0,
-            refractionFactor: 0.0,
-        });
-        secondaryScene.gpuMaterialsManager.pushBasicMaterial({
-          materialAlias: materialAlias_sphere_made_of_triangles + 2,
-            color: [0.0,0.0,1.0],
-            castShadowEnabled: true,
-            receiveLightEnabled: false,
-            reflectionFactor: 0.0,
-            refractionFactor: 0.0,
-        });
+        const axis = glm.vec3.normalize(glm.vec3.create(), [1,1,0]);
+        const tmpQuat = glm.quat.create();
 
-        const vertices = graphics.geometries.makeSphere(1, 2.5);
+        for (let yy = 0; yy < 3; ++yy)
+        for (let xx = 0; xx < 3; ++xx) {
 
-        const positions2: glm.vec3[] = [];
+          const tmpVal = (((xx + yy) % 2) == 0) ? 1 : -1;
+          const axis = glm.vec3.normalize(glm.vec3.create(), [0,1,tmpVal]);
+          glm.quat.setAxisAngle(tmpQuat, axis, continuousTime * Math.PI * tmpVal);
 
-        const mat4 = glm.mat4.identity(glm.mat4.create());
-        // // glm.mat4.scale(mat4, mat4, [0.5,0.5,0.5]);
-        // glm.mat4.translate(mat4, mat4, position);
-        // glm.mat4.multiply(mat4, mat4, glm.mat4.fromQuat(glm.mat4.create(), rotation));
-
-        vertices.forEach((vertex) => {
-          const pos = glm.vec3.fromValues(0, 0, 0);
-          glm.vec3.transformMat4(pos, vertex.pos, mat4);
-          positions2.push(pos);
-        });
-
-        for (let index = 0; index < positions2.length; index += 3) {
-
-          let materialAlias = materialAlias_sphere_made_of_triangles;
-          if ((index % (3 * 3)) === 3) {
-            materialAlias = materialAlias_sphere_made_of_triangles + 1;
-          } else if ((index % (3 * 3)) === 6) {
-            materialAlias = materialAlias_sphere_made_of_triangles + 2;
-          }
-
-          const v0 = positions2[index + 0];
-          const v2 = positions2[index + 1];
-          const v1 = positions2[index + 2];
-
-          secondaryScene.gpuShapesManager.pushTriangle({
-            v0: v0,
-            v1: v1,
-            v2: v2,
-            materialAlias,
+          primaryScene.gpuShapesManager.pushSubScene({
+            sceneIndex: 1,
+            position: [-10+xx*7,5+yy*7,+15],
+            orientation: tmpQuat,
           });
         }
 
-        {
-          // const position = sphere2_fresnelMarble.physicBody.getPosition();
-          // const rotation = sphere2_fresnelMarble.physicBody.getRotation();
-
-          // primaryScene.gpuShapesManager.pushSubScene({
-          //   sceneIndex: 1,
-          //   position,
-          //   orientation: rotation
-          // });
-
-        }
-
-        {
-
-          const tmpQuat = glm.quat.create();
-
-          for (let yy = 0; yy < 3; ++yy)
-          for (let xx = 0; xx < 3; ++xx) {
-
-            const tmpVal = (((xx + yy) % 2) == 0) ? 1 : -1;
-            glm.quat.setAxisAngle(tmpQuat, [0,1,0], continuousTime * Math.PI * tmpVal);
-
-            primaryScene.gpuShapesManager.pushSubScene({
-              sceneIndex: 1,
-              position: [-10+xx*7,5+yy*7,+15],
-              orientation: tmpQuat,
-            });
-          }
-
-        }
-
-        //
-        //
-        //
-        //
-        //
-
-        // primaryScene.gpuShapesManager.pushSphere({
-        //   position: position,
-        //   orientation: glm.quat.identity(glm.quat.create()),
-        //   radius: 0.5,
-        //   materialAlias: materialAlias_sphere_made_of_triangles + 2,
-        // });
-
-        // // actual point light inside the sphere
+        // // some point light
         // rayTracerPass.gpuPointLightsManager.pushPointLight({
-        //   position: position,
-        //   intensity: 4,
-        //   radius: 15
+        //   position: [-10+1*7,5+1*7,+15],
+        //   intensity: 2,
+        //   radius: 20
         // });
+        primaryScene.gpuShapesManager.pushSphere({
+          position: [-10+1*7,5+1*7,+15],
+          orientation: glm.quat.identity(glm.quat.create()),
+          radius: 0.06125,
+          materialAlias: 666,
+        });
 
       }
 
@@ -1045,193 +964,85 @@ export class TestScene3 {
 
       }
 
-
-      /**/
-      {
-
-        // // const radius = 2;
-        // const center: glm.ReadonlyVec3 = [-2,-0.5,3];
-
-        // const X = 0.525731112119133606;
-        // const Z = 0.850650808352039932;
-        // const N = 0.0;
-
-        // const positions: ReadonlyArray<glm.ReadonlyVec3> = [
-        //   [-X, N, Z],
-        //   [X, N, Z],
-        //   [-X, N, -Z],
-        //   [X, N, -Z],
-        //   [N, Z, X],
-        //   [N, Z, -X],
-        //   [N, -Z, X],
-        //   [N, -Z, -X],
-        //   [Z, X, N],
-        //   [-Z, X, N],
-        //   [Z, -X, N],
-        //   [-Z, -X, N]
-        // ];
-
-        // const indices: ReadonlyArray<glm.ReadonlyVec3> = [
-        //   [0, 4, 1],
-        //   [0, 9, 4],
-        //   [9, 5, 4],
-        //   [4, 5, 8],
-        //   [4, 8, 1],
-        //   [8, 10, 1],
-        //   [8, 3, 10],
-        //   [5, 3, 8],
-        //   [5, 2, 3],
-        //   [2, 7, 3],
-        //   [7, 10, 3],
-        //   [7, 6, 10],
-        //   [7, 11, 6],
-        //   [11, 0, 6],
-        //   [0, 1, 6],
-        //   [6, 1, 10],
-        //   [9, 0, 11],
-        //   [9, 11, 2],
-        //   [9, 2, 5],
-        //   [7, 2, 11]
-        // ];
-
-        // const v1ex = glm.vec3.create();
-        // const v2ex = glm.vec3.create();
-        // const v3ex = glm.vec3.create();
-
-        // const materialAlias_sphere = 7000;
-        // primaryScene.gpuMaterialsManager.pushBasicMaterial({
-        //   materialAlias: materialAlias_sphere,
-        //     color: [1.0,0.5,0.5],
-        //     reflectionFactor: 0.0,
-        //     castShadowEnabled: true,
-        //     receiveLightEnabled: true,
-        //     refractionFactor: 0,
-        //     // chessboardEnabled: 0,
-        // });
-
-        // for (const index of indices) {
-        //   const v1: glm.ReadonlyVec3 = positions[index[0]];
-        //   const v2: glm.ReadonlyVec3 = positions[index[1]];
-        //   const v3: glm.ReadonlyVec3 = positions[index[2]];
-
-        //   const v12: glm.vec3 = [
-        //     system.math.lerp(0.5, v1[0], v2[0]),
-        //     system.math.lerp(0.5, v1[1], v2[1]),
-        //     system.math.lerp(0.5, v1[2], v2[2]),
-        //   ];
-        //   const v23: glm.vec3 = [
-        //     system.math.lerp(0.5, v2[0], v3[0]),
-        //     system.math.lerp(0.5, v2[1], v3[1]),
-        //     system.math.lerp(0.5, v2[2], v3[2]),
-        //   ];
-        //   const v31: glm.vec3 = [
-        //     system.math.lerp(0.5, v3[0], v1[0]),
-        //     system.math.lerp(0.5, v3[1], v1[1]),
-        //     system.math.lerp(0.5, v3[2], v1[2]),
-        //   ];
-
-        //   glm.vec3.normalize(v12, v12);
-        //   glm.vec3.normalize(v23, v23);
-        //   glm.vec3.normalize(v31, v31);
-
-
-
-        //   {
-        //     glm.vec3.add(v1ex, v1, center);
-        //     glm.vec3.add(v2ex, v2, center);
-        //     glm.vec3.add(v3ex, v3, center);
-        //     glm.vec3.add(v12, v12, center);
-        //     glm.vec3.add(v23, v23, center);
-        //     glm.vec3.add(v31, v31, center);
-        //   }
-
-
-        //   primaryScene.gpuShapesManager.pushTriangle({
-        //     v0: v1ex,
-        //     v1: v12,
-        //     v2: v31,
-        //     materialAlias: materialAlias_sphere,
-        //   });
-        //   primaryScene.gpuShapesManager.pushTriangle({
-        //     v0: v2ex,
-        //     v1: v12,
-        //     v2: v23,
-        //     materialAlias: materialAlias_sphere,
-        //   });
-        //   primaryScene.gpuShapesManager.pushTriangle({
-        //     v0: v3ex,
-        //     v1: v31,
-        //     v2: v23,
-        //     materialAlias: materialAlias_sphere,
-        //   });
-
-        // }
-
-        // // actual point light inside the sphere
-        // renderer.rayTracerRenderer.rayTracerPass.pushPointLight({
-        //   position: center,
-        //   intensity: 1,
-        //   radius: 15
-        // });
-
-
-        // {
-
-        //   const materialAlias_sphere_made_of_triangles = 7000;
-        //   primaryScene.gpuMaterialsManager.pushBasicMaterial({
-        //     materialAlias: materialAlias_sphere_made_of_triangles,
-        //       color: [1.0,0.5,0.5],
-        //       castShadowEnabled: true,
-        //       receiveLightEnabled: true,
-        //       reflectionFactor: 0.0,
-        //       refractionFactor: 0.0,
-        //   });
-
-        //   const vertices = graphics.geometries.makeSphere(1, 1.5);
-
-        //   const positions2: glm.vec3[] = [];
-
-        //   const mat4 = glm.mat4.identity(glm.mat4.create());
-        //   glm.mat4.scale(mat4, mat4, [0.5,0.5,0.5]);
-
-        //   vertices.forEach((vertex) => {
-        //     const pos = glm.vec3.fromValues(0, 0, 0);
-        //     glm.vec3.transformMat4(pos, vertex.pos, mat4);
-        //     positions2.push(pos);
-        //   });
-
-        //   for (let index = 0; index < positions2.length; index += 3) {
-        //     const v0 = positions2[index + 0];
-        //     const v2 = positions2[index + 1];
-        //     const v1 = positions2[index + 2];
-
-        //     primaryScene.gpuShapesManager.pushTriangle({
-        //       v0: v0,
-        //       v1: v1,
-        //       v2: v2,
-        //       materialAlias: materialAlias_sphere_made_of_triangles,
-        //     });
-        //   }
-
-        // }
-
-      }
-      //*/
-
-      // // refractive blue box
-      // primaryScene.gpuShapesManager.pushBox({
-      //   position: [-5, 2, +7],
-      //   // orientation: glm.quat.identity(glm.quat.create()),
-      //   orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),
-      //   boxSize: [1,1,1],
-      //   color: [1,1,1],
-      //   reflectionFactor: 0.3,
-      //   refractionFactor: 0.6,
-      //   chessboardEnabled: false,
-      //   receiveLightEnabled: true,
-      //   castShadowEnabled: true
-      // });
-
     } // push scene
+
+    primaryScene.markAsDirty();
   }
+
+  private _setupSecondaryScene(renderer: Renderer): void {
+
+    if (this._secondarySceneSetup) {
+      return;
+    }
+    this._secondarySceneSetup = true;
+
+    const rayTracerPass = renderer.rayTracerRenderer.rayTracerPass;
+    const secondaryScene = rayTracerPass.allScenes[1];
+
+    const materialAlias_sphere_made_of_triangles = 7000;
+    secondaryScene.gpuMaterialsManager.pushBasicMaterial({
+      materialAlias: materialAlias_sphere_made_of_triangles,
+        color: [1.0,0.0,0.0],
+        castShadowEnabled: true,
+        receiveLightEnabled: true,
+        reflectionFactor: 0.0,
+        refractionFactor: 0.0,
+    });
+    secondaryScene.gpuMaterialsManager.pushBasicMaterial({
+      materialAlias: materialAlias_sphere_made_of_triangles + 1,
+        color: [0.0,1.0,0.0],
+        castShadowEnabled: true,
+        receiveLightEnabled: true,
+        reflectionFactor: 0.0,
+        refractionFactor: 0.0,
+    });
+    secondaryScene.gpuMaterialsManager.pushBasicMaterial({
+      materialAlias: materialAlias_sphere_made_of_triangles + 2,
+        color: [0.0,0.0,1.0],
+        castShadowEnabled: true,
+        receiveLightEnabled: true,
+        reflectionFactor: 0.0,
+        refractionFactor: 0.0,
+    });
+
+    const vertices = graphics.geometries.makeSphere(1, 2.5);
+
+    const positions2: glm.vec3[] = [];
+
+    const mat4 = glm.mat4.identity(glm.mat4.create());
+    // // glm.mat4.scale(mat4, mat4, [0.5,0.5,0.5]);
+    // glm.mat4.translate(mat4, mat4, position);
+    // glm.mat4.multiply(mat4, mat4, glm.mat4.fromQuat(glm.mat4.create(), rotation));
+
+    vertices.forEach((vertex) => {
+      const pos = glm.vec3.fromValues(0, 0, 0);
+      glm.vec3.transformMat4(pos, vertex.pos, mat4);
+      positions2.push(pos);
+    });
+
+    for (let index = 0; index < positions2.length; index += 3) {
+
+      let materialAlias = materialAlias_sphere_made_of_triangles;
+      if ((index % (3 * 3)) === 3) {
+        materialAlias = materialAlias_sphere_made_of_triangles + 1;
+      } else if ((index % (3 * 3)) === 6) {
+        // materialAlias = materialAlias_sphere_made_of_triangles + 2;
+        continue
+      }
+
+      const v0 = positions2[index + 0];
+      const v2 = positions2[index + 1];
+      const v1 = positions2[index + 2];
+
+      secondaryScene.gpuShapesManager.pushTriangle({
+        v0: v0,
+        v1: v1,
+        v2: v2,
+        materialAlias,
+      });
+    }
+
+    secondaryScene.markAsDirty();
+  }
+
 }

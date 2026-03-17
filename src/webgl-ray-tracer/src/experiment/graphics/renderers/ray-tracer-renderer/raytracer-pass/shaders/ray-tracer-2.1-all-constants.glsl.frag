@@ -34,6 +34,8 @@ const int       MAX_LIGHT_STACK_SIZE = 5;
 const int       MAX_BVH_STACK = 16;
 // const int       MAX_BVH_STACK = 32; // <- safer in case of sub-scenes
 
+const int       MAX_LIGHTS_PER_IMPACT = 5;
+
 ////
 //
 
