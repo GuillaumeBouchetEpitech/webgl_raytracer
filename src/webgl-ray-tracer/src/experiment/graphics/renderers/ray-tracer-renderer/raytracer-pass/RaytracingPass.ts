@@ -214,6 +214,7 @@ export class RayTracerPass implements IRayTracerPass {
 
   private _rayTracerShaderProgram: graphics.webgl2.IUnboundShader;
 
+  // the far corners of the camera
   private _rayTracerGeometry: graphics.webgl2.GeometryWrapper.Geometry;
 
   private _camera: ICamera;
@@ -387,12 +388,12 @@ export class RayTracerPass implements IRayTracerPass {
     return [this._renderWidth, this._renderHeight];
   }
 
-  setSceneStack(inValue: number): void {
+  setSceneMaxStack(inValue: number): void {
     const safeValue = system.math.clamp(inValue, 1, 7); // [1..7]
     this._sceneStack = safeValue;
   }
 
-  setLightStack(inValue: number): void {
+  setLightMaxStack(inValue: number): void {
     const safeValue = system.math.clamp(inValue, 1, 5); // [1..5]
     this._lightStack = safeValue;
   }

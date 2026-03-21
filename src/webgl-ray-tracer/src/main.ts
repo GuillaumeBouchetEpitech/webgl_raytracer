@@ -278,7 +278,7 @@ const onPageLoad = async () => {
         return;
       }
       const newValue = sceneStack.value as unknown as number;
-      mainDemo.setSceneStack(newValue);
+      mainDemo.setSceneMaxStack(newValue);
       sceneStack.blur(); // ensure it's not focused anymore (space-bar issues)
     });
 
@@ -287,7 +287,7 @@ const onPageLoad = async () => {
         return;
       }
       const newValue = lightStack.value as unknown as number;
-      mainDemo.setLightStack(newValue);
+      mainDemo.setLightMaxStack(newValue);
       lightStack.blur(); // ensure it's not focused anymore (space-bar issues)
     });
 

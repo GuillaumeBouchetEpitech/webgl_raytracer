@@ -1004,6 +1004,14 @@ export class TestScene3 {
         reflectionFactor: 0.0,
         refractionFactor: 0.0,
     });
+    secondaryScene.gpuMaterialsManager.pushBasicMaterial({
+      materialAlias: materialAlias_sphere_made_of_triangles + 3,
+        color: [1.0,1.0,1.0],
+        castShadowEnabled: false,
+        receiveLightEnabled: false,
+        reflectionFactor: 0.0,
+        refractionFactor: 0.0,
+    });
 
     const vertices = graphics.geometries.makeSphere(1, 2.5);
 
@@ -1041,6 +1049,13 @@ export class TestScene3 {
         materialAlias,
       });
     }
+
+    secondaryScene.gpuShapesManager.pushSphere({
+      position: [0,0,0],
+      orientation: [0,0,1,0],
+      radius: 2.3,
+      materialAlias: materialAlias_sphere_made_of_triangles + 3,
+    });
 
     secondaryScene.markAsDirty();
   }

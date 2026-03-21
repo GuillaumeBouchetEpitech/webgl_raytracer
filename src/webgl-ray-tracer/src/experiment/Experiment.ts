@@ -511,14 +511,14 @@ export class Experiment {
     this._onResolutionChange = inCallback;
   }
 
-  setSceneStack(inValue: number) {
+  setSceneMaxStack(inValue: number) {
     const safeValue = system.math.clamp(inValue, 1, 7); // [1..7]
-    this._renderer.rayTracerRenderer.setSceneStack(safeValue);
+    this._renderer.rayTracerRenderer.setSceneMaxStack(safeValue);
   }
 
-  setLightStack(inValue: number) {
+  setLightMaxStack(inValue: number) {
     const safeValue = system.math.clamp(inValue, 1, 5); // [1..5]
-    this._renderer.rayTracerRenderer.setLightStack(safeValue);
+    this._renderer.rayTracerRenderer.setLightMaxStack(safeValue);
   }
 
   setPhysicDebugModeEnabled(isEnabled: boolean) {

@@ -24,8 +24,8 @@ export interface IRayTracerRenderer {
   setResolutionCoef(inResolutionCoef: number): void;
   getResolutionCoef(): number;
 
-  setSceneStack(inValue: number): void;
-  setLightStack(inValue: number): void;
+  setSceneMaxStack(inValue: number): void;
+  setLightMaxStack(inValue: number): void;
 
   // setAntiAliasing(enabled: boolean): void;
   // getAntiAliasing(): boolean;
@@ -122,11 +122,11 @@ export class RayTracerRenderer implements IRayTracerRenderer {
     return this._resolutionCoef;
   }
 
-  setSceneStack(inValue: number): void {
-    this._rayTracerPass.setSceneStack(inValue);
+  setSceneMaxStack(inValue: number): void {
+    this._rayTracerPass.setSceneMaxStack(inValue);
   }
-  setLightStack(inValue: number): void {
-    this._rayTracerPass.setLightStack(inValue);
+  setLightMaxStack(inValue: number): void {
+    this._rayTracerPass.setLightMaxStack(inValue);
   }
 
   // setAntiAliasing(enabled: boolean) {
