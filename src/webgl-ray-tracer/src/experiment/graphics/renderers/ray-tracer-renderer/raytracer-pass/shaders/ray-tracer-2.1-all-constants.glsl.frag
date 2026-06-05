@@ -32,7 +32,6 @@ const int       MAX_LIGHT_STACK_SIZE = 5;
 
 // ideal bvh stack size is >=16 (is now smaller -> a benefit of BVH4 over BVH2)
 const int       MAX_BVH_STACK = 16;
-// const int       MAX_BVH_STACK = 32; // <- safer in case of sub-scenes
 
 const int       MAX_LIGHTS_PER_IMPACT = 5;
 
@@ -42,7 +41,8 @@ const int       MAX_LIGHTS_PER_IMPACT = 5;
 //
 ////
 
-const int   POINT_LIGHTS_ROW_INDEX = 0;
+const int   POINT_POINT_LIGHTS_ROW_INDEX = 0;
+const int   POINT_LIGHTS_BVH_ROW_INDEX = 1;
 const int   ROW_OFFSET_MATERIALS = 0;
 const int   ROW_OFFSET_BVH_NODES = 1;
 const int   ROW_OFFSET_SHAPES_SPHERE = 2;

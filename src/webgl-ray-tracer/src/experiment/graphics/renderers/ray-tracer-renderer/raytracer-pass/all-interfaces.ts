@@ -71,11 +71,13 @@ export type IInternalSubScene = IPublicSubScene;
 //
 //
 
-export interface IPointLight {
+export interface IPublicPointLight {
   position: glm.ReadonlyVec3;
   intensity: number;
   radius: number;
 }
+
+export type IInternalPointLight = IPublicPointLight;
 
 //
 //

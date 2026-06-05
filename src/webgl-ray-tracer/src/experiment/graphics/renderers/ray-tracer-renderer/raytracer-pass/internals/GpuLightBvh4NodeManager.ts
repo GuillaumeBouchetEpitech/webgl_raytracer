@@ -2,13 +2,13 @@
 import { GpuDataTexture2d } from './GpuDataTexture2d';
 
 import { type AABB } from './bvh/bvh2/aabb-utils';
-import { ShapesBvh4TreeNode } from './bvh/bvh4/ShapesBvh4Tree';
+import { LightsBvh4TreeNode } from './bvh/bvh4/LightsBvh4Tree';
 
-export class GpuBvh4NodeManager {
+export class GpuLightBvh4NodeManager {
 
   private _gpuDataTexture2d: GpuDataTexture2d;
 
-  private _allNodes: ShapesBvh4TreeNode[] = [];
+  private _allNodes: LightsBvh4TreeNode[] = [];
 
   constructor(gpuDataTexture2d: GpuDataTexture2d) {
     this._gpuDataTexture2d = gpuDataTexture2d;
@@ -18,7 +18,7 @@ export class GpuBvh4NodeManager {
     this._allNodes.length = 0;
   }
 
-  syncRootNode(inputRootNode?: ShapesBvh4TreeNode) {
+  syncRootNode(inputRootNode?: LightsBvh4TreeNode) {
 
     this._allNodes.length = 0;
 
@@ -26,7 +26,7 @@ export class GpuBvh4NodeManager {
       return;
     }
 
-    const _recFunc = (currNode: ShapesBvh4TreeNode) => {
+    const _recFunc = (currNode: LightsBvh4TreeNode) => {
       this._allNodes.push(currNode);
       currNode._childrenNodes.forEach((currChild) => _recFunc(currChild));
     };
@@ -57,7 +57,7 @@ export class GpuBvh4NodeManager {
           childrenNodeIndex += 1;
         } else if (currNode._leaves[leavesNodeIndex]) {
           tmp_type = 2; // leaf node, test and maybe push to the stack
-          tmp_index = currNode._leaves[leavesNodeIndex].shapeIndex;
+          tmp_index = currNode._leaves[leavesNodeIndex].lightIndex;
           tmp_node = currNode._leaves[leavesNodeIndex];
           leavesNodeIndex += 1;
         }

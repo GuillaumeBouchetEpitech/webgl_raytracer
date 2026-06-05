@@ -1,7 +1,7 @@
 
 import * as glm from 'gl-matrix';
 
-import { IInternalBox, IInternalSphere, IInternalTriangle, IInternalSubScene } from '../../../all-interfaces';
+import { IInternalBox, IInternalSphere, IInternalTriangle, IInternalSubScene, IInternalPointLight } from '../../../all-interfaces';
 
 import { type MutableAABB } from './aabb-utils';
 import { Bvh2TreeNode } from './Bvh2TreeNode';
@@ -9,6 +9,11 @@ import { Bvh2Tree } from './Bvh2Tree';
 
 const k_minDelta = 0.01;
 
+// export interface IPointLight extends MutableAABB {
+//   lightIndex: number;
+//   type: 'point-light';
+//   shape: IInternalPointLight;
+// };
 export interface ISphereShape extends MutableAABB {
   shapeIndex: number;
   type: 'sphere';

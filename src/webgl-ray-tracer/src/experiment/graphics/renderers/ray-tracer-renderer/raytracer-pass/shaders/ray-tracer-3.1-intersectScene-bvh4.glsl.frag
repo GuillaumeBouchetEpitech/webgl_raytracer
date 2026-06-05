@@ -50,7 +50,7 @@ bool _intersectSphereShape(
   // sphere-shape-texel[2]:B: <unused>
   // sphere-shape-texel[2]:A: <unused>
 
-  int baseIndex = 1 + sceneIndex * 6;
+  int baseIndex = 2 + sceneIndex * 6;
 
   vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, baseIndex + ROW_OFFSET_SHAPES_SPHERE), 0);
 
@@ -169,7 +169,7 @@ bool _intersectBoxShape(
   // box-shape-texel[2]:B: boxSize.y
   // box-shape-texel[2]:A: boxSize.z
 
-  int baseIndex = 1 + sceneIndex * 6;
+  int baseIndex = 2 + sceneIndex * 6;
 
   vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, baseIndex + ROW_OFFSET_SHAPES_BOX), 0);
 
@@ -287,7 +287,7 @@ bool _intersectTriangleShape(
   // triangle-shape-texel[2]:B: triangle2.z
   // triangle-shape-texel[2]:A: <unused>
 
-  int baseIndex = 1 + sceneIndex * 6;
+  int baseIndex = 2 + sceneIndex * 6;
 
   vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 3 + 0, baseIndex + ROW_OFFSET_SHAPES_TRIANGLE), 0);
 
@@ -479,7 +479,7 @@ void _intersectSubSceneShape(
   // sub-scene-shape-texel[1]:B: quat.z
   // sub-scene-shape-texel[1]:A: quat.w
 
-  int rootBaseIndex = 1;
+  int rootBaseIndex = 2;
 
   vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 2 + 0, rootBaseIndex + ROW_OFFSET_SHAPES_SUB_SCENE), 0);
   vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 2 + 1, rootBaseIndex + ROW_OFFSET_SHAPES_SUB_SCENE), 0);
@@ -508,18 +508,18 @@ void _intersectSubSceneShape(
 
   subRay.invDirection = 1.0 / subRay.direction;
 
-  int baseIndex = 1 + subSceneIndex * 6;
+  int baseIndex = 2 + subSceneIndex * 6;
 
   // push bvh node index on to the stack
-  g_subBvhStack[0] = 0; // sub-scene root node
-  int subBvhStackTopIndex = 0;
+  g_bvhSubShapesStack[0] = 0; // sub-scene root node
+  int bvhSubShapeStackTopIndex = 0;
 
-  while (subBvhStackTopIndex >= 0)
+  while (bvhSubShapeStackTopIndex >= 0)
   {
 
     // pop bvh stack
-    int subNodeIndex = g_subBvhStack[subBvhStackTopIndex];
-    subBvhStackTopIndex -= 1;
+    int subNodeIndex = g_bvhSubShapesStack[bvhSubShapeStackTopIndex];
+    bvhSubShapeStackTopIndex -= 1;
 
     // BVH-node-texel[0]:R: node0 node type
     // BVH-node-texel[0]:G: node0 node index
@@ -583,15 +583,15 @@ void _intersectSubSceneShape(
     vec3 val3_AabbMin = vec3(rootNodeTexel6.b, rootNodeTexel6.a, rootNodeTexel7.r);
     vec3 val3_AabbMax = vec3(rootNodeTexel7.g, rootNodeTexel7.b, rootNodeTexel7.a);
 
-    float allNodeDistance[4];
-    int   allNodeTypes[4];
-    int   allNodeIndices[4];
-    int   nodeWriteIndex = 0;
+    float allNodesDistance[4];
+    int   allNodesTypes[4];
+    int   allNodesIndices[4];
+    int   allNodesWriteIndex = 0;
 
-    allNodeDistance[0] = FAR_VALUE;
-    allNodeDistance[1] = FAR_VALUE;
-    allNodeDistance[2] = FAR_VALUE;
-    allNodeDistance[3] = FAR_VALUE;
+    allNodesDistance[0] = FAR_VALUE;
+    allNodesDistance[1] = FAR_VALUE;
+    allNodesDistance[2] = FAR_VALUE;
+    allNodesDistance[3] = FAR_VALUE;
 
     // accumulate  aabb intersection data
     float tmpAabbDistance;
@@ -600,10 +600,10 @@ void _intersectSubSceneShape(
       rayIntersectBvhAABB(subRay, val0_AabbMin, val0_AabbMax, tmpAabbDistance) &&
       tmpAabbDistance < outBestResult.distance
     ) {
-      allNodeDistance[nodeWriteIndex] = tmpAabbDistance;
-      allNodeTypes[nodeWriteIndex]    = val0_NodeType;
-      allNodeIndices[nodeWriteIndex]  = val0_NodeIndex;
-      ++nodeWriteIndex;
+      allNodesDistance[allNodesWriteIndex] = tmpAabbDistance;
+      allNodesTypes[allNodesWriteIndex]    = val0_NodeType;
+      allNodesIndices[allNodesWriteIndex]  = val0_NodeIndex;
+      ++allNodesWriteIndex;
     }
 
     if (
@@ -611,10 +611,10 @@ void _intersectSubSceneShape(
       rayIntersectBvhAABB(subRay, val1_AabbMin, val1_AabbMax, tmpAabbDistance) &&
       tmpAabbDistance < outBestResult.distance
     ) {
-      allNodeDistance[nodeWriteIndex] = tmpAabbDistance;
-      allNodeTypes[nodeWriteIndex]    = val1_NodeType;
-      allNodeIndices[nodeWriteIndex]  = val1_NodeIndex;
-      ++nodeWriteIndex;
+      allNodesDistance[allNodesWriteIndex] = tmpAabbDistance;
+      allNodesTypes[allNodesWriteIndex]    = val1_NodeType;
+      allNodesIndices[allNodesWriteIndex]  = val1_NodeIndex;
+      ++allNodesWriteIndex;
     }
 
     if (
@@ -622,10 +622,10 @@ void _intersectSubSceneShape(
       rayIntersectBvhAABB(subRay, val2_AabbMin, val2_AabbMax, tmpAabbDistance) &&
       tmpAabbDistance < outBestResult.distance
     ) {
-      allNodeDistance[nodeWriteIndex] = tmpAabbDistance;
-      allNodeTypes[nodeWriteIndex]    = val2_NodeType;
-      allNodeIndices[nodeWriteIndex]  = val2_NodeIndex;
-      ++nodeWriteIndex;
+      allNodesDistance[allNodesWriteIndex] = tmpAabbDistance;
+      allNodesTypes[allNodesWriteIndex]    = val2_NodeType;
+      allNodesIndices[allNodesWriteIndex]  = val2_NodeIndex;
+      ++allNodesWriteIndex;
     }
 
     if (
@@ -633,10 +633,10 @@ void _intersectSubSceneShape(
       rayIntersectBvhAABB(subRay, val3_AabbMin, val3_AabbMax, tmpAabbDistance) &&
       tmpAabbDistance < outBestResult.distance
     ) {
-      allNodeDistance[nodeWriteIndex] = tmpAabbDistance;
-      allNodeTypes[nodeWriteIndex]    = val3_NodeType;
-      allNodeIndices[nodeWriteIndex]  = val3_NodeIndex;
-      ++nodeWriteIndex;
+      allNodesDistance[allNodesWriteIndex] = tmpAabbDistance;
+      allNodesTypes[allNodesWriteIndex]    = val3_NodeType;
+      allNodesIndices[allNodesWriteIndex]  = val3_NodeIndex;
+      ++allNodesWriteIndex;
     }
 
     // crude unrolled sort - start
@@ -647,11 +647,11 @@ void _intersectSubSceneShape(
       valB = tmpVal; \
     }
     #define MAYBE_SWAP(a, b) \
-      if (allNodeDistance[a] > allNodeDistance[b]) \
+      if (allNodesDistance[a] > allNodesDistance[b]) \
       { \
-        DO_SWAP(float, allNodeDistance[a], allNodeDistance[b]) \
-        DO_SWAP(int, allNodeTypes[a], allNodeTypes[b]) \
-        DO_SWAP(int, allNodeIndices[a], allNodeIndices[b]) \
+        DO_SWAP(float, allNodesDistance[a], allNodesDistance[b]) \
+        DO_SWAP(int, allNodesTypes[a], allNodesTypes[b]) \
+        DO_SWAP(int, allNodesIndices[a], allNodesIndices[b]) \
       }
 
     MAYBE_SWAP(0, 1)
@@ -663,32 +663,32 @@ void _intersectSubSceneShape(
     #undef DO_SWAP
     // crude unrolled sort - end
 
-    for (int ii = nodeWriteIndex - 1; ii >= 0; --ii) {
+    for (int ii = allNodesWriteIndex - 1; ii >= 0; --ii) {
 
-      if (allNodeDistance[ii] > outBestResult.distance) {
+      if (allNodesDistance[ii] > outBestResult.distance) {
         break;
       }
 
       // is bvh4 node?
-      if (allNodeTypes[ii] == 1) {
+      if (allNodesTypes[ii] == 1) {
         if (
           // has enough space left on the stack
-          subBvhStackTopIndex + 1 < MAX_BVH_STACK
+          bvhSubShapeStackTopIndex + 1 < MAX_BVH_STACK
         ) {
           // push bvh node index on to the stack
-          subBvhStackTopIndex += 1;
-          g_subBvhStack[subBvhStackTopIndex] = allNodeIndices[ii];
+          bvhSubShapeStackTopIndex += 1;
+          g_bvhSubShapesStack[bvhSubShapeStackTopIndex] = allNodesIndices[ii];
         }
       }
       // is bvh4 leaf?
-      else if (allNodeTypes[ii] == 2) {
+      else if (allNodesTypes[ii] == 2) {
         if (
           // is the node "not a sub-scene"?
-          allNodeIndices[ii] < 3000 &&
+          allNodesIndices[ii] < 3000 &&
           // is not "to be ignored"
-          allNodeIndices[ii] != toIgnoreShapeIndex
+          allNodesIndices[ii] != toIgnoreShapeIndex
         ) {
-          bool hasHit = intersectSceneOneShape(subSceneIndex, allNodeIndices[ii], subRay, outBestResult, shadowCastingMode);
+          bool hasHit = intersectSceneOneShape(subSceneIndex, allNodesIndices[ii], subRay, outBestResult, shadowCastingMode);
           if (hasHit)
           {
             subSceneHasHit = true;
@@ -740,16 +740,16 @@ bool intersectScene(
   // use BVH optimization -> traverse the nodes and their associated AABB
   // -> this should reduce the total number intersections executed
 
-  g_bvhStack[0] = 0; // start with the root BVH node index
-  int bvhStackTopIndex = 0;
+  g_bvhShapeStack[0] = 0; // start with the root BVH node index
+  int bvhShapeStackTopIndex = 0;
 
-  int baseIndex = 1;
+  int baseIndex = 2;
 
-  while (bvhStackTopIndex >= 0)
+  while (bvhShapeStackTopIndex >= 0)
   {
     // pop bvh stack
-    int nodeIndex = g_bvhStack[bvhStackTopIndex];
-    bvhStackTopIndex -= 1;
+    int nodeIndex = g_bvhShapeStack[bvhShapeStackTopIndex];
+    bvhShapeStackTopIndex -= 1;
 
     // BVH-node-texel[0]:R: node0 node type
     // BVH-node-texel[0]:G: node0 node index
@@ -813,63 +813,69 @@ bool intersectScene(
     vec3 val3_AabbMin = vec3(rootNodeTexel6.b, rootNodeTexel6.a, rootNodeTexel7.r);
     vec3 val3_AabbMax = vec3(rootNodeTexel7.g, rootNodeTexel7.b, rootNodeTexel7.a);
 
-    float allNodeDistance[4];
-    int   allNodeTypes[4];
-    int   allNodeIndices[4];
-    int   nodeWriteIndex = 0;
+    float allNodesDistance[4];
+    int   allNodesTypes[4];
+    int   allNodesIndices[4];
+    int   allNodesWriteIndex = 0;
 
-    allNodeDistance[0] = FAR_VALUE;
-    allNodeDistance[1] = FAR_VALUE;
-    allNodeDistance[2] = FAR_VALUE;
-    allNodeDistance[3] = FAR_VALUE;
+    allNodesDistance[0] = FAR_VALUE;
+    allNodesDistance[1] = FAR_VALUE;
+    allNodesDistance[2] = FAR_VALUE;
+    allNodesDistance[3] = FAR_VALUE;
 
-    // accumulate  aabb intersection data
+    // accumulate aabb intersection data (0)
     float tmpAabbDistance;
     if (
       val0_NodeType > 0 &&
       rayIntersectBvhAABB(inRay, val0_AabbMin, val0_AabbMax, tmpAabbDistance) &&
       tmpAabbDistance < outBestResult.distance
     ) {
-      allNodeDistance[nodeWriteIndex] = tmpAabbDistance;
-      allNodeTypes[nodeWriteIndex]    = val0_NodeType;
-      allNodeIndices[nodeWriteIndex]  = val0_NodeIndex;
-      ++nodeWriteIndex;
+      allNodesDistance[allNodesWriteIndex] = tmpAabbDistance;
+      allNodesTypes[allNodesWriteIndex]    = val0_NodeType;
+      allNodesIndices[allNodesWriteIndex]  = val0_NodeIndex;
+      ++allNodesWriteIndex;
     }
 
+    // accumulate aabb intersection data (1)
     if (
       val1_NodeType > 0 &&
       rayIntersectBvhAABB(inRay, val1_AabbMin, val1_AabbMax, tmpAabbDistance) &&
       tmpAabbDistance < outBestResult.distance
     ) {
-      allNodeDistance[nodeWriteIndex] = tmpAabbDistance;
-      allNodeTypes[nodeWriteIndex]    = val1_NodeType;
-      allNodeIndices[nodeWriteIndex]  = val1_NodeIndex;
-      ++nodeWriteIndex;
+      allNodesDistance[allNodesWriteIndex] = tmpAabbDistance;
+      allNodesTypes[allNodesWriteIndex]    = val1_NodeType;
+      allNodesIndices[allNodesWriteIndex]  = val1_NodeIndex;
+      ++allNodesWriteIndex;
     }
 
+    // accumulate aabb intersection data (2)
     if (
       val2_NodeType > 0 &&
       rayIntersectBvhAABB(inRay, val2_AabbMin, val2_AabbMax, tmpAabbDistance) &&
       tmpAabbDistance < outBestResult.distance
     ) {
-      allNodeDistance[nodeWriteIndex] = tmpAabbDistance;
-      allNodeTypes[nodeWriteIndex]    = val2_NodeType;
-      allNodeIndices[nodeWriteIndex]  = val2_NodeIndex;
-      ++nodeWriteIndex;
+      allNodesDistance[allNodesWriteIndex] = tmpAabbDistance;
+      allNodesTypes[allNodesWriteIndex]    = val2_NodeType;
+      allNodesIndices[allNodesWriteIndex]  = val2_NodeIndex;
+      ++allNodesWriteIndex;
     }
 
+    // accumulate aabb intersection data (3)
     if (
       val3_NodeType > 0 &&
       rayIntersectBvhAABB(inRay, val3_AabbMin, val3_AabbMax, tmpAabbDistance) &&
       tmpAabbDistance < outBestResult.distance
     ) {
-      allNodeDistance[nodeWriteIndex] = tmpAabbDistance;
-      allNodeTypes[nodeWriteIndex]    = val3_NodeType;
-      allNodeIndices[nodeWriteIndex]  = val3_NodeIndex;
-      ++nodeWriteIndex;
+      allNodesDistance[allNodesWriteIndex] = tmpAabbDistance;
+      allNodesTypes[allNodesWriteIndex]    = val3_NodeType;
+      allNodesIndices[allNodesWriteIndex]  = val3_NodeIndex;
+      ++allNodesWriteIndex;
     }
 
+    //
     // crude unrolled sort - start
+    // -> from "farthest" to "closest" shape
+
     #define DO_SWAP(valType, valA, valB) \
     { \
       valType tmpVal = valA; \
@@ -877,11 +883,11 @@ bool intersectScene(
       valB = tmpVal; \
     }
     #define MAYBE_SWAP(a, b) \
-      if (allNodeDistance[a] > allNodeDistance[b]) \
+      if (allNodesDistance[a] > allNodesDistance[b]) \
       { \
-        DO_SWAP(float, allNodeDistance[a], allNodeDistance[b]) \
-        DO_SWAP(int, allNodeTypes[a], allNodeTypes[b]) \
-        DO_SWAP(int, allNodeIndices[a], allNodeIndices[b]) \
+        DO_SWAP(float, allNodesDistance[a], allNodesDistance[b]) \
+        DO_SWAP(int, allNodesTypes[a], allNodesTypes[b]) \
+        DO_SWAP(int, allNodesIndices[a], allNodesIndices[b]) \
       }
 
     MAYBE_SWAP(0, 1)
@@ -891,42 +897,48 @@ bool intersectScene(
     MAYBE_SWAP(1, 2)
     #undef MAYBE_SWAP
     #undef DO_SWAP
+
     // crude unrolled sort - end
+    //
 
-    for (int ii = nodeWriteIndex - 1; ii >= 0; --ii) {
+    // unroll from the end -> start with "closest" and finished with "farthest"
+    for (int ii = allNodesWriteIndex - 1; ii >= 0; --ii) {
 
-      if (allNodeDistance[ii] > outBestResult.distance) {
+      // check if this bvh4 node is worth exploring
+      if (allNodesDistance[ii] > outBestResult.distance) {
+        // if this bvh4 node too far, we skip all the remaining nodes
+        // -> the following bvh4 nodes will be even farther
+        // ---> since we sorted them from closest to farthest the following
         break;
       }
 
       // is bvh4 node?
-      if (allNodeTypes[ii] == 1) {
+      if (allNodesTypes[ii] == 1) {
         if (
           // has enough space left on the stack
-          bvhStackTopIndex + 1 < MAX_BVH_STACK
+          bvhShapeStackTopIndex + 1 < MAX_BVH_STACK
         ) {
           // push bvh node index on to the stack
-          bvhStackTopIndex += 1;
-          g_bvhStack[bvhStackTopIndex] = allNodeIndices[ii];
+          bvhShapeStackTopIndex += 1;
+          g_bvhShapeStack[bvhShapeStackTopIndex] = allNodesIndices[ii];
         }
       }
       // is bvh4 leaf?
-      else if (allNodeTypes[ii] == 2) {
+      else if (allNodesTypes[ii] == 2) {
         if (
           // is the node not a sub-scene?
-          allNodeIndices[ii] < 3000 &&
+          allNodesIndices[ii] < 3000 &&
           // is not ignored
-          allNodeIndices[ii] != toIgnoreShapeIndex
+          allNodesIndices[ii] != toIgnoreShapeIndex
         ) {
-          intersectSceneOneShape(0, allNodeIndices[ii], inRay, outBestResult, shadowCastingMode);
-          // outBestResult.sceneIndex = sceneIndex;
+          intersectSceneOneShape(0, allNodesIndices[ii], inRay, outBestResult, shadowCastingMode);
         }
         else if (
           // is the node a sub-scene?
-          allNodeIndices[ii] >= 3000 && allNodeIndices[ii] < 4000
+          allNodesIndices[ii] >= 3000 && allNodesIndices[ii] < 4000
         ) {
           _intersectSubSceneShape(
-            allNodeIndices[ii] - 3000,
+            allNodesIndices[ii] - 3000,
             inRay,
             outBestResult,
             toIgnoreShapeIndex,

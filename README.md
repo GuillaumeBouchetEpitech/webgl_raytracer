@@ -1,18 +1,24 @@
 # Webgl Raytracer
 
-## Live Demo
+---
 
-### Disclaimer(s)
-* It might not work well on smartphones
-* Chromium based web browsers behave the best so far
-* Click the canvas for free fly camera controls
-* The resolution will be scaled down if performance issues arise
+## Online Demo Link
 
-### Demo
-Beyond that: [follow that link to see for yourself](http://guillaumebouchetepitech.github.io/webgl_raytracer/index.html).
+**`/!\ important /!\`**
 
-### Demo2
-Some failed experiment: [link to failed demo](http://guillaumebouchetepitech.github.io/webgl_raytracer/dist-failed-experiment/index.html).
+http://guillaumebouchetepitech.github.io/webgl_raytracer/index.html
+
+**`/!\ important /!\`**
+
+---
+
+## Description
+
+Real time Ray Tracer running on the GPU using WebGL2
+* It works best on desktops/laptops (as opposed to smartphones)
+* Chromium based web browsers behave the best so far (Chrome, Brave, Chromium...)
+* The canvas can be clicked to use the free fly camera controls
+* The resolution will be automatically scaled down in case of performance issues
 
 ## Physic Engine Used
 
@@ -62,7 +68,7 @@ npm run debug
 
 ## Main data texture description
 
-* **Dimensions:** 2048x6
+* **Dimensions:** 2048 x 6? (<- the texture height is dynamic, as in "on demand")
 * **Type:** 2D texture
 * **Format:** RGBA32F
 
@@ -77,12 +83,24 @@ All data texture rows:
 
 | row index | row type        |
 |-----------|-----------------|
-|         0 | materials       |
-|         1 | sphere shapes   |
-|         2 | box shapes      |
-|         3 | triangle shapes |
-|         4 | point lights    |
-|         5 | bvh tree nodes  |
+|         0 | point lights    |
+|         1 | materials       |
+|         2 | bvh tree nodes  |
+|         3 | sphere shapes   |
+|         4 | box shapes      |
+|         5 | triangle shapes |
+|         6 | sub scenes      |
+
+any extra sub-scene data texture rows (sub scene index as 'Y'):
+
+| row index   | row type        |
+|-------------|-----------------|
+| 6 x 'Y' + 0 | materials       |
+| 6 x 'Y' + 1 | bvh tree nodes  |
+| 6 x 'Y' + 2 | sphere shapes   |
+| 6 x 'Y' + 3 | box shapes      |
+| 6 x 'Y' + 4 | triangle shapes |
+| 6 x 'Y' + 5 | sub scenes      |
 
 Material row values (row index: 0)
 ```
@@ -136,9 +154,9 @@ box-shape-texel[1]:G: quat.x
 box-shape-texel[1]:B: quat.y
 box-shape-texel[1]:A: quat.z
 box-shape-texel[2]:R: quat.w
-box-shape-texel[2]:G: boxSize.x
-box-shape-texel[2]:B: boxSize.y
-box-shape-texel[2]:A: boxSize.z
+box-shape-texel[2]:G: size.x
+box-shape-texel[2]:B: size.y
+box-shape-texel[2]:A: size.z
 ```
 
 Triangle shapes row values (row index: 3)
@@ -146,15 +164,15 @@ Triangle shapes row values (row index: 3)
 3 x vec4f
 triangle-shape-texel[0]:R: can cast shadow (0 or 1)
 triangle-shape-texel[0]:G: material index
-triangle-shape-texel[0]:B: triangle0.x
-triangle-shape-texel[0]:A: triangle0.y
-triangle-shape-texel[1]:R: triangle0.z
-triangle-shape-texel[1]:G: triangle1.x
-triangle-shape-texel[1]:B: triangle1.y
-triangle-shape-texel[1]:A: triangle1.z
-triangle-shape-texel[2]:R: triangle2.x
-triangle-shape-texel[2]:G: triangle2.y
-triangle-shape-texel[2]:B: triangle2.z
+triangle-shape-texel[0]:B: vertex0.x
+triangle-shape-texel[0]:A: vertex0.y
+triangle-shape-texel[1]:R: vertex0.z
+triangle-shape-texel[1]:G: vertex1.x
+triangle-shape-texel[1]:B: vertex1.y
+triangle-shape-texel[1]:A: vertex1.z
+triangle-shape-texel[2]:R: vertex2.x
+triangle-shape-texel[2]:G: vertex2.y
+triangle-shape-texel[2]:B: vertex2.z
 triangle-shape-texel[2]:A: <unused>
 ```
 

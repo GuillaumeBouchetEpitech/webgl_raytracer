@@ -85,7 +85,7 @@ vec3 castInitialRay(in vec3 rayDir)
     int materialIndex = g_sceneStack[sceneStackReadIndex].result.materialIndex;
     int sceneIndex = g_sceneStack[sceneStackReadIndex].result.sceneIndex;
 
-    int baseIndex = 1 + sceneIndex * 6;
+    int baseIndex = 2 + sceneIndex * 6;
 
     // material-texel[0]:R: material type (0=basic or 1=chessboard)
     // material-texel[0]:G: can cast shadows (0 or 1)
@@ -263,7 +263,8 @@ vec3 castInitialRay(in vec3 rayDir)
 
     // handle any connected reflection
     int reflectionIndex = g_sceneStack[sceneStackReadIndex].reflectionIndex;
-    if (reflectionIndex != -1)
+    // if (reflectionIndex != -1)
+    if (reflectionIndex >= 0)
     {
       float reflectionFactor = g_sceneStack[sceneStackReadIndex].result.reflectionFactor;
       g_sceneStack[sceneStackReadIndex].color.xyz =

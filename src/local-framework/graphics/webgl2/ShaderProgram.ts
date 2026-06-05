@@ -88,11 +88,14 @@ export class ShaderProgram {
 
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       // An error occurred while linking
-      const lastError = gl.getProgramInfoLog(program);
+      let error_str = gl.getProgramInfoLog(program);
+      if (!error_str) {
+        error_str = 'shader error, failed to link a program';
+      } else {
+        error_str = `shader error, failed to link a program:\n${error_str}`;
+      }
 
-      throw new Error(
-        'Failed to initialized shaders, Error linking:' + lastError
-      );
+      throw new Error(error_str);
     }
 
     this._program = program;
@@ -279,7 +282,11 @@ export class ShaderProgram {
 
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
       let error_str = gl.getShaderInfoLog(shader);
-      if (!error_str) error_str = 'failed to compile a shader';
+      if (!error_str) {
+        error_str = 'failed to compile a shader';
+      } else {
+        error_str = `failed to compile a shader:\n${error_str}`;
+      }
 
       throw new Error(error_str);
     }

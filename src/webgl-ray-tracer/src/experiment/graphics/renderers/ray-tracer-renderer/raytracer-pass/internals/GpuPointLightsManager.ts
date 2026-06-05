@@ -5,12 +5,12 @@ import * as allInterfaces from '../all-interfaces';
 import * as glm from "gl-matrix"
 
 export interface IGpuPointLightsManager {
-  pushPointLight({ position, intensity, radius }: allInterfaces.IPointLight): void;
+  pushPointLight({ position, intensity, radius }: allInterfaces.IPublicPointLight): void;
 }
 
 export class GpuPointLightsManager implements IGpuPointLightsManager {
 
-  private _pointLights: allInterfaces.IPointLight[] = [];
+  private _pointLights: allInterfaces.IPublicPointLight[] = [];
   private _gpuDataTexture2d: GpuDataTexture2d;
 
   constructor(gpuDataTexture2d: GpuDataTexture2d) {
@@ -18,7 +18,7 @@ export class GpuPointLightsManager implements IGpuPointLightsManager {
   }
 
 
-  pushPointLight({ position, intensity, radius }: allInterfaces.IPointLight): void {
+  pushPointLight({ position, intensity, radius }: allInterfaces.IPublicPointLight): void {
     // add point light
 
     if (intensity <= 0) {
@@ -64,7 +64,7 @@ export class GpuPointLightsManager implements IGpuPointLightsManager {
 
   }
 
-  get pointLights(): ReadonlyArray<allInterfaces.IPointLight> {
+  get pointLights(): ReadonlyArray<allInterfaces.IPublicPointLight> {
     return this._pointLights;
   }
 
