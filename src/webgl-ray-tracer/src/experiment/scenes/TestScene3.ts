@@ -845,12 +845,12 @@ export class TestScene3 {
         //   intensity: 2,
         //   radius: 20
         // });
-        primaryScene.gpuShapesManager.pushSphere({
-          position: [-10+1*7,5+1*7,+15],
-          orientation: glm.quat.identity(glm.quat.create()),
-          radius: 0.06125,
-          materialAlias: 666,
-        });
+        // primaryScene.gpuShapesManager.pushSphere({
+        //   position: [-10+1*7,5+1*7,+15],
+        //   orientation: glm.quat.identity(glm.quat.create()),
+        //   radius: 0.06125,
+        //   materialAlias: 666,
+        // });
 
       }
 
@@ -983,24 +983,24 @@ export class TestScene3 {
     secondaryScene.gpuMaterialsManager.pushBasicMaterial({
       materialAlias: materialAlias_sphere_made_of_triangles,
         color: [1.0,0.0,0.0],
-        castShadowEnabled: true,
-        receiveLightEnabled: true,
+        castShadowEnabled: false,
+        receiveLightEnabled: false,
         reflectionFactor: 0.0,
         refractionFactor: 0.0,
     });
     secondaryScene.gpuMaterialsManager.pushBasicMaterial({
       materialAlias: materialAlias_sphere_made_of_triangles + 1,
         color: [0.0,1.0,0.0],
-        castShadowEnabled: true,
-        receiveLightEnabled: true,
+        castShadowEnabled: false,
+        receiveLightEnabled: false,
         reflectionFactor: 0.0,
         refractionFactor: 0.0,
     });
     secondaryScene.gpuMaterialsManager.pushBasicMaterial({
       materialAlias: materialAlias_sphere_made_of_triangles + 2,
         color: [0.0,0.0,1.0],
-        castShadowEnabled: true,
-        receiveLightEnabled: true,
+        castShadowEnabled: false,
+        receiveLightEnabled: false,
         reflectionFactor: 0.0,
         refractionFactor: 0.0,
     });
@@ -1034,8 +1034,8 @@ export class TestScene3 {
       if ((index % (3 * 3)) === 3) {
         materialAlias = materialAlias_sphere_made_of_triangles + 1;
       } else if ((index % (3 * 3)) === 6) {
-        // materialAlias = materialAlias_sphere_made_of_triangles + 2;
-        continue
+        materialAlias = materialAlias_sphere_made_of_triangles + 2;
+        // continue
       }
 
       const v0 = positions2[index + 0];
