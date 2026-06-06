@@ -164,6 +164,7 @@ const onPageLoad = async () => {
     graphics.webgl2.WebGLContext.initialize(canvasElement);
 
     logger.log('[SETUP] initialize (will compile shaders)');
+    const startTime = Date.now();
     await system.utilities.AsyncHelpers.sleep(1);
     mainDemo = new Experiment({
       domElement: canvasElement,
@@ -171,7 +172,9 @@ const onPageLoad = async () => {
       height: canvasElement.height,
       logger,
     });
-    logger.log('[SETUP] initialized');
+    const endTime = Date.now();
+    const deltaTime = endTime - startTime;
+    logger.log(`[SETUP] initialized (${deltaTime / 1000}sec)`);
     await system.utilities.AsyncHelpers.sleep(1);
 
     mainDemo.setResolution(8);

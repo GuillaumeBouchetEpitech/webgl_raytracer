@@ -458,7 +458,9 @@ bool rayIntersectBvhAABB(RayValues ray, vec3 bvhMin, vec3 bvhMax, out float outD
 //
 //
 
-// MARK: sub scene
+#if 0
+
+// MARK: sub scene (old)
 void _intersectSubSceneShape(
   int shapeIndex,
   RayValues inRay,
@@ -508,7 +510,7 @@ void _intersectSubSceneShape(
 
   subRay.invDirection = 1.0 / subRay.direction;
 
-  int baseIndex = 2 + subSceneIndex * 6;
+  int baseIndex = rootBaseIndex + subSceneIndex * 6;
 
   // push bvh node index on to the stack
   g_bvhSubShapesStack[0] = 0; // sub-scene root node
@@ -711,25 +713,25 @@ void _intersectSubSceneShape(
   }
 }
 
-//
-//
-//
-//
-//
 
-//
-//
-//
-//
-//
 
-//
-//
-//
-//
-//
 
-// MARK: intersectScene
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// MARK: intersectScene (old)
 bool intersectScene(
   RayValues inRay,
   inout RayResult outBestResult,
@@ -957,3 +959,326 @@ bool intersectScene(
   return outBestResult.hasHit;
 }
 
+#else
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
+//
+//
+//
+//
+//
+
+// MARK: intersectScene (new)
+bool intersectScene(
+  RayValues inRay,
+  inout RayResult outBestResult,
+  bool shadowCastingMode,
+  int toIgnoreShapeIndex
+) {
+
+  // use BVH optimization -> traverse the nodes and their associated AABB
+  // -> this should reduce the total number intersections executed
+
+  g_bvhShapeStack[0] = 0; // start with the root BVH node index
+  int bvhShapeStackTopIndex = 0;
+
+  RayValues _bvhStack_ray[MAX_BVH_STACK];
+  int _bvhStack_subSceneIndex[MAX_BVH_STACK];
+  // vec3 _bvhStack_center[MAX_BVH_STACK];
+  vec4 _bvhStack_orientation[MAX_BVH_STACK];
+
+  _bvhStack_ray[0] = inRay;
+  _bvhStack_subSceneIndex[0] = 0;
+  // _bvhStack_orientation[0] = vec4(0,0,0,1);
+
+  int rootBaseIndex = 2;
+
+  while (bvhShapeStackTopIndex >= 0)
+  {
+    // pop bvh stack
+    int nodeIndex = g_bvhShapeStack[bvhShapeStackTopIndex];
+    RayValues currRay = _bvhStack_ray[bvhShapeStackTopIndex];
+    int currSceneIndex = _bvhStack_subSceneIndex[bvhShapeStackTopIndex];
+    vec4 currOrientation = _bvhStack_orientation[bvhShapeStackTopIndex];
+
+    bvhShapeStackTopIndex -= 1;
+
+    int baseIndex = rootBaseIndex + currSceneIndex * 6;
+
+    // BVH-node-texel[0]:R: node0 node type
+    // BVH-node-texel[0]:G: node0 node index
+    // BVH-node-texel[0]:B: node0 min.x
+    // BVH-node-texel[0]:A: node0 min.y
+    // BVH-node-texel[1]:R: node0 min.z
+    // BVH-node-texel[1]:G: node0 max.x
+    // BVH-node-texel[1]:B: node0 max.y
+    // BVH-node-texel[1]:A: node0 max.z
+    // BVH-node-texel[2]:R: node1 node type
+    // BVH-node-texel[2]:G: node1 node index
+    // BVH-node-texel[2]:B: node1 min.x
+    // BVH-node-texel[2]:A: node1 min.y
+    // BVH-node-texel[3]:R: node1 min.z
+    // BVH-node-texel[3]:G: node1 max.x
+    // BVH-node-texel[3]:B: node1 max.y
+    // BVH-node-texel[3]:A: node1 max.z
+    // BVH-node-texel[4]:R: node2 node type
+    // BVH-node-texel[4]:G: node2 node index
+    // BVH-node-texel[4]:B: node2 min.x
+    // BVH-node-texel[4]:A: node2 min.y
+    // BVH-node-texel[5]:R: node2 min.z
+    // BVH-node-texel[5]:G: node2 max.x
+    // BVH-node-texel[5]:B: node2 max.y
+    // BVH-node-texel[5]:A: node2 max.z
+    // BVH-node-texel[6]:R: node3 node type
+    // BVH-node-texel[6]:G: node3 node index
+    // BVH-node-texel[6]:B: node3 min.x
+    // BVH-node-texel[6]:A: node3 min.y
+    // BVH-node-texel[7]:R: node3 min.z
+    // BVH-node-texel[7]:G: node3 max.x
+    // BVH-node-texel[7]:B: node3 max.y
+    // BVH-node-texel[7]:A: node3 max.z
+
+    vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 0, baseIndex + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 1, baseIndex + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 2, baseIndex + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel3 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 3, baseIndex + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel4 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 4, baseIndex + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel5 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 5, baseIndex + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel6 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 6, baseIndex + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel7 = texelFetch(u_dataTexture, ivec2(nodeIndex * 8 + 7, baseIndex + ROW_OFFSET_BVH_NODES), 0);
+
+    int val0_NodeType = int(rootNodeTexel0.r);
+    int val0_NodeIndex = int(rootNodeTexel0.g);
+    vec3 val0_AabbMin = vec3(rootNodeTexel0.b, rootNodeTexel0.a, rootNodeTexel1.r);
+    vec3 val0_AabbMax = vec3(rootNodeTexel1.g, rootNodeTexel1.b, rootNodeTexel1.a);
+
+    int val1_NodeType = int(rootNodeTexel2.r);
+    int val1_NodeIndex = int(rootNodeTexel2.g);
+    vec3 val1_AabbMin = vec3(rootNodeTexel2.b, rootNodeTexel2.a, rootNodeTexel3.r);
+    vec3 val1_AabbMax = vec3(rootNodeTexel3.g, rootNodeTexel3.b, rootNodeTexel3.a);
+
+    int val2_NodeType = int(rootNodeTexel4.r);
+    int val2_NodeIndex = int(rootNodeTexel4.g);
+    vec3 val2_AabbMin = vec3(rootNodeTexel4.b, rootNodeTexel4.a, rootNodeTexel5.r);
+    vec3 val2_AabbMax = vec3(rootNodeTexel5.g, rootNodeTexel5.b, rootNodeTexel5.a);
+
+    int val3_NodeType = int(rootNodeTexel6.r);
+    int val3_NodeIndex = int(rootNodeTexel6.g);
+    vec3 val3_AabbMin = vec3(rootNodeTexel6.b, rootNodeTexel6.a, rootNodeTexel7.r);
+    vec3 val3_AabbMax = vec3(rootNodeTexel7.g, rootNodeTexel7.b, rootNodeTexel7.a);
+
+    float allNodesDistance[4];
+    int   allNodesTypes[4];
+    int   allNodesIndices[4];
+    int   allNodesWriteIndex = 0;
+
+    allNodesDistance[0] = FAR_VALUE;
+    allNodesDistance[1] = FAR_VALUE;
+    allNodesDistance[2] = FAR_VALUE;
+    allNodesDistance[3] = FAR_VALUE;
+
+    // accumulate aabb intersection data (0)
+    float tmpAabbDistance;
+    if (
+      val0_NodeType > 0 &&
+      rayIntersectBvhAABB(currRay, val0_AabbMin, val0_AabbMax, tmpAabbDistance) &&
+      tmpAabbDistance < outBestResult.distance
+    ) {
+      allNodesDistance[allNodesWriteIndex] = tmpAabbDistance;
+      allNodesTypes[allNodesWriteIndex]    = val0_NodeType;
+      allNodesIndices[allNodesWriteIndex]  = val0_NodeIndex;
+      ++allNodesWriteIndex;
+    }
+
+    // accumulate aabb intersection data (1)
+    if (
+      val1_NodeType > 0 &&
+      rayIntersectBvhAABB(currRay, val1_AabbMin, val1_AabbMax, tmpAabbDistance) &&
+      tmpAabbDistance < outBestResult.distance
+    ) {
+      allNodesDistance[allNodesWriteIndex] = tmpAabbDistance;
+      allNodesTypes[allNodesWriteIndex]    = val1_NodeType;
+      allNodesIndices[allNodesWriteIndex]  = val1_NodeIndex;
+      ++allNodesWriteIndex;
+    }
+
+    // accumulate aabb intersection data (2)
+    if (
+      val2_NodeType > 0 &&
+      rayIntersectBvhAABB(currRay, val2_AabbMin, val2_AabbMax, tmpAabbDistance) &&
+      tmpAabbDistance < outBestResult.distance
+    ) {
+      allNodesDistance[allNodesWriteIndex] = tmpAabbDistance;
+      allNodesTypes[allNodesWriteIndex]    = val2_NodeType;
+      allNodesIndices[allNodesWriteIndex]  = val2_NodeIndex;
+      ++allNodesWriteIndex;
+    }
+
+    // accumulate aabb intersection data (3)
+    if (
+      val3_NodeType > 0 &&
+      rayIntersectBvhAABB(currRay, val3_AabbMin, val3_AabbMax, tmpAabbDistance) &&
+      tmpAabbDistance < outBestResult.distance
+    ) {
+      allNodesDistance[allNodesWriteIndex] = tmpAabbDistance;
+      allNodesTypes[allNodesWriteIndex]    = val3_NodeType;
+      allNodesIndices[allNodesWriteIndex]  = val3_NodeIndex;
+      ++allNodesWriteIndex;
+    }
+
+    //
+    // crude unrolled sort - start
+    // -> from "farthest" to "closest" shape
+
+    #define DO_SWAP(valType, valA, valB) \
+    { \
+      valType tmpVal = valA; \
+      valA = valB; \
+      valB = tmpVal; \
+    }
+    #define MAYBE_SWAP(a, b) \
+      if (allNodesDistance[a] > allNodesDistance[b]) \
+      { \
+        DO_SWAP(float, allNodesDistance[a], allNodesDistance[b]) \
+        DO_SWAP(int, allNodesTypes[a], allNodesTypes[b]) \
+        DO_SWAP(int, allNodesIndices[a], allNodesIndices[b]) \
+      }
+
+    MAYBE_SWAP(0, 1)
+    MAYBE_SWAP(2, 3)
+    MAYBE_SWAP(0, 2)
+    MAYBE_SWAP(1, 3)
+    MAYBE_SWAP(1, 2)
+    #undef MAYBE_SWAP
+    #undef DO_SWAP
+
+    // crude unrolled sort - end
+    //
+
+    // unroll from the end -> start with "closest" and finished with "farthest"
+    for (int ii = allNodesWriteIndex - 1; ii >= 0; --ii) {
+
+      // check if this bvh4 node is worth exploring
+      if (allNodesDistance[ii] > outBestResult.distance) {
+        // if this bvh4 node too far, we skip all the remaining nodes
+        // -> the following bvh4 nodes will be even farther
+        // ---> since we sorted them from closest to farthest the following
+        break;
+      }
+
+      int currNodesIndex = allNodesIndices[ii];
+
+      // is bvh4 node?
+      if (allNodesTypes[ii] == 1) {
+        if (
+          // has enough space left on the stack
+          bvhShapeStackTopIndex + 1 < MAX_BVH_STACK
+        ) {
+          // push bvh node index on to the stack
+          bvhShapeStackTopIndex += 1;
+          g_bvhShapeStack[bvhShapeStackTopIndex] = currNodesIndex;
+          _bvhStack_subSceneIndex[bvhShapeStackTopIndex] = currSceneIndex;
+          _bvhStack_ray[bvhShapeStackTopIndex] = currRay;
+          _bvhStack_orientation[bvhShapeStackTopIndex] = currOrientation;
+        }
+      }
+      // is bvh4 leaf?
+      else if (allNodesTypes[ii] == 2) {
+        if (
+          // is the node not a sub-scene?
+          currNodesIndex < 3000 &&
+          // is not ignored
+          currNodesIndex != toIgnoreShapeIndex
+        ) {
+          bool hasHit = intersectSceneOneShape(currSceneIndex, currNodesIndex, currRay, outBestResult, shadowCastingMode);
+
+          if (hasHit && currSceneIndex > 0)
+          {
+            mat3 normalMatrix = quat_to_mat3(currOrientation);
+
+            // sub-scene space result should be brought in the root scene space
+            outBestResult.position = inRay.origin + inRay.direction * outBestResult.distance;
+            outBestResult.normal = normalMatrix * outBestResult.normal;
+          }
+
+        }
+        else if (
+          // is the node a sub-scene?
+          currNodesIndex >= 3000 && currNodesIndex < 4000
+        ) {
+
+          // _intersectSubSceneShape(
+          //   currNodesIndex - 3000,
+          //   inRay,
+          //   outBestResult,
+          //   toIgnoreShapeIndex,
+          //   shadowCastingMode
+          // );
+
+          if (
+            // has enough space left on the stack
+            bvhShapeStackTopIndex + 1 < MAX_BVH_STACK
+          ) {
+
+            int shapeIndex = currNodesIndex - 3000;
+
+            vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 2 + 0, rootBaseIndex + ROW_OFFSET_SHAPES_SUB_SCENE), 0);
+            vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 2 + 1, rootBaseIndex + ROW_OFFSET_SHAPES_SUB_SCENE), 0);
+
+            int subSceneIndex = int(shTexel0.a);
+
+            vec3 center = vec3(shTexel0.r, shTexel0.g, shTexel0.b);
+            vec4 orientation = vec4(
+              shTexel1.r,
+              shTexel1.g,
+              shTexel1.b,
+              shTexel1.a
+            );
+            mat3 normalMatrix = quat_to_mat3(orientation);
+            mat3 inverseNormalMatrix = inverse(normalMatrix);
+
+            // push bvh node index on to the stack
+            bvhShapeStackTopIndex += 1;
+            g_bvhShapeStack[bvhShapeStackTopIndex] = 0;
+            _bvhStack_subSceneIndex[bvhShapeStackTopIndex] = subSceneIndex;
+            _bvhStack_orientation[bvhShapeStackTopIndex] = orientation;
+
+            // convert ray from world space to sub-scene space
+            RayValues subRay;
+            subRay.origin = (inverseNormalMatrix * (inRay.origin - center));
+            subRay.direction = (inverseNormalMatrix * inRay.direction);
+
+            // ensure the subRay dir components are "not exactly of value 0"
+            subRay.direction = mix(subRay.direction, vec3(-1e-8), equal(subRay.direction, vec3(0.0)));
+
+            subRay.invDirection = 1.0 / subRay.direction;
+
+            _bvhStack_ray[bvhShapeStackTopIndex] = subRay;
+
+          }
+
+        }
+      }
+    }
+
+    //
+    //
+    //
+
+  }
+
+  return outBestResult.hasHit;
+}
+
+#endif
