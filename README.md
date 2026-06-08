@@ -79,28 +79,34 @@ Example of "table-cell" / "data-texture-pixel" (vec4 f32):
 *---------------*
 ```
 
-All data texture rows:
+The data texture "static data" rows:
 
-| row index | row type        |
-|-----------|-----------------|
-|         0 | point lights    |
-|         1 | materials       |
-|         2 | bvh tree nodes  |
-|         3 | sphere shapes   |
-|         4 | box shapes      |
-|         5 | triangle shapes |
-|         6 | sub scenes      |
+| row index | row type           |
+|-----------|--------------------|
+|         0 | point lights       |
+|         1 | ??? (experimental) |
 
-any extra sub-scene data texture rows (sub scene index as 'Y'):
+The data texture "main scene" rows:
 
-| row index   | row type        |
-|-------------|-----------------|
-| 6 x 'Y' + 0 | materials       |
-| 6 x 'Y' + 1 | bvh tree nodes  |
-| 6 x 'Y' + 2 | sphere shapes   |
-| 6 x 'Y' + 3 | box shapes      |
-| 6 x 'Y' + 4 | triangle shapes |
-| 6 x 'Y' + 5 | sub scenes      |
+| row offset | row index | row type           |
+|------------|-----------|--------------------|
+|          0 |     2 + 0 | materials          |
+|          1 |     2 + 1 | bvh tree nodes     |
+|          2 |     2 + 2 | sphere shapes      |
+|          3 |     2 + 3 | box shapes         |
+|          4 |     2 + 4 | triangle shapes    |
+|          5 |     2 + 5 | sub scenes         |
+
+The data texture "sub scene(s)" rows:
+
+| row offset | row index                     | row type            |
+|------------|-------------------------------|---------------------|
+|          0 |     2 + {scene_index} x 6 + 0 | materials           |
+|          1 |     2 + {scene_index} x 6 + 1 | bvh tree nodes      |
+|          2 |     2 + {scene_index} x 6 + 2 | sphere shapes       |
+|          3 |     2 + {scene_index} x 6 + 3 | box shapes          |
+|          4 |     2 + {scene_index} x 6 + 4 | triangle shapes     |
+|          5 |     2 + {scene_index} x 6 + 5 | sub scenes (unused) |
 
 Material row values (row index: 0)
 ```
@@ -226,3 +232,7 @@ BVH-node-texel[3]:G: leaf3 shape index
 BVH-node-texel[3]:B: <unused>
 BVH-node-texel[3]:A: <unused>
 ```
+
+## Diagram(s)
+
+![diagrams/mega-kernel-logic.dot.svg](diagrams/mega-kernel-logic.dot.svg)

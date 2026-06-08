@@ -1,0 +1,184 @@
+digraph {
+
+  rankdir=TD
+
+
+
+  bgcolor="#bbbbbb"
+  compound=true;
+
+
+  node [
+    shape="box"
+    style=filled
+    fontcolor="#eeeeee"
+    fillcolor="#666644"
+  ]
+
+  edge [
+    fontcolor="#ffffff"
+    color="#000044"
+    len=1.0
+    minlen=1
+  ]
+
+  start [label="start" shape=circle]
+
+  push_initial_ray [label="push primary\nray in the stack" shape=house fillcolor="#880088"]
+
+  start -> push_initial_ray
+
+  subgraph main_loop_subgraph {
+    cluster=true
+    bgcolor="#999999"
+
+    main_loop_start [label="main loop: start" shape=trapezium]
+
+    pop_last_ray [label="pop last ray\nfrom the stack" shape=invhouse fillcolor="#880088"]
+
+    bvh_intersect_shapes [label="BVH intersect shapes\n -> primary ray\l -> reflection ray\l -> refraction ray\l" shape=box style="filled,rounded" fillcolor="#880000"]
+
+    has_hit_shape [label="has hit a shape?" shape=diamond fillcolor="#884422"]
+
+    fetch_material_data [label="fetch material data" shape=box]
+
+    can_receive_light [label="can receive light?" shape=diamond fillcolor="#884422"]
+
+    subgraph light_sub_loop_subgraph {
+      cluster=true
+      bgcolor="#888888"
+
+      light_sub_loop_start [label="light sub-loop: start" shape=trapezium]
+
+      subgraph light_sub_sub_loop_subgraph {
+        cluster=true
+        bgcolor="#777777"
+
+        light_sub_sub_loop_start [label="light sub-sub-loop: start" shape=trapezium]
+
+        shadow_ray_bvh_intersect_shapes [label="BVH intersect shapes\n -> shadow ray\l" shape=box style="filled,rounded" fillcolor="#880000"]
+
+        shadow_ray_has_hit_shape [label="has hit a shape?" shape=diamond fillcolor="#884422"]
+
+        shadow_ray_fetch_material_data [label="fetch material data" shape=box]
+
+        has_hit_refractive_shape[label="the shape is\nrefractive?" shape=diamond fillcolor="#884422"]
+
+        accumulate_refractive_color[label="accumulate\nrefractive\ncolor" shape=box]
+
+        update_advance_shadow_ray[label="update / advance\nshadow ray" shape=box]
+
+        light_sub_sub_loop_end [label="light sub-sub-loop: end" shape=invtrapezium]
+      }
+
+      light_is_blocked[label="is the light\nblocked?" shape=diamond fillcolor="#884422"]
+
+      light_intensity_is_higher[label="is the light intensity\nhigher than the\ncurrent intensiry?" shape=diamond fillcolor="#884422"]
+
+      update_color_light_intensity [label="update color and\nlight intensity" shape=box]
+
+      has_more_lights[label="has more\npoint lights?" shape=diamond fillcolor="#884422"]
+
+      light_sub_loop_end [label="light sub-loop: end" shape=invtrapezium]
+    }
+
+    subgraph reflection_subgraph {
+      cluster=true
+      bgcolor="#888888"
+
+      reflection_start [label="" shape=point]
+      has_reflection [label="has\nreflection" shape=diamond fillcolor="#884422"]
+      push_reflection_ray [label="push\nreflection\nray" shape=house fillcolor="#880088"]
+      reflection_stop [label="" shape=point]
+    }
+
+    subgraph refraction_subgraph {
+      cluster=true
+      bgcolor="#888888"
+
+      refraction_start [label="" shape=point]
+      has_refraction [label="has\nrefraction" shape=diamond fillcolor="#884422"]
+      push_refraction_ray [label="push\nrefraction\nray" shape=house fillcolor="#880088"]
+      refraction_stop [label="" shape=point]
+    }
+
+    has_more_rays_in_the_stack[label="has more rays\nin the stack?" shape=diamond fillcolor="#884422"]
+
+    main_loop_end [label="main loop: end" shape=invtrapezium]
+
+    main_loop_start -> pop_last_ray
+    pop_last_ray -> bvh_intersect_shapes
+    bvh_intersect_shapes -> has_hit_shape
+    has_hit_shape -> has_more_rays_in_the_stack [label="no" penwidth=2 color="#ff0000"]
+    has_hit_shape -> fetch_material_data [label="yes"]
+
+    fetch_material_data -> can_receive_light
+    can_receive_light -> reflection_start [label="no"  penwidth=2 color="#ff8844"]
+    can_receive_light -> light_sub_loop_start [label="yes"]
+    light_sub_loop_start -> light_sub_sub_loop_start
+    light_sub_sub_loop_start -> shadow_ray_bvh_intersect_shapes
+    shadow_ray_bvh_intersect_shapes -> shadow_ray_has_hit_shape
+    shadow_ray_has_hit_shape -> light_sub_sub_loop_end [label="no"]
+    shadow_ray_has_hit_shape -> shadow_ray_fetch_material_data [label="yes"]
+    shadow_ray_fetch_material_data -> has_hit_refractive_shape
+    has_hit_refractive_shape -> light_sub_sub_loop_end [label="no" minlen=3]
+    has_hit_refractive_shape -> accumulate_refractive_color [label="yes"]
+    accumulate_refractive_color -> update_advance_shadow_ray
+    light_sub_sub_loop_start -> update_advance_shadow_ray [dir=back penwidth=3 style=dashed color="#0000aa"]
+
+    light_sub_sub_loop_end -> light_is_blocked
+
+    light_is_blocked -> has_more_lights [label="yes"]
+    light_is_blocked -> light_intensity_is_higher [label="no"]
+    light_intensity_is_higher -> update_color_light_intensity [label="yes"]
+    light_intensity_is_higher -> has_more_lights [label="no"]
+    update_color_light_intensity -> has_more_lights
+
+    light_sub_loop_start -> has_more_lights [label="yes" dir=back penwidth=3 style=dashed color="#0000aa"]
+    has_more_lights -> light_sub_loop_end [label="no"]
+    light_sub_loop_end -> reflection_start
+
+    reflection_start -> has_reflection
+    has_reflection -> reflection_stop [label="no"]
+    has_reflection -> push_reflection_ray [label="yes"]
+    push_reflection_ray -> reflection_stop
+
+    reflection_stop -> refraction_start
+
+    refraction_start -> has_refraction
+    has_refraction -> refraction_stop [label="no"]
+    has_refraction -> push_refraction_ray [label="yes"]
+    push_refraction_ray -> refraction_stop
+
+    refraction_stop -> has_more_rays_in_the_stack
+    has_more_rays_in_the_stack -> main_loop_end [label="no"]
+    main_loop_start -> has_more_rays_in_the_stack [label="yes" dir=back penwidth=3 style=dashed color="#0000aa"]
+  }
+
+  subgraph ginal_color_loop_subgraph {
+    cluster=true
+    bgcolor="#999999"
+
+    final_color_loop_start [label="final color loop: start" shape=trapezium]
+    accumulate_current_result [label="accumulate current result" shape=box]
+    has_more_results[label="has more\nresults?" shape=diamond fillcolor="#884422"]
+    final_color_loop_end [label="final color loop: end" shape=invtrapezium]
+  }
+
+  render_the_pixel [label="render the pixel" shape=box]
+
+  stop [label="stop" shape=circle]
+
+  push_initial_ray -> main_loop_start
+  main_loop_end -> final_color_loop_start
+
+  final_color_loop_start -> accumulate_current_result
+  accumulate_current_result -> has_more_results
+  has_more_results -> final_color_loop_end [label="no"]
+  final_color_loop_start -> has_more_results [label="yes" dir=back penwidth=3 style=dashed color="#0000aa"]
+  final_color_loop_end -> render_the_pixel
+  render_the_pixel -> stop
+
+
+
+}

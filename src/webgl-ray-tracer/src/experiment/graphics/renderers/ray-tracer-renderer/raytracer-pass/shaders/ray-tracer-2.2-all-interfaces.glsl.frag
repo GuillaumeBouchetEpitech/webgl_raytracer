@@ -35,6 +35,14 @@ struct SceneStackData
   int refractionIndex;
 };
 
+struct BvhSceneStackData
+{
+  int bvhNodeIndex;
+  RayValues ray;
+  int sceneIndex;
+  vec4 orientation;
+};
+
 struct LightStackData
 {
   bool used;

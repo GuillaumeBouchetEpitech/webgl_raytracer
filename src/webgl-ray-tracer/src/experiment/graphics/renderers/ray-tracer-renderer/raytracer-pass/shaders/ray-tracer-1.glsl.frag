@@ -49,8 +49,7 @@ SceneStackData  g_sceneStack[MAX_SCENE_STACK_SIZE];
 LightStackData  g_lightStack[MAX_LIGHT_STACK_SIZE];
 
 // int             g_bvhLightStack[MAX_BVH_STACK];
-int             g_bvhShapeStack[MAX_BVH_STACK];
-int             g_bvhSubShapesStack[MAX_BVH_STACK];
+// int             g_bvhShapeStack[MAX_BVH_STACK];
 
 //
 //
