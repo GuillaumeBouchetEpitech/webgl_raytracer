@@ -132,6 +132,22 @@ export class Experiment {
         height: this._def.height,
       });
       this._renderer.initialize();
+
+      // {
+      //   const gl = WebGLContext.getContext();
+      //   const maxTextureUnits = gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
+      //   const maxVertexShaderTextureUnits = gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS);
+      //   const maxFragmentShaderTextureUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+      //   const maxColorAttachments = gl.getParameter(gl.MAX_COLOR_ATTACHMENTS);
+      //   const maxDrawBuffers = gl.getParameter(gl.MAX_DRAW_BUFFERS);
+
+
+      //   this._def.logger.log(`[debug] texture-units-all: "${maxTextureUnits}"`);
+      //   this._def.logger.log(`[debug] texture-units-vs:  "${maxVertexShaderTextureUnits}"`);
+      //   this._def.logger.log(`[debug] texture-units-fs:  "${maxFragmentShaderTextureUnits}"`);
+      //   this._def.logger.log(`[debug] max-color-attach:  "${maxColorAttachments}"`);
+      //   this._def.logger.log(`[debug] max-draw-buffers:  "${maxDrawBuffers}"`);
+      // }
     }
 
     //

@@ -62,7 +62,7 @@ digraph {
 
         shadow_ray_fetch_material_data [label="fetch material data" shape=box]
 
-        has_hit_refractive_shape[label="the shape is\nrefractive?" shape=diamond fillcolor="#884422"]
+        has_hit_refractive_shape[label="is the shape\nrefractive?" shape=diamond fillcolor="#884422"]
 
         accumulate_refractive_color[label="accumulate\nrefractive\ncolor" shape=box]
 
@@ -73,7 +73,7 @@ digraph {
 
       light_is_blocked[label="is the light\nblocked?" shape=diamond fillcolor="#884422"]
 
-      light_intensity_is_higher[label="is the light intensity\nhigher than the\ncurrent intensiry?" shape=diamond fillcolor="#884422"]
+      light_intensity_is_higher[label="is the light\nintensity greater?" shape=diamond fillcolor="#884422"]
 
       update_color_light_intensity [label="update color and\nlight intensity" shape=box]
 
