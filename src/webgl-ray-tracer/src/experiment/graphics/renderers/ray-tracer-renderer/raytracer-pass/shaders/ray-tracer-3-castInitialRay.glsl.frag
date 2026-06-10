@@ -6,7 +6,9 @@
 
 #include "./ray-tracer-3.1-intersectScene-bvh4.glsl.frag"
 
-#include "./ray-tracer-3.2-lightAt.glsl.frag"
+#include "./ray-tracer-3.2-fetch-material.glsl.frag"
+
+#include "./ray-tracer-3.3-lightAt.glsl.frag"
 
 
 
@@ -85,70 +87,18 @@ vec3 castInitialRay(in vec3 rayDir)
     int materialIndex = g_sceneStack[sceneStackReadIndex].result.materialIndex;
     int sceneIndex = g_sceneStack[sceneStackReadIndex].result.sceneIndex;
 
-    int baseIndex = 2 + sceneIndex * 6;
+    vec4 matTexel[2];
+    fetchMaterialTexels(materialIndex, sceneIndex, g_sceneStack[sceneStackReadIndex].result.txPos, matTexel);
 
-    // material-texel[0]:R: material type (0=basic or 1=chessboard)
-    // material-texel[0]:G: can cast shadows (0 or 1)
-    // material-texel[0]:B: ??? (per material type)
-    // material-texel[0]:A: ??? (per material type)
-    // material-texel[1]:R: ??? (per material type)
-    // material-texel[1]:G: ??? (per material type)
-    // material-texel[1]:B: ??? (per material type)
-    // material-texel[1]:A: ??? (per material type)
-    vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, baseIndex + ROW_OFFSET_MATERIALS), 0);
-    vec4 matTexel1 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 1, baseIndex + ROW_OFFSET_MATERIALS), 0);
-
-    int materialType = int(matTexel0.r);
-
-    if (materialType == 1)
-    {
-      // as a chessboard material
-
-      // chessboard-material-texel[0]:R: material type (0=basic or 1=chessboard)
-      // chessboard-material-texel[0]:G: can cast shadows (0 or 1)
-      // chessboard-material-texel[0]:B: sub material index A
-      // chessboard-material-texel[0]:A: sub material index B
-      // chessboard-material-texel[1]:R: chessboard-fraction.x
-      // chessboard-material-texel[1]:G: chessboard-fraction.y
-      // chessboard-material-texel[1]:B: chessboard-fraction.z
-      // chessboard-material-texel[1]:A: <unused>
-
-      int subMaterialIndex = 0;
-
-      vec3 txPos = g_sceneStack[sceneStackReadIndex].result.txPos;
-      if (
-        (fract(txPos.x * matTexel1.r) > 0.5)
-        == (fract(txPos.y * matTexel1.g) > 0.5)
-        == (fract(txPos.z * matTexel1.b) > 0.5)
-      ) {
-        subMaterialIndex = int(matTexel0.a);
-      } else {
-        subMaterialIndex = int(matTexel0.b);
-      }
-
-      // as a basic material
-
-      // basic-material-texel[0]:R: material type (0=basic or 1=chessboard)
-      // basic-material-texel[0]:G: can cast shadows (0 or 1)
-      // basic-material-texel[0]:B: reflection index [0..1]
-      // basic-material-texel[0]:A: refraction index [0..1]
-      // basic-material-texel[1]:R: can receive light
-      // basic-material-texel[1]:G: color.r
-      // basic-material-texel[1]:B: color.g
-      // basic-material-texel[1]:A: color.b
-      matTexel0 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 0, baseIndex + ROW_OFFSET_MATERIALS), 0);
-      matTexel1 = texelFetch(u_dataTexture, ivec2(subMaterialIndex * 2 + 1, baseIndex + ROW_OFFSET_MATERIALS), 0);
-    }
-
-    vec3 materialColor = matTexel1.gba;
-    float reflectionFactor = matTexel0.b;
-    float refractionFactor = matTexel0.a;
+    vec3 materialColor = matTexel[1].gba;
+    float reflectionFactor = matTexel[0].b;
+    float refractionFactor = matTexel[0].a;
 
     g_sceneStack[sceneStackReadIndex].color = vec4(materialColor, 0.5);
     g_sceneStack[sceneStackReadIndex].result.reflectionFactor = reflectionFactor;
     g_sceneStack[sceneStackReadIndex].result.refractionFactor = refractionFactor;
 
-    bool canReceiveLight = (matTexel1.r != 0.0);
+    bool canReceiveLight = (matTexel[1].r != 0.0);
 
     //
     // MARK: Light handling

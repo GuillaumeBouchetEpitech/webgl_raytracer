@@ -478,16 +478,18 @@ bool intersectScene(
 
   int bvhShapeStackTopIndex = 0;
 
-  const int rootBaseIndex = 2;
+  const int rootIndexY = 2;
 
   while (bvhShapeStackTopIndex >= 0)
   {
     // pop bvh stack
+    // -> this is a copy
     BvhSceneStackData _stackData = _bvhSceneStack[bvhShapeStackTopIndex];
 
     bvhShapeStackTopIndex -= 1;
 
-    int baseIndex = rootBaseIndex + _stackData.sceneIndex * 6;
+    int bvhStartX = _stackData.bvhNodeIndex * 8;
+    int baseIndexY = rootIndexY + _stackData.sceneIndex * 6;
 
     // BVH-node-texel[0]:R: node0 node type
     // BVH-node-texel[0]:G: node0 node index
@@ -522,14 +524,15 @@ bool intersectScene(
     // BVH-node-texel[7]:B: node3 max.y
     // BVH-node-texel[7]:A: node3 max.z
 
-    vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(_stackData.bvhNodeIndex * 8 + 0, baseIndex + ROW_OFFSET_BVH_NODES), 0);
-    vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(_stackData.bvhNodeIndex * 8 + 1, baseIndex + ROW_OFFSET_BVH_NODES), 0);
-    vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(_stackData.bvhNodeIndex * 8 + 2, baseIndex + ROW_OFFSET_BVH_NODES), 0);
-    vec4 rootNodeTexel3 = texelFetch(u_dataTexture, ivec2(_stackData.bvhNodeIndex * 8 + 3, baseIndex + ROW_OFFSET_BVH_NODES), 0);
-    vec4 rootNodeTexel4 = texelFetch(u_dataTexture, ivec2(_stackData.bvhNodeIndex * 8 + 4, baseIndex + ROW_OFFSET_BVH_NODES), 0);
-    vec4 rootNodeTexel5 = texelFetch(u_dataTexture, ivec2(_stackData.bvhNodeIndex * 8 + 5, baseIndex + ROW_OFFSET_BVH_NODES), 0);
-    vec4 rootNodeTexel6 = texelFetch(u_dataTexture, ivec2(_stackData.bvhNodeIndex * 8 + 6, baseIndex + ROW_OFFSET_BVH_NODES), 0);
-    vec4 rootNodeTexel7 = texelFetch(u_dataTexture, ivec2(_stackData.bvhNodeIndex * 8 + 7, baseIndex + ROW_OFFSET_BVH_NODES), 0);
+
+    vec4 rootNodeTexel0 = texelFetch(u_dataTexture, ivec2(bvhStartX + 0, baseIndexY + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel1 = texelFetch(u_dataTexture, ivec2(bvhStartX + 1, baseIndexY + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel2 = texelFetch(u_dataTexture, ivec2(bvhStartX + 2, baseIndexY + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel3 = texelFetch(u_dataTexture, ivec2(bvhStartX + 3, baseIndexY + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel4 = texelFetch(u_dataTexture, ivec2(bvhStartX + 4, baseIndexY + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel5 = texelFetch(u_dataTexture, ivec2(bvhStartX + 5, baseIndexY + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel6 = texelFetch(u_dataTexture, ivec2(bvhStartX + 6, baseIndexY + ROW_OFFSET_BVH_NODES), 0);
+    vec4 rootNodeTexel7 = texelFetch(u_dataTexture, ivec2(bvhStartX + 7, baseIndexY + ROW_OFFSET_BVH_NODES), 0);
 
     int val0_NodeType = int(rootNodeTexel0.r);
     int val0_NodeIndex = int(rootNodeTexel0.g);
@@ -557,9 +560,10 @@ bool intersectScene(
       int type;
       int index;
     };
+    // BVH4 -> 4 nodes
     BvhNodeData childrenNodesStack[4];
 
-    // ensure any unused stack element get sorted last
+    // this is to ensure that unused stack elements get sorted as "last"
     childrenNodesStack[0].distance = FAR_VALUE;
     childrenNodesStack[1].distance = FAR_VALUE;
     childrenNodesStack[2].distance = FAR_VALUE;
@@ -647,7 +651,7 @@ bool intersectScene(
     //
 
     // from "closest" to "farthest"
-    for (int ii = 0; ii < allNodesWriteIndex; ++ii) {
+    for (int ii = 0; ii < 4 && ii < allNodesWriteIndex; ++ii) {
 
       // check if this bvh4 node is worth exploring
       if (childrenNodesStack[ii].distance > outBestResult.distance) {
@@ -712,7 +716,7 @@ bool intersectScene(
             bvhShapeStackTopIndex + 1 < MAX_BVH_STACK
           ) {
 
-            int shapeIndex = currNodesIndex - 3000;
+            int subSceneInstanceX = currNodesIndex - 3000;
 
             // sub-scene-shape-texel[0]:R: center.x
             // sub-scene-shape-texel[0]:G: center.y
@@ -723,8 +727,8 @@ bool intersectScene(
             // sub-scene-shape-texel[1]:B: quat.y
             // sub-scene-shape-texel[1]:A: quat.z
 
-            vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(shapeIndex * 2 + 0, rootBaseIndex + ROW_OFFSET_SHAPES_SUB_SCENE), 0);
-            vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(shapeIndex * 2 + 1, rootBaseIndex + ROW_OFFSET_SHAPES_SUB_SCENE), 0);
+            vec4 shTexel0 = texelFetch(u_dataTexture, ivec2(subSceneInstanceX * 2 + 0, rootIndexY + ROW_OFFSET_SHAPES_SUB_SCENE), 0);
+            vec4 shTexel1 = texelFetch(u_dataTexture, ivec2(subSceneInstanceX * 2 + 1, rootIndexY + ROW_OFFSET_SHAPES_SUB_SCENE), 0);
 
             int subSceneIndex = int(shTexel0.a);
 
@@ -743,7 +747,7 @@ bool intersectScene(
             subRay.origin = (inverseNormalMatrix * (inRay.origin - center));
             subRay.direction = (inverseNormalMatrix * inRay.direction);
 
-            // ensure the subRay dir components are "not exactly of value 0"
+            // ensure the subRay direction components (xyz) cannot be "exactly of the value 0"
             subRay.direction = mix(subRay.direction, vec3(-1e-8), equal(subRay.direction, vec3(0.0)));
 
             subRay.invDirection = 1.0 / subRay.direction;
