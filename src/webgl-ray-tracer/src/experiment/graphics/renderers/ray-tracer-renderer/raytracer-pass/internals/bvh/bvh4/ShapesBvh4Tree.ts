@@ -1,5 +1,5 @@
 
-import { IInternalBox, IInternalSphere, IInternalSubScene, IInternalTriangle } from '../../../all-interfaces';
+import { IInternalBox, IInternalSphere, IInternalSubSceneInstance, IInternalTriangle } from '../../../all-interfaces';
 
 import { type IShape, ShapesBvh2Tree } from '../bvh2/ShapesBvh2Tree';
 import { Bvh4TreeNode } from './Bvh4TreeNode';
@@ -25,8 +25,8 @@ export class ShapesBvh4Tree {
     allSpheres: ReadonlyArray<IInternalSphere>,
     allBoxes: ReadonlyArray<IInternalBox>,
     allTriangles: ReadonlyArray<IInternalTriangle>,
-    allSubScenes: ReadonlyArray<IInternalSubScene>,
-    allScenes: ReadonlyArray<{ min: glm.ReadonlyVec3; max: glm.ReadonlyVec3; }>,
+    allSubScenes?: ReadonlyArray<IInternalSubSceneInstance>,
+    allScenes?: ReadonlyArray<{ min: glm.ReadonlyVec3; max: glm.ReadonlyVec3; }>,
   ) {
     this.reset();
     this._shapesBvh2Tree.synchronize(allSpheres, allBoxes, allTriangles, allSubScenes, allScenes);

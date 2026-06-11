@@ -86,7 +86,7 @@ bool intersectTriangle(RayValues ray, vec3 v0, vec3 v1, vec3 v2, out float outDi
   float tmpDotVal = dot(ray.direction, n);
 
   // safe -> mitigated risk of division by zero
-  tmpDotVal = (tmpDotVal == 0.0 ? -1e-8 : tmpDotVal);
+  tmpDotVal = (tmpDotVal == 0.0 ? 1e-6 : tmpDotVal);
 
   float d = 1.0 / tmpDotVal;
 

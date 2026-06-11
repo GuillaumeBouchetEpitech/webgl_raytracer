@@ -117,19 +117,19 @@ export class GpuDataTexture2d {
 
       for (let texelY = 0; texelY < this._dataRows.length; ++texelY) {
 
-        // const currRow = this._dataRows[texelY];
-        // if (!currRow.isDirty) {
-        //   continue;
-        // }
+        const currRow = this._dataRows[texelY];
+        if (!currRow.isDirty) {
+          continue;
+        }
 
         // TODO: only update if necessary
         // -> when the texture reallocated
         // -> or when the data row is modified
 
-        // currRow.uploadToGpu(texelY, boundDataTexture);
+        currRow.uploadToGpu(texelY, boundDataTexture);
         // boundDataTexture.updateFromBuffer(0, texelY, currRow.currentIndex, 1, currRow.dataValues);
 
-        this._dataRows[texelY].uploadToGpu(texelY, boundDataTexture);
+        // this._dataRows[texelY].uploadToGpu(texelY, boundDataTexture);
       }
 
     });

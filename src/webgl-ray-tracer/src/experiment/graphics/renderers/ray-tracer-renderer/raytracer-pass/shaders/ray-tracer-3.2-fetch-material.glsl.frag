@@ -5,9 +5,10 @@
 //
 //
 
-void fetchMaterialTexels(int materialIndex, int sceneIndex, vec3 txPos, out vec4 matTexel[2])
+void fetchMaterialTexels(in RayResult rayResult, out vec4 matTexel[2])
+
 {
-  int baseIndex = 2 + sceneIndex * 6;
+  int baseIndex = 2 + rayResult.sceneIndex * 6;
 
   // material-texel[0]:R: material type (0=basic or 1=chessboard)
   // material-texel[0]:G: can cast shadows (0 or 1)
@@ -17,8 +18,8 @@ void fetchMaterialTexels(int materialIndex, int sceneIndex, vec3 txPos, out vec4
   // material-texel[1]:G: ??? (per material type)
   // material-texel[1]:B: ??? (per material type)
   // material-texel[1]:A: ??? (per material type)
-  vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 0, baseIndex + ROW_OFFSET_MATERIALS), 0);
-  vec4 matTexel1 = texelFetch(u_dataTexture, ivec2(materialIndex * 2 + 1, baseIndex + ROW_OFFSET_MATERIALS), 0);
+  vec4 matTexel0 = texelFetch(u_dataTexture, ivec2(rayResult.materialIndex * 2 + 0, baseIndex + ROW_OFFSET_MATERIALS), 0);
+  vec4 matTexel1 = texelFetch(u_dataTexture, ivec2(rayResult.materialIndex * 2 + 1, baseIndex + ROW_OFFSET_MATERIALS), 0);
 
   int materialType = int(matTexel0.r);
 
@@ -37,11 +38,10 @@ void fetchMaterialTexels(int materialIndex, int sceneIndex, vec3 txPos, out vec4
 
     int subMaterialIndex = 0;
 
-    // vec3 txPos = g_sceneStack[sceneStackReadIndex].result.txPos;
     if (
-      (fract(txPos.x * matTexel1.r) > 0.5)
-      == (fract(txPos.y * matTexel1.g) > 0.5)
-      == (fract(txPos.z * matTexel1.b) > 0.5)
+      (fract(rayResult.txPos.x * matTexel1.r) > 0.5)
+      == (fract(rayResult.txPos.y * matTexel1.g) > 0.5)
+      == (fract(rayResult.txPos.z * matTexel1.b) > 0.5)
     ) {
       subMaterialIndex = int(matTexel0.a);
     } else {

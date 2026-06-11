@@ -8,6 +8,8 @@ import { BrowserFrankenPhysWasmModule, physics } from 'FrankenPhys';
 
 import * as utilities from './utilities';
 
+import { buildInfos } from './buildInfos';
+
 let logger: Logger | null = null;
 let mainDemo: Experiment | null = null;
 
@@ -65,6 +67,10 @@ const onPageLoad = async () => {
 
     logger = new Logger('loggerOutput');
     logger.log('[SETUP] page loaded');
+    logger.log(`[INFOS] buildDate: ${buildInfos.buildDate}`);
+    logger.log(`[INFOS] -> this was ${buildInfos.timeSinceBuild} ago`);
+
+
 
     //
     // HTML elements check

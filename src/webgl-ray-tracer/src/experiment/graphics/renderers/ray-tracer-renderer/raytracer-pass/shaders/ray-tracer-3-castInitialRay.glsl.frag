@@ -84,21 +84,18 @@ vec3 castInitialRay(in vec3 rayDir)
     // MARK: material handling
     //
 
-    int materialIndex = g_sceneStack[sceneStackReadIndex].result.materialIndex;
-    int sceneIndex = g_sceneStack[sceneStackReadIndex].result.sceneIndex;
+    vec4 materialTexels[2];
+    fetchMaterialTexels(g_sceneStack[sceneStackReadIndex].result, materialTexels);
 
-    vec4 matTexel[2];
-    fetchMaterialTexels(materialIndex, sceneIndex, g_sceneStack[sceneStackReadIndex].result.txPos, matTexel);
-
-    vec3 materialColor = matTexel[1].gba;
-    float reflectionFactor = matTexel[0].b;
-    float refractionFactor = matTexel[0].a;
+    vec3 materialColor = materialTexels[1].gba;
+    float reflectionFactor = materialTexels[0].b;
+    float refractionFactor = materialTexels[0].a;
 
     g_sceneStack[sceneStackReadIndex].color = vec4(materialColor, 0.5);
     g_sceneStack[sceneStackReadIndex].result.reflectionFactor = reflectionFactor;
     g_sceneStack[sceneStackReadIndex].result.refractionFactor = refractionFactor;
 
-    bool canReceiveLight = (matTexel[1].r != 0.0);
+    bool canReceiveLight = (materialTexels[1].r != 0.0);
 
     //
     // MARK: Light handling

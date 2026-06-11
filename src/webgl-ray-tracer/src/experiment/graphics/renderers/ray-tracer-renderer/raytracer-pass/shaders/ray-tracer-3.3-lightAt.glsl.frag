@@ -73,13 +73,10 @@ void _checkForShadowOrTransparency(
     previousShapeIndex = currResult.shapeIndex;
 
     // now we're going to need the shape's material
-    int materialIndex = currResult.materialIndex;
-    int sceneIndex = currResult.sceneIndex;
+    vec4 materialTexels[2];
+    fetchMaterialTexels(currResult, materialTexels);
 
-    vec4 matTexel[2];
-    fetchMaterialTexels(materialIndex, sceneIndex, currResult.txPos, matTexel);
-
-    float refractionFactor = matTexel[0].a;
+    float refractionFactor = materialTexels[0].a;
 
     // is the shape "solid enough"?
     if (refractionFactor <= 0.01)
@@ -93,7 +90,7 @@ void _checkForShadowOrTransparency(
     // handle refraction/transparency
     //
 
-    vec3 shapeColor = matTexel[1].gba;
+    vec3 shapeColor = materialTexels[1].gba;
     result.lightColor *= shapeColor;
     result.lightIntensity *= refractionFactor;
     currRay.origin = currResult.position;

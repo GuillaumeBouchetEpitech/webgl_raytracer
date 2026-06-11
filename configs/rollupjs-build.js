@@ -56,6 +56,20 @@ const _handleGlslFilesPlugin = {
   }
 };
 
+const _buildDate = new Date();
+const BuildInfosPlugin = {
+  name: "Build Infos Loader",
+  transform(code, id) {
+    if (id.indexOf("buildInfos.ts") < 0) {
+      return;
+    }
+
+    code = code.replace(/<buildDate-not-specified>/, _buildDate.toISOString());
+
+    return { code, map: { mappings: "" } };
+  },
+};
+
 //
 //
 //
@@ -74,7 +88,8 @@ const asyncBuild = async ({
     typescript({ tsconfig: tsConfigFilePath }),
     commonjs(),
     nodeResolve(),
-    _handleGlslFilesPlugin
+    _handleGlslFilesPlugin,
+    BuildInfosPlugin
   ];
 
   if (buildOptions.isRelease) {

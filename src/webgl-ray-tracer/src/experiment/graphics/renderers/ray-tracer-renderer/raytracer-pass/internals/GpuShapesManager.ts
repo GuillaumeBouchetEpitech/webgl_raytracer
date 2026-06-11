@@ -4,16 +4,20 @@ import * as allInterfaces from '../all-interfaces';
 
 import * as glm from "gl-matrix"
 
-export interface IGpuShapesManager {
+export interface ISubSceneGpuShapesManager {
   pushSphere(opts: allInterfaces.IPublicSphere): void;
   pushBox(opts: allInterfaces.IPublicBox): void;
   pushTriangle(opts: allInterfaces.IPublicTriangle): void;
-  pushSubScene(opts: allInterfaces.IPublicSubScene): void;
 
   spheres: ReadonlyArray<allInterfaces.IInternalSphere>;
   boxes: ReadonlyArray<allInterfaces.IInternalBox>;
   triangles: ReadonlyArray<allInterfaces.IInternalTriangle>;
-  subScenes: ReadonlyArray<allInterfaces.IInternalSubScene>;
+};
+
+export interface IMainSceneGpuShapesManager extends ISubSceneGpuShapesManager {
+  pushSubSceneInstance(opts: allInterfaces.IPublicSubSceneInstance): void;
+
+  subSceneInstances: ReadonlyArray<allInterfaces.IInternalSubSceneInstance>;
 };
 
 interface IMaterialsManager {
@@ -22,14 +26,14 @@ interface IMaterialsManager {
   getIndexFromAlias(materialAlias: number): number | undefined;
 };
 
-export class GpuShapesManager implements IGpuShapesManager {
+export class GpuShapesManager implements IMainSceneGpuShapesManager {
 
   private _materialsManager: IMaterialsManager;
 
   private _spheres: allInterfaces.IInternalSphere[] = [];
   private _boxes: allInterfaces.IInternalBox[] = [];
   private _triangles: allInterfaces.IInternalTriangle[] = [];
-  private _subScenes: allInterfaces.IInternalSubScene[] = [];
+  private _subSceneInstances: allInterfaces.IInternalSubSceneInstance[] = [];
 
   private _gpuDataTexture2d: GpuDataTexture2d;
 
@@ -104,17 +108,17 @@ export class GpuShapesManager implements IGpuShapesManager {
     });
   }
 
-  pushSubScene({
+  pushSubSceneInstance({
     sceneIndex,
     position,
     orientation,
-  }: allInterfaces.IPublicSubScene) {
+  }: allInterfaces.IPublicSubSceneInstance) {
 
-    if (sceneIndex <= 0) {
-      throw new Error(`cannot push the primary scene as a sub-scene`);
+    if (sceneIndex < 0 /*|| sceneIndex >= this._subSceneInstances.length*/) {
+      throw new Error(`out of bound sub-scene index (${sceneIndex})`);
     }
 
-    this._subScenes.push({
+    this._subSceneInstances.push({
       sceneIndex,
       position: glm.vec3.clone(position),
       orientation: glm.quat.clone(orientation),
@@ -125,7 +129,7 @@ export class GpuShapesManager implements IGpuShapesManager {
     this._spheres.length = 0;
     this._boxes.length = 0;
     this._triangles.length = 0;
-    this._subScenes.length = 0;
+    this._subSceneInstances.length = 0;
   }
 
   prepareBufferSpheres(texelY: number) {
@@ -257,7 +261,7 @@ export class GpuShapesManager implements IGpuShapesManager {
 
   }
 
-  prepareBufferSubScene(texelY: number) {
+  prepareBufferSubSceneInstances(texelY: number) {
 
     const currRow = this._gpuDataTexture2d.getDataRow(texelY);
     currRow.clear();
@@ -265,7 +269,7 @@ export class GpuShapesManager implements IGpuShapesManager {
     {
       // sub-scenes
 
-      for (const currSubScene of this._subScenes) {
+      for (const currSubScene of this._subSceneInstances) {
         // add triangle
 
         // const currMatIndex = this._materialsManager.getIndexFromAlias(triangle.materialAlias);
@@ -275,7 +279,7 @@ export class GpuShapesManager implements IGpuShapesManager {
 
         // const canCastShadow = this._materialsManager.canCastShadow(triangle.materialAlias)!;
 
-        if (currSubScene.sceneIndex <= 0) {
+        if (currSubScene.sceneIndex < 0) {
           throw new Error("LOL????");
         }
 
@@ -283,7 +287,7 @@ export class GpuShapesManager implements IGpuShapesManager {
           currSubScene.position[0], // [0]
           currSubScene.position[1], // [1]
           currSubScene.position[2], // [2]
-          currSubScene.sceneIndex + 0.5, // [3]
+          currSubScene.sceneIndex + 1 + 0.5, // [3]
         );
         currRow.push(
           currSubScene.orientation[0], // [4]
@@ -307,7 +311,7 @@ export class GpuShapesManager implements IGpuShapesManager {
   get triangles(): ReadonlyArray<allInterfaces.IInternalTriangle> {
     return this._triangles;
   }
-  get subScenes(): ReadonlyArray<allInterfaces.IInternalSubScene> {
-    return this._subScenes;
+  get subSceneInstances(): ReadonlyArray<allInterfaces.IInternalSubSceneInstance> {
+    return this._subSceneInstances;
   }
 };

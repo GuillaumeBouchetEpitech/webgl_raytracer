@@ -1,7 +1,7 @@
 
 import * as glm from 'gl-matrix';
 
-import { IInternalBox, IInternalSphere, IInternalTriangle, IInternalSubScene, IInternalPointLight } from '../../../all-interfaces';
+import { IInternalBox, IInternalSphere, IInternalTriangle, IInternalSubSceneInstance, IInternalPointLight } from '../../../all-interfaces';
 
 import { type MutableAABB } from './aabb-utils';
 import { Bvh2TreeNode } from './Bvh2TreeNode';
@@ -32,7 +32,7 @@ export interface ITriangleShape extends MutableAABB {
 export interface ISubSceneShape extends MutableAABB {
   shapeIndex: number;
   type: 'sub-scene';
-  shape: IInternalSubScene;
+  shape: IInternalSubSceneInstance;
 };
 export type IShape = ISphereShape | IBoxShape | ITriangleShape | ISubSceneShape;
 
@@ -68,8 +68,8 @@ export class ShapesBvh2Tree {
     allSpheres: ReadonlyArray<IInternalSphere>,
     allBoxes: ReadonlyArray<IInternalBox>,
     allTriangles: ReadonlyArray<IInternalTriangle>,
-    allSubScenes: ReadonlyArray<IInternalSubScene>,
-    allScenes: ReadonlyArray<{ min: glm.ReadonlyVec3; max: glm.ReadonlyVec3; }>,
+    allInstancedSubScenes?: ReadonlyArray<IInternalSubSceneInstance>,
+    allSubScenes?: ReadonlyArray<{ min: glm.ReadonlyVec3; max: glm.ReadonlyVec3; }>,
   ) {
 
     this.reset();
@@ -197,56 +197,59 @@ export class ShapesBvh2Tree {
       });
     }
 
-    shapeIndex = 3000;
-    for (const currSubScene of allSubScenes) {
+    if (allInstancedSubScenes && allSubScenes) {
 
-      glm.mat4.identity(this._boxMat4_a);
-      glm.mat4.translate(this._boxMat4_a, this._boxMat4_a, currSubScene.position);
-      glm.mat4.fromQuat(this._boxMat4_b, currSubScene.orientation);
-      glm.mat4.multiply(this._boxMat4_a, this._boxMat4_a, this._boxMat4_b);
+      shapeIndex = 3000;
+      for (const currInstance of allInstancedSubScenes) {
 
-      const min = glm.vec3.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
-      const max = glm.vec3.fromValues(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
+        glm.mat4.identity(this._boxMat4_a);
+        glm.mat4.translate(this._boxMat4_a, this._boxMat4_a, currInstance.position);
+        glm.mat4.fromQuat(this._boxMat4_b, currInstance.orientation);
+        glm.mat4.multiply(this._boxMat4_a, this._boxMat4_a, this._boxMat4_b);
 
-      const tmpMin = allScenes[currSubScene.sceneIndex].min;
-      const tmpMax = allScenes[currSubScene.sceneIndex].max;
+        const min = glm.vec3.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
+        const max = glm.vec3.fromValues(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
 
-      const allBoxCorners: ReadonlyArray<glm.ReadonlyVec3> = [
-        glm.vec3.set(this._boxCorners[0], tmpMin[0], tmpMin[1], tmpMin[2]),
-        glm.vec3.set(this._boxCorners[1], tmpMax[0], tmpMin[1], tmpMin[2]),
-        glm.vec3.set(this._boxCorners[2], tmpMin[0], tmpMax[1], tmpMin[2]),
-        glm.vec3.set(this._boxCorners[3], tmpMax[0], tmpMax[1], tmpMin[2]),
-        glm.vec3.set(this._boxCorners[4], tmpMin[0], tmpMin[1], tmpMax[2]),
-        glm.vec3.set(this._boxCorners[5], tmpMax[0], tmpMin[1], tmpMax[2]),
-        glm.vec3.set(this._boxCorners[6], tmpMin[0], tmpMax[1], tmpMax[2]),
-        glm.vec3.set(this._boxCorners[7], tmpMax[0], tmpMax[1], tmpMax[2]),
-      ];
+        const tmpMin = allSubScenes[currInstance.sceneIndex].min;
+        const tmpMax = allSubScenes[currInstance.sceneIndex].max;
 
-      // need to apply the box transformation to the corners (translation, then rotation)
-      allBoxCorners.forEach((vertex) => {
+        const allBoxCorners: ReadonlyArray<glm.ReadonlyVec3> = [
+          glm.vec3.set(this._boxCorners[0], tmpMin[0], tmpMin[1], tmpMin[2]),
+          glm.vec3.set(this._boxCorners[1], tmpMax[0], tmpMin[1], tmpMin[2]),
+          glm.vec3.set(this._boxCorners[2], tmpMin[0], tmpMax[1], tmpMin[2]),
+          glm.vec3.set(this._boxCorners[3], tmpMax[0], tmpMax[1], tmpMin[2]),
+          glm.vec3.set(this._boxCorners[4], tmpMin[0], tmpMin[1], tmpMax[2]),
+          glm.vec3.set(this._boxCorners[5], tmpMax[0], tmpMin[1], tmpMax[2]),
+          glm.vec3.set(this._boxCorners[6], tmpMin[0], tmpMax[1], tmpMax[2]),
+          glm.vec3.set(this._boxCorners[7], tmpMax[0], tmpMax[1], tmpMax[2]),
+        ];
 
-        glm.vec3.transformMat4(this._boxPos, vertex, this._boxMat4_a);
+        // need to apply the box transformation to the corners (translation, then rotation)
+        allBoxCorners.forEach((vertex) => {
 
-        min[0] = Math.min(min[0], this._boxPos[0]);
-        min[1] = Math.min(min[1], this._boxPos[1]);
-        min[2] = Math.min(min[2], this._boxPos[2]);
-        max[0] = Math.max(max[0], this._boxPos[0]);
-        max[1] = Math.max(max[1], this._boxPos[1]);
-        max[2] = Math.max(max[2], this._boxPos[2]);
-      });
+          glm.vec3.transformMat4(this._boxPos, vertex, this._boxMat4_a);
 
-      // here we ensure the shape is not "paper flat" on any of its axises
-      if (max[0] - min[0] < k_minDelta) { max[0] += k_minDelta; }
-      if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
-      if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
+          min[0] = Math.min(min[0], this._boxPos[0]);
+          min[1] = Math.min(min[1], this._boxPos[1]);
+          min[2] = Math.min(min[2], this._boxPos[2]);
+          max[0] = Math.max(max[0], this._boxPos[0]);
+          max[1] = Math.max(max[1], this._boxPos[1]);
+          max[2] = Math.max(max[2], this._boxPos[2]);
+        });
 
-      allEntries.push({
-        shapeIndex: shapeIndex++,
-        type: 'sub-scene',
-        shape: currSubScene,
-        min,
-        max
-      });
+        // here we ensure the shape is not "paper flat" on any of its axises
+        if (max[0] - min[0] < k_minDelta) { max[0] += k_minDelta; }
+        if (max[1] - min[1] < k_minDelta) { max[1] += k_minDelta; }
+        if (max[2] - min[2] < k_minDelta) { max[2] += k_minDelta; }
+
+        allEntries.push({
+          shapeIndex: shapeIndex++,
+          type: 'sub-scene',
+          shape: currInstance,
+          min,
+          max
+        });
+      }
     }
 
     this._bvhTree.synchronize(allEntries);

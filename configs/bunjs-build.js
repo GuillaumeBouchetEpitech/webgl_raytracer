@@ -42,6 +42,18 @@ const GlslFilesLoaderPlugin = {
   },
 };
 
+const _buildDate = new Date();
+const BuildInfosPlugin = {
+  name: "Build Infos Loader",
+  setup(build) {
+    build.onLoad({ filter: /buildInfos\.ts$/ }, ({ path: buildInfosFilepath }) => {
+      let fileContent = fs.readFileSync(buildInfosFilepath, { encoding: "utf8" });
+      fileContent = fileContent.replace(/<buildDate-not-specified>/, _buildDate.toISOString());
+      return { contents: fileContent, loader: "ts" };
+    });
+  },
+};
+
 const asyncBuild = async ({
   name,
   // tsConfigFilePath,
@@ -59,7 +71,7 @@ const asyncBuild = async ({
     format: "esm",
     root: path.dirname(inputFilePath),
     naming: outputFilePath,
-    plugins: [GlslFilesLoaderPlugin],
+    plugins: [BuildInfosPlugin,GlslFilesLoaderPlugin],
   };
 
   if (buildOptions.isRelease) {

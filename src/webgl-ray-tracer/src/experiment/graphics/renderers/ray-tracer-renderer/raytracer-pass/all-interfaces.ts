@@ -57,7 +57,7 @@ export interface IPublicTriangle {
 
 export type IInternalTriangle = IPublicTriangle;
 
-export interface IPublicSubScene {
+export interface IPublicSubSceneInstance {
   position: glm.ReadonlyVec3;
   orientation: glm.ReadonlyQuat;
   sceneIndex: number;
@@ -65,7 +65,7 @@ export interface IPublicSubScene {
   // max: glm.ReadonlyVec3;
 }
 
-export type IInternalSubScene = IPublicSubScene;
+export type IInternalSubSceneInstance = IPublicSubSceneInstance;
 
 //
 //

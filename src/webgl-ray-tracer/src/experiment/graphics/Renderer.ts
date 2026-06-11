@@ -218,11 +218,11 @@ export class Renderer {
 
   bvhRenderDebugWireframe() {
 
-    const rootScene = this._rayTracerRenderer.rayTracerPass.allScenes[0];
+    const mainScene = this._rayTracerRenderer.rayTracerPass.mainScene;
 
-    rootScene.bvhRenderDebugWireframe(this._stackRenderers);
+    mainScene.bvhRenderDebugWireframe(this._stackRenderers);
 
-    const gpuShapesManager = rootScene.gpuShapesManager;
+    const gpuShapesManager = mainScene.gpuShapesManager;
 
     const defaultColor: glm.ReadonlyVec3 = [1,1,1];
     gpuShapesManager.spheres.forEach((sphere) => {
@@ -237,14 +237,14 @@ export class Renderer {
 
     const tmpMat4_a = glm.mat4.create();
     const tmpMat4_b = glm.mat4.create();
-    gpuShapesManager.subScenes.forEach((subSceneData) => {
+    gpuShapesManager.subSceneInstances.forEach((subSceneInstanceData) => {
 
       glm.mat4.identity(tmpMat4_a);
-      glm.mat4.translate(tmpMat4_a, tmpMat4_a, subSceneData.position);
-      glm.mat4.fromQuat(tmpMat4_b, subSceneData.orientation);
+      glm.mat4.translate(tmpMat4_a, tmpMat4_a, subSceneInstanceData.position);
+      glm.mat4.fromQuat(tmpMat4_b, subSceneInstanceData.orientation);
       glm.mat4.multiply(tmpMat4_a, tmpMat4_a, tmpMat4_b);
 
-      const currSubScene = this._rayTracerRenderer.rayTracerPass.allScenes[subSceneData.sceneIndex];
+      const currSubScene = this._rayTracerRenderer.rayTracerPass.allSubScenes[subSceneInstanceData.sceneIndex];
 
       currSubScene.bvhRenderDebugWireframe(this._stackRenderers, tmpMat4_a);
     });

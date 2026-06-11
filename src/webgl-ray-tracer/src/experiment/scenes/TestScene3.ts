@@ -165,7 +165,7 @@ let sphere2_fresnelMarble: SphereObject | undefined;
 
 export class TestScene3 {
 
-  private _secondarySceneSetup = false;
+  private _subSceneSetup = false;
 
   ensureSceneData(physicWorld: physics.PhysicWorld) {
 
@@ -434,8 +434,8 @@ export class TestScene3 {
     }
 
     const rayTracerPass = renderer.rayTracerRenderer.rayTracerPass;
-    const primaryScene = rayTracerPass.allScenes[0];
-    // const secondaryScene = rayTracerPass.allScenes[1];
+    const mainScene = rayTracerPass.mainScene;
+    // const subScene = rayTracerPass.allScenes[1];
 
     {
       { // center the light
@@ -525,7 +525,7 @@ export class TestScene3 {
       {
 
         // graphical presentation of the point light
-        primaryScene.gpuMaterialsManager.pushBasicMaterial({
+        mainScene.gpuMaterialsManager.pushBasicMaterial({
           materialAlias: 666,
           color: [1, 1, 0],
           reflectionFactor: 0,
@@ -533,7 +533,7 @@ export class TestScene3 {
           receiveLightEnabled: false,
           castShadowEnabled: false
         });
-        primaryScene.gpuShapesManager.pushSphere({
+        mainScene.gpuShapesManager.pushSphere({
           position: g_lightPos,
           orientation: glm.quat.identity(glm.quat.create()),
           radius: 0.06125,
@@ -580,7 +580,7 @@ export class TestScene3 {
           indices.push([0,4,1]);
 
           const materialAlias_lightCoverTriangle: number[] = [6000, 6001, 6002, 6003];
-          primaryScene.gpuMaterialsManager.pushBasicMaterial({
+          mainScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: materialAlias_lightCoverTriangle[0],
               color: [1.0, 0.0, 1.0], // purple
               reflectionFactor: 0.0,
@@ -588,7 +588,7 @@ export class TestScene3 {
               receiveLightEnabled: false,
               castShadowEnabled: true,
           });
-          primaryScene.gpuMaterialsManager.pushBasicMaterial({
+          mainScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: materialAlias_lightCoverTriangle[1],
               color: [1.0, 0.0, 0.0],
               reflectionFactor: 0.0,
@@ -596,7 +596,7 @@ export class TestScene3 {
               receiveLightEnabled: false,
               castShadowEnabled: true,
           });
-          primaryScene.gpuMaterialsManager.pushBasicMaterial({
+          mainScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: materialAlias_lightCoverTriangle[2],
               color: [0.0, 1.0, 0.0],
               reflectionFactor: 0.0,
@@ -604,7 +604,7 @@ export class TestScene3 {
               receiveLightEnabled: false,
               castShadowEnabled: true,
           });
-          primaryScene.gpuMaterialsManager.pushBasicMaterial({
+          mainScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: materialAlias_lightCoverTriangle[3],
               color: [0.0, 0.0, 1.0],
               reflectionFactor: 0.0,
@@ -615,7 +615,7 @@ export class TestScene3 {
 
           indices.forEach(([idx0, idx1, idx2], index) => {
 
-            primaryScene.gpuShapesManager.pushTriangle({
+            mainScene.gpuShapesManager.pushTriangle({
               v0: coverVertices[idx0],
               v1: coverVertices[idx1],
               v2: coverVertices[idx2],
@@ -628,7 +628,7 @@ export class TestScene3 {
         { // debug refractive planes (the ones almost against the "left wall")
 
           const materialAlias_refractive1 = 1001;
-          primaryScene.gpuMaterialsManager.pushBasicMaterial({
+          mainScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: materialAlias_refractive1,
             color: [1.0,1.0,0.5],
             reflectionFactor: 0.0,
@@ -636,7 +636,7 @@ export class TestScene3 {
             castShadowEnabled: true,
             receiveLightEnabled: true,
           });
-          primaryScene.gpuShapesManager.pushBox({
+          mainScene.gpuShapesManager.pushBox({
             position: [-9,2,2],
             orientation: glm.quat.identity(glm.quat.create()),
             boxSize: [0.05, 0.5, 1.5],
@@ -644,7 +644,7 @@ export class TestScene3 {
           });
 
           const materialAlias_refractive2 = 1002;
-          primaryScene.gpuMaterialsManager.pushBasicMaterial({
+          mainScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: materialAlias_refractive2,
             color: [0.5,1.0,0.5],
             reflectionFactor: 0.0,
@@ -652,7 +652,7 @@ export class TestScene3 {
             castShadowEnabled: true,
             receiveLightEnabled: true,
           });
-          primaryScene.gpuShapesManager.pushBox({
+          mainScene.gpuShapesManager.pushBox({
             position: [-9.2,2,2],
             orientation: glm.quat.identity(glm.quat.create()),
             boxSize: [0.05, 1.5, 0.5],
@@ -672,7 +672,7 @@ export class TestScene3 {
       const _buildMaterial = (material: BasicMaterial | ChessMaterial): number => {
 
         if (_isBasicMaterial(material)) {
-          return primaryScene.gpuMaterialsManager.pushBasicMaterial({
+          return mainScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: ++_tmpMaterialAlias,
             color: material.color,
             refractionFactor: material.refractionFactor ?? 0,
@@ -683,7 +683,7 @@ export class TestScene3 {
         }
 
         if (_isChessMaterial(material)) {
-          const materialA = primaryScene.gpuMaterialsManager.pushBasicMaterial({
+          const materialA = mainScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: ++_tmpMaterialAlias,
             color: material.materialA.color,
             refractionFactor: material.materialA.refractionFactor ?? 0,
@@ -691,7 +691,7 @@ export class TestScene3 {
             receiveLightEnabled: material.materialA.receiveLightEnabled ?? true,
             castShadowEnabled: material.materialA.castShadowEnabled ?? true,
           });
-          const materialB = primaryScene.gpuMaterialsManager.pushBasicMaterial({
+          const materialB = mainScene.gpuMaterialsManager.pushBasicMaterial({
             materialAlias: ++_tmpMaterialAlias,
             color: material.materialB.color,
             refractionFactor: material.materialB.refractionFactor ?? 0,
@@ -699,7 +699,7 @@ export class TestScene3 {
             receiveLightEnabled: material.materialB.receiveLightEnabled ?? true,
             castShadowEnabled: material.materialB.castShadowEnabled ?? true,
           });
-          return primaryScene.gpuMaterialsManager.pushChessboardMaterial({
+          return mainScene.gpuMaterialsManager.pushChessboardMaterial({
             materialAlias: ++_tmpMaterialAlias,
             chessboardArgs: material.chessboardArgs,
             castShadowEnabled: true,
@@ -716,7 +716,7 @@ export class TestScene3 {
         const position = currBox.physicBody.getPosition();
         const rotation = currBox.physicBody.getRotation();
 
-        primaryScene.gpuShapesManager.pushBox({
+        mainScene.gpuShapesManager.pushBox({
           position: position,
           orientation: rotation,
           boxSize: currBox.boxSize,
@@ -724,6 +724,8 @@ export class TestScene3 {
         });
 
       });
+
+      this._setupSubScene(renderer);
 
       // if (false)
       if (sphere1_chessLight)
@@ -758,37 +760,42 @@ export class TestScene3 {
         const position = sphere1_chessLight.physicBody.getPosition();
         const rotation = sphere1_chessLight.physicBody.getRotation();
 
-        primaryScene.gpuShapesManager.pushSphere({
+        // mainScene.gpuShapesManager.pushSphere({
+        //   position: position,
+        //   orientation: rotation,
+        //   radius: sphere1_chessLight.radius,
+        //   materialAlias: _buildMaterial(sphere1_chessLight.material),
+        // });
+
+
+
+        // // graphical presentation of the point lights
+        // mainScene.gpuMaterialsManager.pushBasicMaterial({
+        //   materialAlias: 668,
+        //   // color: [blinkColor, blinkColor, 0],
+        //   color: [blinkColor*currColorMask[0], blinkColor*currColorMask[1], blinkColor*currColorMask[2]],
+        //   reflectionFactor: 0,
+        //   refractionFactor: 0,
+        //   receiveLightEnabled: false,
+        //   castShadowEnabled: false
+        // });
+        // mainScene.gpuShapesManager.pushSphere({
+        //   position: position,
+        //   orientation: rotation,
+        //   // radius: blinkColor * 0.9,
+        //   radius: 0.9,
+        //   materialAlias: 668,
+        // });
+        mainScene.gpuShapesManager.pushSubSceneInstance({
+          sceneIndex: 0,
           position: position,
           orientation: rotation,
-          radius: sphere1_chessLight.radius,
-          materialAlias: _buildMaterial(sphere1_chessLight.material),
-        });
-
-
-
-        // graphical presentation of the point lights
-        primaryScene.gpuMaterialsManager.pushBasicMaterial({
-          materialAlias: 668,
-          // color: [blinkColor, blinkColor, 0],
-          color: [blinkColor*currColorMask[0], blinkColor*currColorMask[1], blinkColor*currColorMask[2]],
-          reflectionFactor: 0,
-          refractionFactor: 0,
-          receiveLightEnabled: false,
-          castShadowEnabled: false
-        });
-        primaryScene.gpuShapesManager.pushSphere({
-          position: position,
-          orientation: rotation,
-          // radius: blinkColor * 0.9,
-          radius: 0.9,
-          materialAlias: 668,
         });
 
         // actual point light inside the sphere
         rayTracerPass.gpuPointLightsManager.pushPointLight({
           position: position,
-          intensity: 0.1 + 3.9 * lightCoef,
+          intensity: 0.1 + 3.9 * lightCoef * 3,
           radius: 10,
         });
 
@@ -808,36 +815,40 @@ export class TestScene3 {
         //   receiveLightEnabled: true,
         //   castShadowEnabled: true
         // });
-        primaryScene.gpuShapesManager.pushSphere({
+        mainScene.gpuShapesManager.pushSphere({
           position: position,
           orientation: rotation,
           radius: 1.5,
           // materialAlias: 669,
           materialAlias: _buildMaterial(sphere2_fresnelMarble.material),
         });
+
+        // mainScene.gpuShapesManager.pushSubSceneInstance({
+        //   sceneIndex: 0,
+        //   position: position,
+        //   orientation: rotation,
+        // });
       }
 
 
-      this._setupSecondaryScene(renderer);
-
       {
 
-        const axis = glm.vec3.normalize(glm.vec3.create(), [1,1,0]);
-        const tmpQuat = glm.quat.create();
+        // const axis = glm.vec3.normalize(glm.vec3.create(), [1,1,0]);
+        // const tmpQuat = glm.quat.create();
 
-        for (let yy = 0; yy < 3; ++yy)
-        for (let xx = 0; xx < 3; ++xx) {
+        // for (let yy = 0; yy < 3; ++yy)
+        // for (let xx = 0; xx < 3; ++xx) {
 
-          const tmpVal = (((xx + yy) % 2) == 0) ? 1 : -1;
-          const axis = glm.vec3.normalize(glm.vec3.create(), [0,1,tmpVal]);
-          glm.quat.setAxisAngle(tmpQuat, axis, continuousTime * Math.PI * tmpVal);
+        //   const tmpVal = (((xx + yy) % 2) == 0) ? 1 : -1;
+        //   const axis = glm.vec3.normalize(glm.vec3.create(), [0,1,tmpVal]);
+        //   glm.quat.setAxisAngle(tmpQuat, axis, continuousTime * Math.PI * tmpVal);
 
-          primaryScene.gpuShapesManager.pushSubScene({
-            sceneIndex: 1,
-            position: [-10+xx*7,5+yy*7,+15],
-            orientation: tmpQuat,
-          });
-        }
+        //   mainScene.gpuShapesManager.pushSubSceneInstance({
+        //     sceneIndex: 0,
+        //     position: [-10+xx*7,5+yy*7,+15],
+        //     orientation: tmpQuat,
+        //   });
+        // }
 
         // // some point light
         // rayTracerPass.gpuPointLightsManager.pushPointLight({
@@ -845,7 +856,7 @@ export class TestScene3 {
         //   intensity: 2,
         //   radius: 20
         // });
-        // primaryScene.gpuShapesManager.pushSphere({
+        // mainScene.gpuShapesManager.pushSphere({
         //   position: [-10+1*7,5+1*7,+15],
         //   orientation: glm.quat.identity(glm.quat.create()),
         //   radius: 0.06125,
@@ -857,7 +868,7 @@ export class TestScene3 {
       /**/
       // background reflective blue sphere
 
-      primaryScene.gpuMaterialsManager.pushBasicMaterial({
+      mainScene.gpuMaterialsManager.pushBasicMaterial({
         materialAlias: 888,
         color: [0, 0, 1],
         reflectionFactor: 0.8,
@@ -867,7 +878,7 @@ export class TestScene3 {
         castShadowEnabled: true
       });
 
-      primaryScene.gpuShapesManager.pushSphere({
+      mainScene.gpuShapesManager.pushSphere({
         position: [-5, 0, -7],
         orientation: glm.quat.identity(glm.quat.create()),
         radius: 5,
@@ -880,7 +891,7 @@ export class TestScene3 {
 
       //     meshTriangles.forEach((vertices) => {
 
-      //       primaryScene.gpuShapesManager.pushTriangle({
+      //       mainScene.gpuShapesManager.pushTriangle({
       //         v0: vertices[0],
       //         v1: vertices[1],
       //         v2: vertices[2],
@@ -907,7 +918,7 @@ export class TestScene3 {
 
         // simple reflective triangle
         const materialAlias_heartTriangle = 4000;
-        primaryScene.gpuMaterialsManager.pushBasicMaterial({
+        mainScene.gpuMaterialsManager.pushBasicMaterial({
           materialAlias: materialAlias_heartTriangle,
           color: [1.0, 0.5, 0.5],
           reflectionFactor: 0.0,
@@ -915,19 +926,19 @@ export class TestScene3 {
           receiveLightEnabled: true,
           castShadowEnabled: true,
         });
-        primaryScene.gpuShapesManager.pushTriangle({
+        mainScene.gpuShapesManager.pushTriangle({
           v0: vertices[0],
           v1: vertices[1],
           v2: vertices[2],
           materialAlias: materialAlias_heartTriangle,
         });
-        primaryScene.gpuShapesManager.pushTriangle({
+        mainScene.gpuShapesManager.pushTriangle({
           v0: vertices[0],
           v1: vertices[4],
           v2: vertices[3],
           materialAlias: materialAlias_heartTriangle,
         });
-        primaryScene.gpuShapesManager.pushTriangle({
+        mainScene.gpuShapesManager.pushTriangle({
           v0: vertices[2],
           v1: vertices[5],
           v2: vertices[4],
@@ -943,7 +954,7 @@ export class TestScene3 {
         allPos.push([-10, -1+0.5, +2+ 2]);
 
         const materialAlias_wallBoxes = 5000;
-        primaryScene.gpuMaterialsManager.pushBasicMaterial({
+        mainScene.gpuMaterialsManager.pushBasicMaterial({
           materialAlias: materialAlias_wallBoxes,
             color: [1.0,0.5,0.5],
             reflectionFactor: 0.0,
@@ -954,7 +965,7 @@ export class TestScene3 {
         });
 
         for (const currPos of allPos) {
-          primaryScene.gpuShapesManager.pushBox({
+          mainScene.gpuShapesManager.pushBox({
             position: currPos,
             orientation: glm.quat.setAxisAngle(glm.quat.create(), [1,0,0], Math.PI * 0.25),
             boxSize: [0.05, 0.25, 0.25],
@@ -966,54 +977,47 @@ export class TestScene3 {
 
     } // push scene
 
-    primaryScene.markAsDirty();
+    mainScene.markAsDirty();
   }
 
-  private _setupSecondaryScene(renderer: Renderer): void {
+  private _setupSubScene(renderer: Renderer): void {
 
-    if (this._secondarySceneSetup) {
+    if (this._subSceneSetup) {
       return;
     }
-    this._secondarySceneSetup = true;
+    this._subSceneSetup = true;
 
-    const rayTracerPass = renderer.rayTracerRenderer.rayTracerPass;
-    const secondaryScene = rayTracerPass.allScenes[1];
+    const subScene = renderer.rayTracerRenderer.rayTracerPass.allSubScenes[0];
 
     const materialAlias_sphere_made_of_triangles = 7000;
-    secondaryScene.gpuMaterialsManager.pushBasicMaterial({
+    subScene.gpuMaterialsManager.pushBasicMaterial({
       materialAlias: materialAlias_sphere_made_of_triangles,
-        color: [1.0,0.0,0.0],
-        castShadowEnabled: false,
-        receiveLightEnabled: false,
+        color: [1.0,1.0,0.0],
+        castShadowEnabled: true,
+        receiveLightEnabled: true,
         reflectionFactor: 0.0,
         refractionFactor: 0.0,
     });
-    secondaryScene.gpuMaterialsManager.pushBasicMaterial({
+    subScene.gpuMaterialsManager.pushBasicMaterial({
       materialAlias: materialAlias_sphere_made_of_triangles + 1,
-        color: [0.0,1.0,0.0],
-        castShadowEnabled: false,
-        receiveLightEnabled: false,
+        color: [0.5,1.0,0.5],
+        castShadowEnabled: true,
+        receiveLightEnabled: true,
         reflectionFactor: 0.0,
         refractionFactor: 0.0,
     });
-    secondaryScene.gpuMaterialsManager.pushBasicMaterial({
+    subScene.gpuMaterialsManager.pushBasicMaterial({
       materialAlias: materialAlias_sphere_made_of_triangles + 2,
-        color: [0.0,0.0,1.0],
-        castShadowEnabled: false,
-        receiveLightEnabled: false,
+        color: [1.0,0.0,1.0],
+        castShadowEnabled: true,
+        receiveLightEnabled: true,
         reflectionFactor: 0.0,
-        refractionFactor: 0.0,
-    });
-    secondaryScene.gpuMaterialsManager.pushBasicMaterial({
-      materialAlias: materialAlias_sphere_made_of_triangles + 3,
-        color: [1.0,1.0,1.0],
-        castShadowEnabled: false,
-        receiveLightEnabled: false,
-        reflectionFactor: 0.0,
-        refractionFactor: 0.0,
+        refractionFactor: 0.3,
     });
 
-    const vertices = graphics.geometries.makeSphere(1, 2.5);
+    // const vertices = graphics.geometries.makeSphere(1, 2.5);
+    const vertices = graphics.geometries.makeSphere(1, 0.99);
+    // const vertices = graphics.geometries.makeBox([1.5, 1.5, 1.5]);
 
     const positions2: glm.vec3[] = [];
 
@@ -1042,7 +1046,7 @@ export class TestScene3 {
       const v2 = positions2[index + 1];
       const v1 = positions2[index + 2];
 
-      secondaryScene.gpuShapesManager.pushTriangle({
+      subScene.gpuShapesManager.pushTriangle({
         v0: v0,
         v1: v1,
         v2: v2,
@@ -1050,14 +1054,23 @@ export class TestScene3 {
       });
     }
 
-    secondaryScene.gpuShapesManager.pushSphere({
+    subScene.gpuMaterialsManager.pushBasicMaterial({
+      materialAlias: materialAlias_sphere_made_of_triangles + 3,
+        color: [0.3,0.3,0.3],
+        castShadowEnabled: false,
+        receiveLightEnabled: false,
+        reflectionFactor: 0.0,
+        refractionFactor: 0.0,
+    });
+    subScene.gpuShapesManager.pushSphere({
       position: [0,0,0],
       orientation: [0,0,1,0],
-      radius: 2.3,
+      // radius: 2.3,
+      radius: 0.8,
       materialAlias: materialAlias_sphere_made_of_triangles + 3,
     });
 
-    secondaryScene.markAsDirty();
+    subScene.markAsDirty();
   }
 
 }
