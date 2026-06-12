@@ -1056,7 +1056,7 @@ export class TestScene3 {
 
     subScene.gpuMaterialsManager.pushBasicMaterial({
       materialAlias: materialAlias_sphere_made_of_triangles + 3,
-        color: [0.3,0.3,0.3],
+        color: [1.0,0.0,1.0],
         castShadowEnabled: false,
         receiveLightEnabled: false,
         reflectionFactor: 0.0,

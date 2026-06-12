@@ -473,6 +473,7 @@ bool intersectScene(
 
   _bvhSceneStack[0].bvhNodeIndex = 0;
   _bvhSceneStack[0].ray = inRay;
+  _bvhSceneStack[0].distance = outBestResult.distance;
   _bvhSceneStack[0].sceneIndex = 0;
   _bvhSceneStack[0].orientation = vec4(0,0,1,0);
 
@@ -482,11 +483,16 @@ bool intersectScene(
 
   while (bvhShapeStackTopIndex >= 0)
   {
-    // pop bvh stack
+    // pop bvh stack last element
     // -> this is a copy
     BvhSceneStackData _stackData = _bvhSceneStack[bvhShapeStackTopIndex];
 
     bvhShapeStackTopIndex -= 1;
+
+    if (outBestResult.distance < _stackData.distance) {
+      // previous nodes were closer, this node is now farther -> skip
+      continue;
+    }
 
     int bvhStartX = _stackData.bvhNodeIndex * 8;
     int baseIndexY = rootIndexY + _stackData.sceneIndex * 6;
@@ -653,11 +659,11 @@ bool intersectScene(
     // from "closest" to "farthest"
     for (int ii = 0; ii < 4 && ii < allNodesWriteIndex; ++ii) {
 
-      // check if this bvh4 node is worth exploring
+      // check if this node is still worth exploring
+      // -> closer previous shape node(s) can invalidate the next bvh4 nodes
+      // ---> we know the following bvh4 nodes will be even farther
+      // -----> since they are sorted "from closest to farthest"
       if (childrenNodesStack[ii].distance > outBestResult.distance) {
-        // if this bvh4 node too far, we skip all the remaining nodes
-        // -> the following bvh4 nodes will be even farther
-        // ---> since we sorted them from closest to farthest the following
         break;
       }
 
@@ -675,6 +681,7 @@ bool intersectScene(
           bvhShapeStackTopIndex += 1;
           _bvhSceneStack[bvhShapeStackTopIndex].bvhNodeIndex = currNodesIndex;
           _bvhSceneStack[bvhShapeStackTopIndex].ray = _stackData.ray;
+          _bvhSceneStack[bvhShapeStackTopIndex].distance = childrenNodesStack[ii].distance;
           _bvhSceneStack[bvhShapeStackTopIndex].sceneIndex = _stackData.sceneIndex;
           _bvhSceneStack[bvhShapeStackTopIndex].orientation = _stackData.orientation;
 
@@ -755,9 +762,10 @@ bool intersectScene(
             // push bvh node index on to the stack
             bvhShapeStackTopIndex += 1;
             _bvhSceneStack[bvhShapeStackTopIndex].bvhNodeIndex = 0;
+            _bvhSceneStack[bvhShapeStackTopIndex].ray = subRay;
+            _bvhSceneStack[bvhShapeStackTopIndex].distance = childrenNodesStack[ii].distance;
             _bvhSceneStack[bvhShapeStackTopIndex].sceneIndex = subSceneIndex;
             _bvhSceneStack[bvhShapeStackTopIndex].orientation = orientation;
-            _bvhSceneStack[bvhShapeStackTopIndex].ray = subRay;
 
           }
 

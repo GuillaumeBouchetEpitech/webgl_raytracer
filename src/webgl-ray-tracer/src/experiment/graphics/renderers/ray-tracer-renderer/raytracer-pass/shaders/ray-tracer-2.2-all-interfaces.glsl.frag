@@ -39,6 +39,7 @@ struct BvhSceneStackData
 {
   int bvhNodeIndex;
   RayValues ray;
+  float distance;
   int sceneIndex;
   vec4 orientation;
 };

@@ -14,6 +14,13 @@ import textureVertex from './shaders/texture.glsl.vert';
 import textureFragment from './shaders/texture.glsl.frag';
 
 // // @ts-ignore
+// import textureAndUpscaleVertex from './shaders/texture-and-upscale.glsl.vert';
+// // @ts-ignore
+// import textureAndUpscaleFragment from './shaders/texture-and-upscale.glsl.frag';
+
+
+
+// // @ts-ignore
 // import asciiArtVertex from './shaders/ascii-art.glsl.vert';
 // // @ts-ignore
 // import asciiArtFragment from './shaders/ascii-art.glsl.frag';
@@ -53,17 +60,33 @@ export class PostProcessPass implements IPostProcessPass {
     this._width = inDef.width;
     this._height = inDef.height;
 
-    this._textureShaderProgram = new ShaderProgram('RayTracerRenderer-1', {
+    // this._textureShaderProgram = new ShaderProgram('PostProcessPass', {
+    //   vertexSrc: textureVertex,
+    //   fragmentSrc: textureFragment,
+    //   attributes: [
+    //     'a_vertexPosition',
+    //     'a_vertexTextureCoord'
+    //   ],
+    //   uniforms: [
+    //     'u_texture',
+    //     // 'u_renderedSize',
+    //     // 'u_gridSize'
+    //   ]
+    // });
+
+    this._textureShaderProgram = new ShaderProgram('PostProcessPass', {
       vertexSrc: textureVertex,
       fragmentSrc: textureFragment,
+      // vertexSrc: textureAndUpscaleVertex,
+      // fragmentSrc: textureAndUpscaleFragment,
       attributes: [
         'a_vertexPosition',
         'a_vertexTextureCoord'
       ],
       uniforms: [
         'u_texture',
-        // 'u_renderedSize',
-        // 'u_gridSize'
+        // 'u_srcSize',
+        // 'u_dstSize'
       ]
     });
 
@@ -150,6 +173,11 @@ export class PostProcessPass implements IPostProcessPass {
 
     shader.bind((boundShader) => {
       boundShader.setTextureUniform('u_texture', this._finalTexture, 0);
+
+
+      // boundShader.setFloat2Uniform('u_srcSize', renderedWidth, renderedHeight);
+      // boundShader.setFloat2Uniform('u_dstSize', this._width, this._height);
+
 
       // boundShader.setFloat2Uniform('u_renderedSize', renderedWidth, renderedHeight);
 
